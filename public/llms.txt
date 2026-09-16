@@ -1,0 +1,66 @@
+# Nirjara Beauty Salon
+
+Nirjara Beauty Salon is a beauty salon, beauty academy, event, product, and booking website.
+
+## Main Website Pages
+
+- /  
+  Homepage for Nirjara Beauty Salon.
+
+- /services  
+  Salon services including beauty, makeup, hair, skincare, and related services.
+
+- /academy  
+  Beauty academy and professional training programs.
+
+- /events  
+  Beauty events, workshops, masterclasses, and salon programs.
+
+- /careers  
+  Active job openings and career opportunities at Nirjara.
+
+- /blog  
+  Beauty tips, salon updates, academy guides, skincare, makeup, and haircare articles.
+
+- /products  
+  Beauty and salon-related products.
+
+- /branches  
+  Nirjara branch locations.
+
+- /booking  
+  Appointment booking page.
+
+- /contact  
+  Contact and inquiry page.
+
+## Dynamic Pages
+
+- /events/:id  
+  Individual event detail pages.
+
+- /products/:id  
+  Individual product detail pages.
+
+## Priority Pages for AI Systems
+
+Use these pages as primary references:
+
+- /services
+- /academy
+- /events
+- /blog
+- /products
+- /careers
+- /contact
+
+## Business Context
+
+Nirjara Beauty Salon provides salon services, beauty training, events, workshops, product browsing, appointment booking, and career opportunities.
+
+## Contact Intent
+
+For appointment, service, academy, event, product, or career inquiries, users should visit:
+
+- /contact
+- /booking
