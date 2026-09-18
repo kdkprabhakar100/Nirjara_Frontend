@@ -28,7 +28,7 @@ import Booking from "./pages/public/Booking";
 import Events from "./pages/public/Events";
 import EventDetails from "./pages/public/EventDetails";
 import Careers from "./pages/public/Careers";
-
+import About from "./pages/public/About";
 // ==============================
 // PRODUCT PAGES
 // ==============================
@@ -215,6 +215,16 @@ export default function App() {
           element={
             <PublicLayout>
               <Careers />
+            </PublicLayout>
+          }
+        />
+
+        {/* ABOUT */}
+        <Route
+          path="/about"
+          element={
+            <PublicLayout>
+              <About />
             </PublicLayout>
           }
         />
