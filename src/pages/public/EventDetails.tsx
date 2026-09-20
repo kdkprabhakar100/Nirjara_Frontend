@@ -27,9 +27,10 @@ const EventDetails = () => {
     EventType[]
   >([]);
 
-  // =============================
-  // FETCH SINGLE EVENT
-  // =============================
+  /* ============================================================
+     FETCH SINGLE EVENT
+  ============================================================ */
+
   const fetchEvent = async () => {
     try {
       const res = await axios.get(
@@ -38,13 +39,14 @@ const EventDetails = () => {
 
       setEvent(res.data);
     } catch (error) {
-      console.log(error);
+      console.error("EVENT FETCH ERROR:", error);
     }
   };
 
-  // =============================
-  // FETCH RELATED EVENTS
-  // =============================
+  /* ============================================================
+     FETCH RELATED EVENTS
+  ============================================================ */
+
   const fetchRelatedEvents = async () => {
     try {
       const res = await axios.get(
@@ -57,7 +59,7 @@ const EventDetails = () => {
 
       setRelatedEvents(filtered.slice(0, 3));
     } catch (error) {
-      console.log(error);
+      console.error("RELATED EVENTS ERROR:", error);
     }
   };
 
@@ -66,148 +68,1066 @@ const EventDetails = () => {
     fetchRelatedEvents();
   }, [id]);
 
+  /* ============================================================
+     LOADING
+  ============================================================ */
+
   if (!event) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-pink-600 text-2xl">
-        Loading Event...
+      <div
+        className="
+          flex
+          min-h-screen
+          items-center
+          justify-center
+          bg-[#FFF5F8]
+        "
+      >
+        <div className="text-center">
+          <div
+            className="
+              mx-auto
+              h-10
+              w-10
+              animate-spin
+              rounded-full
+              border-2
+              border-[#E75480]/20
+              border-t-[#E75480]
+            "
+          />
+
+          <p
+            className="
+              mt-5
+              text-[9px]
+              font-semibold
+              uppercase
+              tracking-[4px]
+              text-[#E75480]
+            "
+          >
+            Loading Event
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-pink-50 min-h-screen">
-      {/* ============================= */}
-      {/* HERO IMAGE */}
-      {/* ============================= */}
+    <main
+      className="
+        min-h-screen
+        overflow-hidden
+        bg-[#FFF5F8]
+        text-[#3A2A2F]
+      "
+    >
+      {/* ========================================================
+          HERO
+      ======================================================== */}
 
-      <div className="relative h-[500px] overflow-hidden">
+      <section
+        className="
+          relative
+          mt-[72px]
+          h-[440px]
+          overflow-hidden
+
+          sm:h-[500px]
+          md:h-[560px]
+          lg:h-[620px]
+        "
+      >
+        {/* HERO IMAGE */}
+
         <img
           src={event.image}
           alt={event.title}
-          className="w-full h-[250px] sm:h-[350px] md:h-[500px] object-cover"        />
+          className="
+            absolute
+            inset-0
+            h-full
+            w-full
+            object-cover
+          "
+        />
 
-        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+        {/* DARK WARM OVERLAY */}
+
+        <div
+          className="
+            absolute
+            inset-0
+            bg-[#29191F]/45
+          "
+        />
+
+        {/* BOTTOM GRADIENT */}
+
+        <div
+          className="
+            absolute
+            inset-0
+            bg-gradient-to-t
+            from-[#29191F]/60
+            via-transparent
+            to-black/5
+          "
+        />
+
+        {/* HERO CONTENT */}
+
+        <div
+          className="
+            relative
+            z-10
+            mx-auto
+            flex
+            h-full
+            max-w-6xl
+            items-center
+            justify-center
+            px-5
+            text-center
+            sm:px-8
+          "
+        >
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center px-4"
+            initial={{
+              opacity: 0,
+              y: 30,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
+            transition={{
+              duration: 0.7,
+            }}
+            className="max-w-4xl"
           >
-            <h1 className="text-5xl md:text-6xl font-serif font-bold text-white mb-4">
+            {/* TOP LABEL */}
+
+            <div
+              className="
+                flex
+                items-center
+                justify-center
+                gap-4
+              "
+            >
+              <span
+                className="
+                  hidden
+                  h-px
+                  w-10
+                  bg-[#F48AAA]/70
+                  sm:block
+                "
+              />
+
+              <p
+                className="
+                  text-[9px]
+                  font-semibold
+                  uppercase
+                  tracking-[4px]
+                  text-[#FF9DBA]
+                  sm:text-[10px]
+                  sm:tracking-[5px]
+                "
+              >
+                Nirjara Beauty Event
+              </p>
+
+              <span
+                className="
+                  hidden
+                  h-px
+                  w-10
+                  bg-[#F48AAA]/70
+                  sm:block
+                "
+              />
+            </div>
+
+            {/* TITLE */}
+
+            <h1
+              className="
+                mt-6
+                font-serif
+                text-[42px]
+                font-normal
+                leading-[0.98]
+                tracking-[-1px]
+                text-white
+                drop-shadow-[0_3px_15px_rgba(0,0,0,0.18)]
+
+                sm:text-[56px]
+                md:text-[68px]
+                lg:text-[76px]
+              "
+            >
               {event.title}
             </h1>
 
-            <p className="text-white text-lg">
-              Premium Nirjara Beauty Event
+            {/* SMALL DESCRIPTION */}
+
+            <p
+              className="
+                mx-auto
+                mt-6
+                max-w-2xl
+                font-serif
+                text-base
+                italic
+                leading-relaxed
+                text-white/85
+
+                sm:text-lg
+                md:text-xl
+              "
+            >
+              Premium Nirjara Beauty Experience
             </p>
           </motion.div>
         </div>
-      </div>
-
-      {/* ============================= */}
-      {/* EVENT CONTENT */}
-      {/* ============================= */}
-
-      <section className="max-w-5xl mx-auto px-4 py-16">
-        <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12">
-          {/* DETAILS */}
-          <div className="grid md:grid-cols-3 gap-6 mb-10">
-            <div className="bg-pink-100 rounded-2xl p-6 text-center">
-              <h3 className="text-pink-700 font-bold mb-2">
-                Date
-              </h3>
-
-              <p className="text-gray-700">
-                {new Date(
-                  event.date
-                ).toLocaleDateString()}
-              </p>
-            </div>
-
-            <div className="bg-pink-100 rounded-2xl p-6 text-center">
-              <h3 className="text-pink-700 font-bold mb-2">
-                Time
-              </h3>
-
-              <p className="text-gray-700">
-                {event.time}
-              </p>
-            </div>
-
-            <div className="bg-pink-100 rounded-2xl p-6 text-center">
-              <h3 className="text-pink-700 font-bold mb-2">
-                Location
-              </h3>
-
-              <p className="text-gray-700">
-                {event.location}
-              </p>
-            </div>
-          </div>
-
-          {/* DESCRIPTION */}
-          <div className="mb-10">
-            <h2 className="text-3xl font-serif font-bold text-pink-700 mb-6">
-              About This Event
-            </h2>
-
-            <p className="text-gray-700 leading-relaxed text-lg">
-              {event.description}
-            </p>
-          </div>
-
-          {/* CTA */}
-          <Link
-            to={event.buttonLink}
-            className="inline-block bg-pink-600 hover:bg-pink-700 transition text-white px-8 py-4 rounded-xl text-lg"
-          >
-            {event.buttonText}
-          </Link>
-        </div>
       </section>
 
-      {/* ============================= */}
-      {/* RELATED EVENTS */}
-      {/* ============================= */}
+      {/* ========================================================
+          EVENT INFORMATION
+      ======================================================== */}
 
-      <section className="max-w-7xl mx-auto px-4 pb-20">
-        <h2 className="text-4xl font-serif font-bold text-center text-pink-700 mb-14">
-          Related Events
-        </h2>
+      <section
+        className="
+          relative
+          z-20
+          mx-auto
+          max-w-6xl
+          px-4
+          pb-16
+          pt-12
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {relatedEvents.map((item) => (
-            <motion.div
-              key={item._id}
-              whileHover={{ y: -8 }}
-              className="bg-white rounded-3xl overflow-hidden shadow-lg"
+          sm:px-6
+          sm:pb-20
+          sm:pt-16
+
+          lg:px-8
+          lg:pb-24
+        "
+      >
+        {/* ======================================================
+            INFORMATION CARD
+        ====================================================== */}
+
+        <div
+          className="
+            overflow-hidden
+            rounded-[28px]
+            border
+            border-[#E75480]/10
+            bg-white
+            shadow-[0_20px_60px_rgba(58,42,47,0.07)]
+
+            sm:rounded-[32px]
+          "
+        >
+          {/* ====================================================
+              DATE / TIME / LOCATION
+          ==================================================== */}
+
+          <div
+            className="
+              grid
+              border-b
+              border-[#E75480]/10
+
+              sm:grid-cols-3
+            "
+          >
+            {/* DATE */}
+
+            <div
+              className="
+                flex
+                items-center
+                gap-4
+                border-b
+                border-[#E75480]/10
+                p-6
+
+                sm:border-b-0
+                sm:border-r
+                sm:p-7
+
+                lg:p-8
+              "
             >
-              <img
-                src={item.image}
-                alt={item.title}
-                className="w-full h-64 object-cover"
-              />
+              <div
+                className="
+                  flex
+                  h-11
+                  w-11
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-full
+                  bg-[#FFF5F8]
+                "
+              >
+                <svg
+                  className="
+                    h-[18px]
+                    w-[18px]
+                    stroke-[#E75480]
+                  "
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect
+                    x="3"
+                    y="4"
+                    width="18"
+                    height="17"
+                    rx="2"
+                  />
 
-              <div className="p-6">
-                <h3 className="text-2xl font-serif font-bold text-pink-700 mb-3">
-                  {item.title}
-                </h3>
+                  <path d="M8 2v4M16 2v4M3 10h18" />
+                </svg>
+              </div>
 
-                <p className="text-gray-600 mb-5 line-clamp-3">
-                  {item.description}
+              <div>
+                <p
+                  className="
+                    text-[8px]
+                    font-semibold
+                    uppercase
+                    tracking-[2.5px]
+                    text-[#E75480]
+                  "
+                >
+                  Date
                 </p>
 
-                <Link
-                  to={`/events/${item._id}`}
-                  className="inline-block bg-pink-600 hover:bg-pink-700 transition text-white px-6 py-3 rounded-xl"
+                <p
+                  className="
+                    mt-2
+                    text-[13px]
+                    leading-5
+                    text-[#654E56]
+
+                    lg:text-sm
+                  "
                 >
-                  View Details
+                  {new Date(
+                    event.date
+                  ).toLocaleDateString(undefined, {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </p>
+              </div>
+            </div>
+
+            {/* TIME */}
+
+            <div
+              className="
+                flex
+                items-center
+                gap-4
+                border-b
+                border-[#E75480]/10
+                p-6
+
+                sm:border-b-0
+                sm:border-r
+                sm:p-7
+
+                lg:p-8
+              "
+            >
+              <div
+                className="
+                  flex
+                  h-11
+                  w-11
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-full
+                  bg-[#FFF5F8]
+                "
+              >
+                <svg
+                  className="
+                    h-[18px]
+                    w-[18px]
+                    stroke-[#E75480]
+                  "
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="9"
+                  />
+
+                  <path d="M12 7v5l3 2" />
+                </svg>
+              </div>
+
+              <div>
+                <p
+                  className="
+                    text-[8px]
+                    font-semibold
+                    uppercase
+                    tracking-[2.5px]
+                    text-[#E75480]
+                  "
+                >
+                  Time
+                </p>
+
+                <p
+                  className="
+                    mt-2
+                    text-[13px]
+                    leading-5
+                    text-[#654E56]
+
+                    lg:text-sm
+                  "
+                >
+                  {event.time}
+                </p>
+              </div>
+            </div>
+
+            {/* LOCATION */}
+
+            <div
+              className="
+                flex
+                items-center
+                gap-4
+                p-6
+
+                sm:p-7
+
+                lg:p-8
+              "
+            >
+              <div
+                className="
+                  flex
+                  h-11
+                  w-11
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-full
+                  bg-[#FFF5F8]
+                "
+              >
+                <svg
+                  className="
+                    h-[18px]
+                    w-[18px]
+                    stroke-[#E75480]
+                  "
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z" />
+
+                  <circle
+                    cx="12"
+                    cy="10"
+                    r="3"
+                  />
+                </svg>
+              </div>
+
+              <div>
+                <p
+                  className="
+                    text-[8px]
+                    font-semibold
+                    uppercase
+                    tracking-[2.5px]
+                    text-[#E75480]
+                  "
+                >
+                  Location
+                </p>
+
+                <p
+                  className="
+                    mt-2
+                    text-[13px]
+                    leading-5
+                    text-[#654E56]
+
+                    lg:text-sm
+                  "
+                >
+                  {event.location}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* ====================================================
+              EVENT DESCRIPTION
+          ==================================================== */}
+
+          <div
+            className="
+              px-6
+              py-9
+
+              sm:px-9
+              sm:py-11
+
+              md:px-12
+              md:py-12
+
+              lg:px-16
+              lg:py-14
+            "
+          >
+            {/* SMALL LABEL */}
+
+            <div className="flex items-center gap-3">
+              <span
+                className="
+                  h-px
+                  w-7
+                  bg-[#E75480]/50
+                "
+              />
+
+              <p
+                className="
+                  text-[8px]
+                  font-semibold
+                  uppercase
+                  tracking-[3px]
+                  text-[#E75480]
+                "
+              >
+                Event Details
+              </p>
+            </div>
+
+            {/* HEADING */}
+
+            <h2
+              className="
+                mt-5
+                font-serif
+                text-[32px]
+                font-normal
+                leading-tight
+                text-[#3A2A2F]
+
+                sm:text-[38px]
+                md:text-[42px]
+              "
+            >
+              About This{" "}
+
+              <span className="italic text-[#E75480]">
+                Event
+              </span>
+            </h2>
+
+            {/* DESCRIPTION */}
+
+            <p
+              className="
+                mt-6
+                max-w-4xl
+                whitespace-pre-line
+                text-sm
+                leading-7
+                text-[#8A6F78]
+
+                sm:text-[15px]
+                sm:leading-8
+
+                md:text-base
+              "
+            >
+              {event.description}
+            </p>
+
+            {/* CTA */}
+
+            {event.buttonLink && (
+              <div className="mt-9">
+                <Link
+                  to={event.buttonLink}
+                  className="
+                    group
+                    inline-flex
+                    items-center
+                    justify-center
+                    gap-4
+                    rounded-full
+                    bg-[#E75480]
+                    px-7
+                    py-4
+                    text-[9px]
+                    font-semibold
+                    uppercase
+                    tracking-[2.5px]
+                    text-white
+                    shadow-[0_12px_30px_rgba(231,84,128,0.22)]
+                    transition-all
+                    duration-300
+
+                    hover:-translate-y-1
+                    hover:bg-[#D94773]
+                    hover:shadow-[0_16px_38px_rgba(231,84,128,0.30)]
+                  "
+                >
+                  {event.buttonText || "Learn More"}
+
+                  <span
+                    className="
+                      text-base
+                      leading-none
+                      transition-transform
+                      duration-300
+                      group-hover:translate-x-1
+                    "
+                  >
+                    →
+                  </span>
                 </Link>
               </div>
-            </motion.div>
-          ))}
+            )}
+          </div>
         </div>
       </section>
-    </div>
+
+      {/* ========================================================
+          RELATED EVENTS
+      ======================================================== */}
+
+      {relatedEvents.length > 0 && (
+        <section
+          className="
+            border-t
+            border-[#E75480]/10
+            bg-white
+            px-4
+            py-16
+
+            sm:px-6
+            sm:py-20
+
+            lg:px-8
+            lg:py-24
+          "
+        >
+          <div className="mx-auto max-w-7xl">
+
+            {/* SECTION HEADING */}
+
+            <div className="text-center">
+              <p
+                className="
+                  text-[9px]
+                  font-semibold
+                  uppercase
+                  tracking-[4px]
+                  text-[#E75480]
+                "
+              >
+                Discover More
+              </p>
+
+              <h2
+                className="
+                  mt-4
+                  font-serif
+                  text-[38px]
+                  font-normal
+                  leading-tight
+                  text-[#3A2A2F]
+
+                  sm:text-[48px]
+                  lg:text-[54px]
+                "
+              >
+                Related{" "}
+
+                <span className="italic text-[#E75480]">
+                  Events
+                </span>
+              </h2>
+
+              <div
+                className="
+                  mx-auto
+                  mt-6
+                  h-px
+                  w-20
+                  bg-[#E75480]/40
+                "
+              />
+            </div>
+
+            {/* ==================================================
+                RELATED EVENT GRID
+            ================================================== */}
+
+            <div
+              className="
+                mt-12
+                grid
+                grid-cols-1
+                gap-6
+
+                sm:grid-cols-2
+
+                lg:mt-16
+                lg:grid-cols-3
+
+                xl:gap-8
+              "
+            >
+              {relatedEvents.map((item) => (
+                <motion.article
+                  key={item._id}
+                  whileHover={{
+                    y: -6,
+                  }}
+                  transition={{
+                    duration: 0.3,
+                  }}
+                  className="
+                    group
+                    flex
+                    h-full
+                    flex-col
+                    overflow-hidden
+                    rounded-[26px]
+                    border
+                    border-[#E75480]/10
+                    bg-white
+                    shadow-[0_10px_35px_rgba(58,42,47,0.05)]
+                    transition-shadow
+                    duration-300
+
+                    hover:shadow-[0_20px_50px_rgba(58,42,47,0.09)]
+                  "
+                >
+                  {/* IMAGE */}
+
+                  <div
+                    className="
+                      relative
+                      h-[230px]
+                      overflow-hidden
+
+                      sm:h-[250px]
+                      lg:h-[270px]
+                    "
+                  >
+                    <img
+                      src={item.image}
+                      alt={item.title}
+                      className="
+                        h-full
+                        w-full
+                        object-cover
+                        transition-transform
+                        duration-700
+                        group-hover:scale-[1.05]
+                      "
+                    />
+
+                    {/* OVERLAY */}
+
+                    <div
+                      className="
+                        absolute
+                        inset-0
+                        bg-gradient-to-t
+                        from-[#3A2A2F]/15
+                        to-transparent
+                      "
+                    />
+
+                    {/* DATE */}
+
+                    <div
+                      className="
+                        absolute
+                        left-4
+                        top-4
+                        rounded-full
+                        border
+                        border-white/40
+                        bg-white/90
+                        px-4
+                        py-2
+                        text-[8px]
+                        font-semibold
+                        uppercase
+                        tracking-[1.5px]
+                        text-[#E75480]
+                        shadow-sm
+                        backdrop-blur-md
+                      "
+                    >
+                      {new Date(
+                        item.date
+                      ).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </div>
+                  </div>
+
+                  {/* CONTENT */}
+
+                  <div
+                    className="
+                      flex
+                      flex-1
+                      flex-col
+                      p-5
+                      sm:p-6
+                    "
+                  >
+                    {/* TITLE */}
+
+                    <h3
+                      className="
+                        font-serif
+                        text-[27px]
+                        font-normal
+                        leading-[1.08]
+                        text-[#3A2A2F]
+                        transition-colors
+                        duration-300
+
+                        group-hover:text-[#E75480]
+                      "
+                    >
+                      {item.title}
+                    </h3>
+
+                    {/* DESCRIPTION */}
+
+                    <p
+                      className="
+                        mt-4
+                        line-clamp-3
+                        text-[13px]
+                        leading-6
+                        text-[#8A6F78]
+
+                        sm:text-sm
+                      "
+                    >
+                      {item.description}
+                    </p>
+
+                    {/* DIVIDER */}
+
+                    <div
+                      className="
+                        my-5
+                        h-px
+                        w-full
+                        bg-[#E75480]/10
+                      "
+                    />
+
+                    {/* DETAILS */}
+
+                    <div className="space-y-3">
+
+                      {/* LOCATION */}
+
+                      <div
+                        className="
+                          flex
+                          items-start
+                          gap-3
+                          text-[12px]
+                          leading-5
+                          text-[#8A6F78]
+                        "
+                      >
+                        <svg
+                          className="
+                            mt-[2px]
+                            h-[15px]
+                            w-[15px]
+                            shrink-0
+                            stroke-[#E75480]
+                          "
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z" />
+
+                          <circle
+                            cx="12"
+                            cy="10"
+                            r="3"
+                          />
+                        </svg>
+
+                        <span>
+                          {item.location}
+                        </span>
+                      </div>
+
+                      {/* TIME */}
+
+                      <div
+                        className="
+                          flex
+                          items-start
+                          gap-3
+                          text-[12px]
+                          leading-5
+                          text-[#8A6F78]
+                        "
+                      >
+                        <svg
+                          className="
+                            mt-[2px]
+                            h-[15px]
+                            w-[15px]
+                            shrink-0
+                            stroke-[#E75480]
+                          "
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <circle
+                            cx="12"
+                            cy="12"
+                            r="9"
+                          />
+
+                          <path d="M12 7v5l3 2" />
+                        </svg>
+
+                        <span>
+                          {item.time}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* BUTTON */}
+
+                    <div className="mt-auto pt-7">
+                      <Link
+                        to={`/events/${item._id}`}
+                        className="
+                          group/button
+                          inline-flex
+                          items-center
+                          justify-center
+                          gap-3
+                          rounded-full
+                          border
+                          border-[#E75480]
+                          bg-[#E75480]
+                          px-6
+                          py-3
+                          text-[8px]
+                          font-semibold
+                          uppercase
+                          tracking-[2px]
+                          text-white
+                          transition-all
+                          duration-300
+
+                          hover:-translate-y-[2px]
+                          hover:bg-[#D94773]
+                          hover:shadow-[0_10px_25px_rgba(231,84,128,0.20)]
+                        "
+                      >
+                        View Details
+
+                        <span
+                          className="
+                            text-sm
+                            transition-transform
+                            duration-300
+                            group-hover/button:translate-x-1
+                          "
+                        >
+                          →
+                        </span>
+                      </Link>
+                    </div>
+                  </div>
+                </motion.article>
+              ))}
+            </div>
+
+            {/* ==================================================
+                BACK TO EVENTS
+            ================================================== */}
+
+            <div className="mt-14 text-center">
+              <Link
+                to="/events"
+                className="
+                  inline-flex
+                  items-center
+                  gap-3
+                  text-[9px]
+                  font-semibold
+                  uppercase
+                  tracking-[2.5px]
+                  text-[#8A6F78]
+                  transition-colors
+                  duration-300
+
+                  hover:text-[#E75480]
+                "
+              >
+                <span>←</span>
+                View All Events
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+    </main>
   );
 };
 
