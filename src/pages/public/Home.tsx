@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import ServiceCard from "../../components/ServiceCard";
 import BranchCard from "../../components/BranchCard";
 import Gallery from "../../components/Gallery";
-
 /* ============================================================
    TYPES
 ============================================================ */
@@ -616,7 +615,7 @@ export default function Home() {
               title={service.title}
               description={service.description}
               price={service.price}
-              icon={service.icon || "✦"}
+              //icon={service.icon || "✦"}
               image={service.image || ""}
             />
           ))}

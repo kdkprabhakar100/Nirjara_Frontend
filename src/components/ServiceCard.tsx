@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 
 type ServiceCardProps = {
-  icon: string;
   title: string;
   description: string;
   price: string;
@@ -9,47 +8,97 @@ type ServiceCardProps = {
 };
 
 export default function ServiceCard({
-  icon,
   title,
   description,
   price,
   image,
 }: ServiceCardProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 35 }}
+    <motion.article
+      initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.2 }}
-      transition={{ duration: 0.5 }}
-      className="group relative cursor-pointer overflow-hidden rounded-3xl border border-[#E75480]/10 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-[#E75480]/30 hover:shadow-xl"
+      viewport={{
+        once: true,
+        amount: 0.15,
+      }}
+      transition={{
+        duration: 0.5,
+      }}
+      className="
+        group
+        flex
+        h-full
+        flex-col
+        overflow-hidden
+        rounded-[28px]
+        border
+        border-[#E75480]/10
+        bg-white
+        shadow-sm
+        transition-all
+        duration-300
+        hover:-translate-y-1
+        hover:shadow-xl
+      "
     >
-      <div className="relative h-48 overflow-hidden">
+      {/* IMAGE */}
+
+      <div className="relative h-[240px] overflow-hidden sm:h-[250px] lg:h-[260px]">
         <img
           src={image || "/images/salon.png"}
           alt={title}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
+          loading="lazy"
+          className="
+            h-full
+            w-full
+            object-cover
+            transition-transform
+            duration-700
+            group-hover:scale-105
+          "
         />
 
-        <div className="absolute inset-0 flex items-center justify-center bg-[#E75480]/70 opacity-0 transition duration-300 group-hover:opacity-100">
-          <button className="rounded-full bg-white px-6 py-3 text-xs font-semibold uppercase tracking-[2px] text-[#E75480] shadow-md">
+        {/* PRICE */}
+
+        <div className="absolute bottom-4 right-4 rounded-full bg-white px-5 py-2 text-xs font-medium text-[#E75480] shadow-sm">
+          {price}
+        </div>
+      </div>
+
+      {/* CONTENT */}
+
+      <div className="flex flex-1 flex-col p-6 sm:p-7">
+        <h3 className="font-serif text-2xl text-[#3A2A2F] sm:text-[27px]">
+          {title}
+        </h3>
+
+        <p className="mt-3 line-clamp-3 text-sm leading-7 text-[#8A6F78]">
+          {description}
+        </p>
+
+        <div className="mt-auto pt-6">
+          <button
+            type="button"
+            className="
+              w-full
+              rounded-full
+              bg-[#E75480]
+              px-6
+              py-3.5
+              text-xs
+              font-semibold
+              uppercase
+              tracking-[2px]
+              text-white
+              transition-all
+              duration-300
+              hover:bg-[#d94873]
+            "
+          >
             Book Now
           </button>
         </div>
       </div>
-
-      <div className="p-8">
-        <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[#FCE7EF] text-3xl text-[#E75480]">
-          {icon}
-        </div>
-
-        <h3 className="font-serif text-2xl text-[#3A2A2F]">{title}</h3>
-
-        <p className="mt-3 text-sm leading-7 text-[#8A6F78]">{description}</p>
-
-        <p className="mt-5 text-sm font-medium tracking-wide text-[#E75480]">
-          {price}
-        </p>
-      </div>
-    </motion.div>
+    </motion.article>
   );
 }

@@ -51,7 +51,7 @@ export default function Navbar() {
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 lg:gap-4">
 
         {/* LOGO */}
-        <NavLink
+        {/* <NavLink
           to="/"
           onClick={() => setOpen(false)}
           className="shrink-0 font-serif text-base leading-tight tracking-[2px] text-[#E75480] sm:text-xl xl:text-2xl"
@@ -60,7 +60,30 @@ export default function Navbar() {
           <span className="block italic tracking-[3px] text-[#C77A95] sm:inline">
             Beauty
           </span>
-        </NavLink>
+        </NavLink> */}
+        {/* ========================================
+            NIRJARA LOGO
+        ======================================== */}
+
+          <NavLink
+            to="/"
+            onClick={() => setOpen(false)}
+            className="flex shrink-0 items-center"
+            aria-label="Nirjara Beauty Home"
+          >
+            <img
+              src="/images/Nirjara-logo.png"
+              alt="Nirjara Beauty"
+              className="
+                h-[42px]
+                w-auto
+                object-contain
+                sm:h-[46px]
+                lg:h-[48px]
+                xl:h-[52px]
+              "
+            />
+          </NavLink>
 
         {/* DESKTOP MENU */}
         <div className="hidden items-center gap-4 lg:flex xl:gap-6">
