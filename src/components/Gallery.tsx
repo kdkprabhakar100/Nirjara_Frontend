@@ -1,10 +1,4 @@
 import {
-  motion,
-  useAnimationFrame,
-  useMotionValue,
-  type MotionValue,
-} from "framer-motion";
-import {
   useCallback,
   useEffect,
   useMemo,
@@ -12,542 +6,129 @@ import {
   useState,
 } from "react";
 
+import {
+  AnimatePresence,
+  motion,
+  useAnimationFrame,
+  useMotionValue,
+} from "framer-motion";
+
 /* =========================================================
    TYPES
 ========================================================= */
 
 type GalleryItem = {
   _id: string;
-  title: string;
-  description?: string;
+  title?: string;
   category?: string;
   image: string;
-  status?: string;
 };
 
 /* =========================================================
-   CAROUSEL SETTINGS
+   CONFIG
 ========================================================= */
 
-const CARD_WIDTH = 190;
-const CARD_GAP = 16;
-const ITEM_WIDTH = CARD_WIDTH + CARD_GAP;
+const MOBILE_AUTOPLAY_TIME = 2800;
+const DESKTOP_SPEED = 32;
 
-/*
-  Automatic slider speed.
-  Increase = faster
-  Decrease = slower
+const DESKTOP_HEIGHTS = [
+  430,
+  370,
+  310,
+  255,
+  310,
+  370,
+  430,
+];
 
-  Good range: 25–45
-*/
-const AUTO_SPEED = 128;
-
-/*
-  We repeat the gallery multiple times so that the slider
-  can loop without visibly jumping.
-*/
-const REPEAT_COUNT = 7;
-
-/* =========================================================
-   CURVED GALLERY CARD
-========================================================= */
-
-type CurvedGalleryCardProps = {
-  item: GalleryItem;
-  index: number;
-  sliderX: MotionValue<number>;
-};
-
-function CurvedGalleryCard({
-  item,
-  index,
-  sliderX,
-}: CurvedGalleryCardProps) {
-  /*
-    Height is a MotionValue instead of React state.
-
-    This is important because changing React state every
-    animation frame would cause unnecessary re-renders.
-  */
-  const height = useMotionValue(260);
-
-  const opacity = useMotionValue(1);
-
-  const scale = useMotionValue(1);
-
-  useAnimationFrame(() => {
-    const viewportWidth = window.innerWidth;
-
-    /* ---------------------------------------------
-       Find this card's position mathematically.
-
-       IMPORTANT:
-       We do NOT use getBoundingClientRect().
-       That avoids repeated layout calculations.
-    --------------------------------------------- */
-
-    const cardLeft =
-      sliderX.get() + index * ITEM_WIDTH;
-
-    const cardCenter =
-      cardLeft + CARD_WIDTH / 2;
-
-    const screenCenter =
-      viewportWidth / 2;
-
-    const distanceFromCenter = Math.abs(
-      cardCenter - screenCenter
-    );
-
-    /*
-      Convert distance to 0 → 1.
-
-      0 = exact center of screen
-      1 = edge of screen
-    */
-    const normalizedDistance = Math.min(
-      distanceFromCenter /
-        (viewportWidth / 2),
-      1
-    );
-
-    /*
-      This controls the curve.
-
-      Higher exponent:
-      flatter center + stronger edges
-
-      Lower exponent:
-      softer curve
-    */
-    const curve = Math.pow(
-      normalizedDistance,
-      1.55
-    );
-
-    /* ---------------------------------------------
-       RESPONSIVE HEIGHTS
-    --------------------------------------------- */
-
-    let centerHeight = 235;
-    let edgeHeight = 430;
-
-    if (viewportWidth < 640) {
-      centerHeight = 190;
-      edgeHeight = 310;
-    } else if (viewportWidth < 1024) {
-      centerHeight = 215;
-      edgeHeight = 360;
-    }
-
-    /*
-      Center = shortest
-      Edges = tallest
-    */
-    const calculatedHeight =
-      centerHeight +
-      (edgeHeight - centerHeight) *
-        curve;
-
-    /*
-      Set directly.
-
-      NO CSS/Framer height transition here.
-      The curve follows the carousel position itself.
-    */
-    height.set(calculatedHeight);
-
-    /* ---------------------------------------------
-       VERY SUBTLE SCALE
-
-       This gives the edge cards slightly more presence
-       without changing the main curve structure.
-    --------------------------------------------- */
-
-    const calculatedScale =
-      0.985 +
-      curve * 0.015;
-
-    scale.set(calculatedScale);
-
-    /* ---------------------------------------------
-       EDGE FADE
-    --------------------------------------------- */
-
-    if (normalizedDistance > 0.88) {
-      const fadeAmount =
-        (normalizedDistance - 0.88) /
-        0.12;
-
-      opacity.set(
-        Math.max(
-          0.68,
-          1 - fadeAmount * 0.32
-        )
-      );
-    } else {
-      opacity.set(1);
-    }
-  });
-
-  return (
-    <motion.article
-      style={{
-        width: CARD_WIDTH,
-        height,
-        opacity,
-        scale,
-        willChange:
-          "transform, height, opacity",
-      }}
-      className="
-        group
-        relative
-        shrink-0
-        overflow-hidden
-        rounded-[24px]
-        bg-[#F5E9ED]
-        shadow-[0_12px_40px_rgba(58,42,47,0.07)]
-      "
-    >
-      {/* IMAGE */}
-
-      <img
-        src={item.image}
-        alt={item.title || "Nirjara Beauty"}
-        draggable={false}
-        loading="lazy"
-        className="
-          pointer-events-none
-          h-full
-          w-full
-          select-none
-          object-cover
-          object-center
-        "
-      />
-
-      {/* SUBTLE IMAGE OVERLAY */}
-
-      <div
-        className="
-          pointer-events-none
-          absolute
-          inset-0
-          bg-black/[0.02]
-          transition-colors
-          duration-500
-          group-hover:bg-transparent
-        "
-      />
-
-      {/* BOTTOM GRADIENT */}
-
-      <div
-        className="
-          pointer-events-none
-          absolute
-          inset-x-0
-          bottom-0
-          h-[38%]
-          bg-gradient-to-t
-          from-black/45
-          via-black/10
-          to-transparent
-        "
-      />
-
-      {/* TEXT */}
-
-      {(item.title || item.category) && (
-        <div
-          className="
-            pointer-events-none
-            absolute
-            bottom-4
-            left-4
-            right-4
-            z-10
-          "
-        >
-          {item.category && (
-            <p
-              className="
-                mb-1
-                text-[7px]
-                font-medium
-                uppercase
-                tracking-[2.5px]
-                text-white/70
-              "
-            >
-              {item.category}
-            </p>
-          )}
-
-          {item.title && (
-            <h3
-              className="
-                font-serif
-                text-[16px]
-                leading-tight
-                text-white
-                drop-shadow-sm
-              "
-            >
-              {item.title}
-            </h3>
-          )}
-        </div>
-      )}
-    </motion.article>
-  );
-}
+const TABLET_HEIGHTS = [
+  350,
+  305,
+  265,
+  225,
+  265,
+  305,
+  350,
+];
 
 /* =========================================================
-   GALLERY PAGE
+   MAIN PAGE
 ========================================================= */
 
 export default function Gallery() {
-  const [gallery, setGallery] =
-    useState<GalleryItem[]>([]);
+  const [gallery, setGallery] = useState<GalleryItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [loading, setLoading] =
-    useState(true);
-
-  /*
-    Pause when user hovers.
-  */
-  const [hovering, setHovering] =
-    useState(false);
-
-  /*
-    Pause automatic animation while user drags.
-  */
-  const [dragging, setDragging] =
-    useState(false);
-
-  /*
-    Main carousel position.
-  */
-  const x = useMotionValue(0);
-
-  /*
-    Width of ONE complete gallery set.
-  */
-  const singleSetWidthRef =
-    useRef(0);
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1440
+  );
 
   /* =======================================================
-     FETCH GALLERY FROM BACKEND
+     FETCH GALLERY
   ======================================================= */
 
   useEffect(() => {
-    let mounted = true;
-
     const fetchGallery = async () => {
       try {
-        setLoading(true);
-
         const response = await fetch(
-          `${
-            import.meta.env.VITE_API_URL
-          }/api/gallery`
+          `${import.meta.env.VITE_API_URL}/api/gallery`
         );
 
         if (!response.ok) {
-          throw new Error(
-            `Gallery request failed: ${response.status}`
-          );
+          throw new Error(`Gallery request failed: ${response.status}`);
         }
 
-        const data =
-          await response.json();
+        const data = await response.json();
 
-        if (!mounted) return;
-
-        /*
-          Supports:
-          [...]
-          
-          OR
-          
-          { data: [...] }
-          
-          OR
-          
-          { items: [...] }
-        */
-
-        const items: GalleryItem[] =
-          Array.isArray(data)
-            ? data
-            : Array.isArray(data?.data)
-            ? data.data
-            : Array.isArray(data?.items)
-            ? data.items
-            : [];
+        const items: GalleryItem[] = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data?.gallery)
+          ? data.gallery
+          : [];
 
         setGallery(items);
       } catch (error) {
-        console.error(
-          "Gallery fetch error:",
-          error
-        );
-
-        if (mounted) {
-          setGallery([]);
-        }
+        console.error("Failed to fetch gallery:", error);
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 
     fetchGallery();
-
-    return () => {
-      mounted = false;
-    };
   }, []);
 
   /* =======================================================
-     CREATE REPEATED ITEMS FOR INFINITE LOOP
-  ======================================================= */
-
-  const displayItems =
-    useMemo(() => {
-      if (!gallery.length) {
-        return [];
-      }
-
-      return Array.from(
-        { length: REPEAT_COUNT },
-        () => gallery
-      ).flat();
-    }, [gallery]);
-
-  /* =======================================================
-     INITIAL CAROUSEL POSITION
+     SCREEN WIDTH
   ======================================================= */
 
   useEffect(() => {
-    if (!gallery.length) return;
+    const updateWidth = () => {
+      setViewportWidth(window.innerWidth);
+    };
 
-    const singleSetWidth =
-      gallery.length * ITEM_WIDTH;
+    updateWidth();
 
-    singleSetWidthRef.current =
-      singleSetWidth;
+    window.addEventListener("resize", updateWidth);
 
-    /*
-      Start inside the middle repeated copies.
+    return () => {
+      window.removeEventListener("resize", updateWidth);
+    };
+  }, []);
 
-      That gives us plenty of content on both sides.
-    */
-    x.set(-singleSetWidth * 3);
-  }, [gallery, x]);
-
-  /* =======================================================
-     INFINITE LOOP NORMALIZATION
-  ======================================================= */
-
-  const normalizeSlider =
-    useCallback(() => {
-      const setWidth =
-        singleSetWidthRef.current;
-
-      if (!setWidth) return;
-
-      let currentX = x.get();
-
-      /*
-        Because each gallery set is identical,
-        moving exactly one set forward/backward
-        is visually invisible.
-      */
-
-      while (
-        currentX <=
-        -setWidth * 4
-      ) {
-        currentX += setWidth;
-      }
-
-      while (
-        currentX >=
-        -setWidth * 2
-      ) {
-        currentX -= setWidth;
-      }
-
-      x.set(currentX);
-    }, [x]);
+  const isMobile = viewportWidth < 768;
 
   /* =======================================================
-     AUTOMATIC SMOOTH ANIMATION
-  ======================================================= */
-
-  useAnimationFrame(
-    (_time, delta) => {
-      if (!gallery.length) {
-        return;
-      }
-
-      /*
-        Stop automatic movement while interacting.
-      */
-      if (hovering || dragging) {
-        return;
-      }
-
-      /*
-        Sometimes when changing browser tabs,
-        requestAnimationFrame returns a huge delta.
-
-        Clamp it so carousel doesn't suddenly jump.
-      */
-      const safeDelta =
-        Math.min(delta, 32);
-
-      /*
-        Convert pixels/second into pixels/frame.
-      */
-      const movement =
-        AUTO_SPEED *
-        (safeDelta / 1000);
-
-      /*
-        Move right -> left.
-      */
-      x.set(
-        x.get() - movement
-      );
-
-      normalizeSlider();
-    }
-  );
-
-  /* =======================================================
-     LOADING SCREEN
+     LOADING
   ======================================================= */
 
   if (loading) {
     return (
-      <main
-        className="
-          flex
-          min-h-screen
-          items-center
-          justify-center
-          bg-[#FFF5F8]
-        "
-      >
-        <div className="text-center">
+      <main className="min-h-screen bg-[#FFF5F8] pt-24">
+        <div className="flex h-[500px] items-center justify-center">
           <div
             className="
-              mx-auto
               h-8
               w-8
               animate-spin
@@ -557,78 +138,21 @@ export default function Gallery() {
               border-t-[#E75480]
             "
           />
-
-          <p
-            className="
-              mt-5
-              text-[8px]
-              uppercase
-              tracking-[4px]
-              text-[#E75480]
-            "
-          >
-            Loading Gallery
-          </p>
         </div>
       </main>
     );
   }
 
   /* =======================================================
-     EMPTY STATE
+     EMPTY
   ======================================================= */
 
   if (!gallery.length) {
     return (
-      <main
-        className="
-          flex
-          min-h-screen
-          items-center
-          justify-center
-          bg-[#FFF5F8]
-          px-6
-        "
-      >
-        <div className="text-center">
-          <p
-            className="
-              text-[9px]
-              uppercase
-              tracking-[4px]
-              text-[#E75480]
-            "
-          >
-            Our Gallery
-          </p>
-
-          <h1
-            className="
-              mt-4
-              font-serif
-              text-4xl
-              text-[#3A2A2F]
-            "
-          >
-            Beauty{" "}
-            <span
-              className="
-                italic
-                text-[#E75480]
-              "
-            >
-              In Motion
-            </span>
-          </h1>
-
-          <p
-            className="
-              mt-4
-              text-sm
-              text-[#8A6F78]
-            "
-          >
-            Gallery images will appear here soon.
+      <main className="min-h-screen bg-[#FFF5F8] pt-24">
+        <div className="flex h-[500px] items-center justify-center">
+          <p className="text-sm text-[#8A6F78]">
+            Gallery coming soon.
           </p>
         </div>
       </main>
@@ -640,36 +164,22 @@ export default function Gallery() {
   ======================================================= */
 
   return (
-    <main
-      className="
-        min-h-screen
-        overflow-hidden
-        bg-[#FFF5F8]
-        pb-16
-        pt-28
-        sm:pt-32
-        lg:pt-36
-      "
-    >
-      {/* =================================================
-          PAGE HEADER
-      ================================================= */}
+    <main className="min-h-screen overflow-hidden bg-[#FFF5F8] pt-24 md:pt-32">
+      {/* ===================================================
+          PAGE INTRO
+      =================================================== */}
 
-      <section
-        className="
-          relative
-          z-10
-          px-6
-          text-center
-        "
-      >
+      <section className="relative z-10 mx-auto max-w-4xl px-5 text-center">
         <p
           className="
-            text-[9px]
+            text-[8px]
             font-medium
             uppercase
-            tracking-[5px]
+            tracking-[4px]
             text-[#E75480]
+
+            md:text-[10px]
+            md:tracking-[5px]
           "
         >
           Our Gallery
@@ -677,22 +187,22 @@ export default function Gallery() {
 
         <h1
           className="
-            mt-4
+            mt-3
             font-serif
-            text-[38px]
-            leading-[1.05]
+            text-[32px]
+            leading-[1.08]
             text-[#3A2A2F]
-            sm:text-[46px]
-            lg:text-[52px]
+
+            sm:text-[38px]
+
+            md:mt-4
+            md:text-[48px]
+
+            lg:text-[54px]
           "
         >
           Beauty{" "}
-          <span
-            className="
-              italic
-              text-[#E75480]
-            "
-          >
+          <span className="italic text-[#E75480]">
             In Motion
           </span>
         </h1>
@@ -700,89 +210,474 @@ export default function Gallery() {
         <p
           className="
             mx-auto
-            mt-5
-            max-w-[560px]
+            mt-3
+            max-w-[310px]
             text-[13px]
-            leading-7
+            leading-6
             text-[#8A6F78]
-            sm:text-sm
+
+            md:mt-5
+            md:max-w-2xl
+            md:text-[15px]
+            md:leading-7
           "
         >
-          Explore beautiful transformations,
-          artistry and unforgettable moments
-          created at Nirjara Beauty.
+          Explore beautiful transformations, artistry and unforgettable
+          moments created at Nirjara Beauty.
         </p>
       </section>
 
-      {/* =================================================
+      {/* ===================================================
           SMALL SECTION LABEL
-      ================================================= */}
+      =================================================== */}
 
       <div
         className="
-          mt-10
+          mt-6
           flex
           items-center
           justify-center
-          gap-4
-          sm:mt-12
+          gap-3
+
+          md:mt-8
+          md:gap-4
         "
       >
-        <span
-          className="
-            h-px
-            w-9
-            bg-[#E75480]/25
-          "
-        />
+        <span className="h-px w-8 bg-[#E75480]/25 md:w-10" />
 
         <span
           className="
-            whitespace-nowrap
-            text-[7px]
+            text-[6px]
             font-medium
             uppercase
-            tracking-[5px]
+            tracking-[4px]
             text-[#E75480]
+
+            md:text-[7px]
+            md:tracking-[5px]
           "
         >
           Beauty In Motion
         </span>
 
-        <span
-          className="
-            h-px
-            w-9
-            bg-[#E75480]/25
-          "
-        />
+        <span className="h-px w-8 bg-[#E75480]/25 md:w-10" />
       </div>
 
+      {/* ===================================================
+          MOBILE
+      =================================================== */}
+
+      {isMobile ? (
+        <MobileGallery items={gallery} />
+      ) : (
+        <DesktopGallery
+          items={gallery}
+          viewportWidth={viewportWidth}
+        />
+      )}
+    </main>
+  );
+}
+
+/* =========================================================
+   MOBILE GALLERY
+========================================================= */
+
+function MobileGallery({
+  items,
+}: {
+  items: GalleryItem[];
+}) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [direction, setDirection] = useState(1);
+  const [paused, setPaused] = useState(false);
+
+  const total = items.length;
+
+  /* =======================================================
+     NEXT
+  ======================================================= */
+
+  const nextSlide = useCallback(() => {
+    if (total <= 1) return;
+
+    setDirection(1);
+
+    setActiveIndex((current) =>
+      current === total - 1 ? 0 : current + 1
+    );
+  }, [total]);
+
+  /* =======================================================
+     PREVIOUS
+  ======================================================= */
+
+  const previousSlide = useCallback(() => {
+    if (total <= 1) return;
+
+    setDirection(-1);
+
+    setActiveIndex((current) =>
+      current === 0 ? total - 1 : current - 1
+    );
+  }, [total]);
+
+  /* =======================================================
+     AUTOPLAY
+  ======================================================= */
+
+  useEffect(() => {
+    if (paused || total <= 1) return;
+
+    const timer = window.setInterval(() => {
+      nextSlide();
+    }, MOBILE_AUTOPLAY_TIME);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [paused, total, nextSlide]);
+
+  /* =======================================================
+     GET ITEM SAFELY
+  ======================================================= */
+
+  const getItem = (offset: number) => {
+    const index = (activeIndex + offset + total) % total;
+
+    return items[index];
+  };
+
+  const previousItem = getItem(-1);
+  const activeItem = getItem(0);
+  const nextItem = getItem(1);
+
+  /* =======================================================
+     MOBILE UI
+  ======================================================= */
+
+  return (
+    <section
+      className="
+        relative
+        mt-7
+        w-full
+        overflow-hidden
+        pb-14
+      "
+      onTouchStart={() => setPaused(true)}
+      onTouchEnd={() => setPaused(false)}
+    >
       {/* =================================================
-          CURVED GALLERY
+          CAROUSEL AREA
       ================================================= */}
 
-      <section
+      <div
         className="
           relative
-          mt-4
-          h-[340px]
+          mx-auto
+          h-[390px]
           w-full
           overflow-hidden
-          sm:mt-5
-          sm:h-[390px]
-          lg:h-[455px]
+
+          min-[390px]:h-[410px]
         "
-        onMouseEnter={() => {
-          setHovering(true);
-        }}
-        onMouseLeave={() => {
-          setHovering(false);
-        }}
       >
-        {/* ===============================================
-            LEFT SOFT FADE / BLUR
-        =============================================== */}
+        {/* =================================================
+            PREVIOUS CARD
+        ================================================= */}
+
+        {total > 1 && (
+          <motion.button
+            type="button"
+            aria-label="Previous gallery image"
+            onClick={previousSlide}
+            initial={false}
+            animate={{
+              x: "-76%",
+              scale: 0.91,
+              opacity: 0.48,
+            }}
+            transition={{
+              type: "spring",
+              stiffness: 280,
+              damping: 30,
+              mass: 0.8,
+            }}
+            className="
+              absolute
+              left-1/2
+              top-1/2
+              z-10
+
+              h-[330px]
+              w-[76vw]
+              max-w-[320px]
+
+              -translate-x-1/2
+              -translate-y-1/2
+
+              overflow-hidden
+              rounded-[24px]
+
+              bg-[#F4E8EC]
+
+              shadow-[0_10px_30px_rgba(58,42,47,0.06)]
+            "
+          >
+            <img
+              src={previousItem.image}
+              alt=""
+              draggable={false}
+              className="
+                h-full
+                w-full
+                object-cover
+                object-center
+              "
+            />
+
+            <div className="absolute inset-0 bg-[#FFF5F8]/10" />
+          </motion.button>
+        )}
+
+        {/* =================================================
+            NEXT CARD
+        ================================================= */}
+
+        {total > 1 && (
+          <motion.button
+            type="button"
+            aria-label="Next gallery image"
+            onClick={nextSlide}
+            initial={false}
+            animate={{
+              x: "76%",
+              scale: 0.91,
+              opacity: 0.48,
+            }}
+            transition={{
+              type: "spring",
+              stiffness: 280,
+              damping: 30,
+              mass: 0.8,
+            }}
+            className="
+              absolute
+              left-1/2
+              top-1/2
+              z-10
+
+              h-[330px]
+              w-[76vw]
+              max-w-[320px]
+
+              -translate-x-1/2
+              -translate-y-1/2
+
+              overflow-hidden
+              rounded-[24px]
+
+              bg-[#F4E8EC]
+
+              shadow-[0_10px_30px_rgba(58,42,47,0.06)]
+            "
+          >
+            <img
+              src={nextItem.image}
+              alt=""
+              draggable={false}
+              className="
+                h-full
+                w-full
+                object-cover
+                object-center
+              "
+            />
+
+            <div className="absolute inset-0 bg-[#FFF5F8]/10" />
+          </motion.button>
+        )}
+
+        {/* =================================================
+            ACTIVE CARD
+        ================================================= */}
+
+        <AnimatePresence
+          initial={false}
+          custom={direction}
+          mode="popLayout"
+        >
+          <motion.article
+            key={activeItem._id}
+            custom={direction}
+            variants={{
+              enter: (dir: number) => ({
+                x: dir > 0 ? 35 : -35,
+                opacity: 0.8,
+                scale: 0.97,
+              }),
+
+              center: {
+                x: 0,
+                opacity: 1,
+                scale: 1,
+              },
+
+              exit: (dir: number) => ({
+                x: dir > 0 ? -35 : 35,
+                opacity: 0,
+                scale: 0.97,
+              }),
+            }}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{
+              type: "spring",
+              stiffness: 260,
+              damping: 28,
+              mass: 0.75,
+            }}
+            drag={total > 1 ? "x" : false}
+            dragConstraints={{
+              left: 0,
+              right: 0,
+            }}
+            dragElastic={0.16}
+            onDragStart={() => {
+              setPaused(true);
+            }}
+            onDragEnd={(_, info) => {
+              setPaused(false);
+
+              const swipeDistance = 55;
+              const swipeVelocity = 450;
+
+              if (
+                info.offset.x < -swipeDistance ||
+                info.velocity.x < -swipeVelocity
+              ) {
+                nextSlide();
+                return;
+              }
+
+              if (
+                info.offset.x > swipeDistance ||
+                info.velocity.x > swipeVelocity
+              ) {
+                previousSlide();
+              }
+            }}
+            className="
+              absolute
+              left-1/2
+              top-1/2
+              z-20
+
+              h-[360px]
+              w-[76vw]
+              max-w-[320px]
+
+              -translate-x-1/2
+              -translate-y-1/2
+
+              cursor-grab
+              touch-pan-y
+              overflow-hidden
+              rounded-[26px]
+
+              bg-[#F4E8EC]
+
+              shadow-[0_18px_45px_rgba(58,42,47,0.12)]
+
+              active:cursor-grabbing
+
+              min-[390px]:h-[380px]
+            "
+          >
+            <img
+              src={activeItem.image}
+              alt={activeItem.title || "Nirjara Beauty"}
+              draggable={false}
+              className="
+                pointer-events-none
+                h-full
+                w-full
+                select-none
+                object-cover
+                object-center
+              "
+            />
+
+            {/* bottom readable gradient */}
+
+            {(activeItem.title || activeItem.category) && (
+              <div
+                className="
+                  pointer-events-none
+                  absolute
+                  inset-x-0
+                  bottom-0
+                  h-[38%]
+
+                  bg-gradient-to-t
+                  from-black/55
+                  via-black/15
+                  to-transparent
+                "
+              />
+            )}
+
+            {/* text */}
+
+            {(activeItem.title || activeItem.category) && (
+              <div
+                className="
+                  pointer-events-none
+                  absolute
+                  bottom-5
+                  left-5
+                  right-5
+                  z-10
+                  text-left
+                "
+              >
+                {activeItem.category && (
+                  <p
+                    className="
+                      mb-1.5
+                      text-[7px]
+                      font-medium
+                      uppercase
+                      tracking-[2.5px]
+                      text-white/75
+                    "
+                  >
+                    {activeItem.category}
+                  </p>
+                )}
+
+                {activeItem.title && (
+                  <h2
+                    className="
+                      font-serif
+                      text-[19px]
+                      leading-tight
+                      text-white
+                    "
+                  >
+                    {activeItem.title}
+                  </h2>
+                )}
+              </div>
+            )}
+          </motion.article>
+        </AnimatePresence>
+
+        {/* =================================================
+            SIDE FADES
+        ================================================= */}
 
         <div
           className="
@@ -791,18 +686,13 @@ export default function Gallery() {
             inset-y-0
             left-0
             z-30
-            w-[7%]
+            w-[8%]
+
             bg-gradient-to-r
             from-[#FFF5F8]
-            via-[#FFF5F8]/60
             to-transparent
-            backdrop-blur-[1px]
           "
         />
-
-        {/* ===============================================
-            RIGHT SOFT FADE / BLUR
-        =============================================== */}
 
         <div
           className="
@@ -811,162 +701,522 @@ export default function Gallery() {
             inset-y-0
             right-0
             z-30
-            w-[7%]
+            w-[8%]
+
             bg-gradient-to-l
             from-[#FFF5F8]
-            via-[#FFF5F8]/60
             to-transparent
-            backdrop-blur-[1px]
           "
         />
-
-        {/* ===============================================
-            MOVING TRACK
-
-            items-center is IMPORTANT.
-
-            Because cards have different heights,
-            this keeps all of them vertically centered.
-
-            Result:
-
-            LEFT EDGE       CENTER       RIGHT EDGE
-               tall          short           tall
-
-                 \______________/
-        =============================================== */}
-
-        <motion.div
-          drag="x"
-          dragElastic={0.01}
-          dragMomentum={false}
-
-          onDragStart={() => {
-            setDragging(true);
-          }}
-
-          onDragEnd={() => {
-            normalizeSlider();
-
-            window.setTimeout(() => {
-              setDragging(false);
-            }, 80);
-          }}
-
-          style={{
-            x,
-            gap: CARD_GAP,
-            touchAction: "pan-y",
-            willChange: "transform",
-          }}
-
-          className="
-            absolute
-            inset-y-0
-            left-0
-            flex
-            w-max
-            cursor-grab
-            items-center
-            select-none
-            active:cursor-grabbing
-          "
-        >
-          {displayItems.map(
-            (item, index) => (
-              <CurvedGalleryCard
-                key={`${item._id}-${index}`}
-                item={item}
-                index={index}
-                sliderX={x}
-              />
-            )
-          )}
-        </motion.div>
-      </section>
+      </div>
 
       {/* =================================================
-          CONTROLS / INDICATOR
+          DOTS
       ================================================= */}
 
-      <div
-        className="
-          mt-2
-          flex
-          flex-col
-          items-center
-          justify-center
-          gap-3
-        "
-      >
-        {/* INDICATOR */}
+      {total > 1 && (
+        <div className="mt-2 flex items-center justify-center gap-2">
+          {items.map((item, index) => {
+            const active = index === activeIndex;
 
-        <div
-          className="
-            flex
-            items-center
-            justify-center
-            gap-[6px]
-          "
-        >
-          <span
-            className="
-              h-[5px]
-              w-[5px]
-              rounded-full
-              bg-[#E75480]/20
-            "
-          />
+            return (
+              <button
+                key={item._id}
+                type="button"
+                aria-label={`Go to image ${index + 1}`}
+                onClick={() => {
+                  setDirection(index > activeIndex ? 1 : -1);
+                  setActiveIndex(index);
+                }}
+                className={`
+                  h-[5px]
+                  rounded-full
+                  transition-all
+                  duration-300
 
-          <span
-            className="
-              h-[5px]
-              w-[5px]
-              rounded-full
-              bg-[#E75480]/30
-            "
-          />
-
-          <span
-            className="
-              h-[5px]
-              w-8
-              rounded-full
-              bg-[#E75480]
-            "
-          />
-
-          <span
-            className="
-              h-[5px]
-              w-[5px]
-              rounded-full
-              bg-[#E75480]/30
-            "
-          />
-
-          <span
-            className="
-              h-[5px]
-              w-[5px]
-              rounded-full
-              bg-[#E75480]/20
-            "
-          />
+                  ${
+                    active
+                      ? "w-7 bg-[#E75480]"
+                      : "w-[5px] bg-[#E75480]/25"
+                  }
+                `}
+              />
+            );
+          })}
         </div>
+      )}
 
+      {/* =================================================
+          SWIPE TEXT
+      ================================================= */}
+
+      <div className="mt-5 text-center">
         <p
           className="
             text-[7px]
             font-medium
             uppercase
             tracking-[4px]
-            text-[#B78B98]
+            text-[#E75480]
           "
         >
-          Drag to explore
+          Swipe to explore
         </p>
       </div>
-    </main>
+    </section>
   );
+}
+
+/* =========================================================
+   DESKTOP GALLERY
+========================================================= */
+
+function DesktopGallery({
+  items,
+  viewportWidth,
+}: {
+  items: GalleryItem[];
+  viewportWidth: number;
+}) {
+  const x = useMotionValue(0);
+
+  const pausedRef = useRef(false);
+  const draggingRef = useRef(false);
+  const previousTimeRef = useRef<number | null>(null);
+
+  /* =======================================================
+     DIMENSIONS
+  ======================================================= */
+
+  const dimensions = useMemo(() => {
+    if (viewportWidth >= 1280) {
+      const gap = 14;
+
+      const cardWidth = Math.max(
+        150,
+        Math.min(205, (viewportWidth - gap * 6) / 7)
+      );
+
+      return {
+        cardWidth,
+        gap,
+        heights: DESKTOP_HEIGHTS,
+      };
+    }
+
+    return {
+      cardWidth: 170,
+      gap: 12,
+      heights: TABLET_HEIGHTS,
+    };
+  }, [viewportWidth]);
+
+  const itemWidth =
+    dimensions.cardWidth + dimensions.gap;
+
+  /* =======================================================
+     ENSURE ENOUGH CARDS
+  ======================================================= */
+
+  const baseItems = useMemo(() => {
+    if (!items.length) return [];
+
+    const result: GalleryItem[] = [];
+
+    while (result.length < 14) {
+      result.push(...items);
+    }
+
+    return result.slice(0, Math.max(14, items.length));
+  }, [items]);
+
+  const repeatedItems = useMemo(
+    () => [...baseItems, ...baseItems, ...baseItems],
+    [baseItems]
+  );
+
+  const singleSetWidth =
+    baseItems.length * itemWidth;
+
+  /* =======================================================
+     START POSITION
+  ======================================================= */
+
+  useEffect(() => {
+    if (!singleSetWidth) return;
+
+    x.set(-singleSetWidth);
+
+    previousTimeRef.current = null;
+  }, [singleSetWidth, x]);
+
+  /* =======================================================
+     AUTO MOVEMENT
+  ======================================================= */
+
+  useAnimationFrame((time) => {
+    if (!singleSetWidth) return;
+
+    if (pausedRef.current || draggingRef.current) {
+      previousTimeRef.current = time;
+      return;
+    }
+
+    if (previousTimeRef.current === null) {
+      previousTimeRef.current = time;
+      return;
+    }
+
+    const delta =
+      Math.min(time - previousTimeRef.current, 40) / 1000;
+
+    previousTimeRef.current = time;
+
+    let nextX =
+      x.get() - DESKTOP_SPEED * delta;
+
+    if (nextX <= -singleSetWidth * 2) {
+      nextX += singleSetWidth;
+    }
+
+    x.set(nextX);
+  });
+
+  /* =======================================================
+     NORMALIZE
+  ======================================================= */
+
+  const normalizeSlider = () => {
+    if (!singleSetWidth) return;
+
+    let current = x.get();
+
+    while (current > -singleSetWidth * 0.25) {
+      current -= singleSetWidth;
+    }
+
+    while (current < -singleSetWidth * 2.5) {
+      current += singleSetWidth;
+    }
+
+    x.set(current);
+  };
+
+  /* =======================================================
+     DESKTOP UI
+  ======================================================= */
+
+  return (
+    <section
+      className="
+        relative
+        mt-7
+        flex
+        h-[390px]
+        w-full
+        items-center
+        overflow-hidden
+
+        lg:h-[470px]
+      "
+      onMouseEnter={() => {
+        pausedRef.current = true;
+      }}
+      onMouseLeave={() => {
+        pausedRef.current = false;
+      }}
+    >
+      {/* LEFT FADE */}
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          inset-y-0
+          left-0
+          z-20
+          w-[7%]
+
+          bg-gradient-to-r
+          from-[#FFF5F8]
+          via-[#FFF5F8]/70
+          to-transparent
+        "
+      />
+
+      {/* RIGHT FADE */}
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          inset-y-0
+          right-0
+          z-20
+          w-[7%]
+
+          bg-gradient-to-l
+          from-[#FFF5F8]
+          via-[#FFF5F8]/70
+          to-transparent
+        "
+      />
+
+      {/* TRACK */}
+
+      <motion.div
+        drag="x"
+        dragMomentum={false}
+        dragElastic={0.035}
+        onDragStart={() => {
+          draggingRef.current = true;
+        }}
+        onDragEnd={() => {
+          draggingRef.current = false;
+          previousTimeRef.current = null;
+          normalizeSlider();
+        }}
+        style={{
+          x,
+          gap: dimensions.gap,
+          willChange: "transform",
+          transform: "translateZ(0)",
+        }}
+        className="
+          flex
+          cursor-grab
+          touch-pan-y
+          items-center
+
+          active:cursor-grabbing
+        "
+      >
+        {repeatedItems.map((item, index) => (
+          <DesktopGalleryCard
+            key={`${item._id}-${index}`}
+            item={item}
+            index={index}
+            cardWidth={dimensions.cardWidth}
+            itemWidth={itemWidth}
+            heights={dimensions.heights}
+            x={x}
+            viewportWidth={viewportWidth}
+          />
+        ))}
+      </motion.div>
+    </section>
+  );
+}
+
+/* =========================================================
+   DESKTOP CARD
+========================================================= */
+
+type DesktopGalleryCardProps = {
+  item: GalleryItem;
+  index: number;
+  cardWidth: number;
+  itemWidth: number;
+  heights: number[];
+  x: ReturnType<typeof useMotionValue<number>>;
+  viewportWidth: number;
+};
+
+function DesktopGalleryCard({
+  item,
+  index,
+  cardWidth,
+  itemWidth,
+  heights,
+  x,
+  viewportWidth,
+}: DesktopGalleryCardProps) {
+  const maxHeight = heights[0];
+  const minHeight = heights[3];
+
+  const scaleY = useDynamicScale({
+    index,
+    itemWidth,
+    cardWidth,
+    x,
+    viewportWidth,
+    maxHeight,
+    minHeight,
+  });
+
+  return (
+    <div
+      style={{
+        width: cardWidth,
+        height: maxHeight,
+      }}
+      className="
+        relative
+        flex
+        shrink-0
+        items-center
+        justify-center
+      "
+    >
+      <motion.article
+        style={{
+          width: cardWidth,
+          height: maxHeight,
+          scaleY,
+          transformOrigin: "center center",
+          willChange: "transform",
+          backfaceVisibility: "hidden",
+        }}
+        className="
+          relative
+          overflow-hidden
+          rounded-[22px]
+          bg-[#F4E8EC]
+
+          shadow-[0_10px_35px_rgba(58,42,47,0.06)]
+        "
+      >
+        <img
+          src={item.image}
+          alt={item.title || "Nirjara Beauty"}
+          draggable={false}
+          loading="lazy"
+          decoding="async"
+          className="
+            pointer-events-none
+            h-full
+            w-full
+            select-none
+            object-cover
+            object-center
+          "
+        />
+
+        {(item.title || item.category) && (
+          <div
+            className="
+              pointer-events-none
+              absolute
+              inset-x-0
+              bottom-0
+              h-[38%]
+
+              bg-gradient-to-t
+              from-black/50
+              via-black/10
+              to-transparent
+            "
+          />
+        )}
+
+        {(item.title || item.category) && (
+          <div
+            className="
+              pointer-events-none
+              absolute
+              bottom-5
+              left-5
+              right-5
+              z-10
+            "
+          >
+            {item.category && (
+              <p
+                className="
+                  mb-1
+                  text-[7px]
+                  font-medium
+                  uppercase
+                  tracking-[2.5px]
+                  text-white/75
+                "
+              >
+                {item.category}
+              </p>
+            )}
+
+            {item.title && (
+              <h3
+                className="
+                  font-serif
+                  text-[16px]
+                  leading-tight
+                  text-white
+                "
+              >
+                {item.title}
+              </h3>
+            )}
+          </div>
+        )}
+      </motion.article>
+    </div>
+  );
+}
+
+/* =========================================================
+   DESKTOP CURVE
+========================================================= */
+
+type DynamicScaleProps = {
+  index: number;
+  itemWidth: number;
+  cardWidth: number;
+  x: ReturnType<typeof useMotionValue<number>>;
+  viewportWidth: number;
+  maxHeight: number;
+  minHeight: number;
+};
+
+function useDynamicScale({
+  index,
+  itemWidth,
+  cardWidth,
+  x,
+  viewportWidth,
+  maxHeight,
+  minHeight,
+}: DynamicScaleProps) {
+  const scale = useMotionValue(1);
+
+  useAnimationFrame(() => {
+    if (!viewportWidth) return;
+
+    const cardCenter =
+      x.get() +
+      index * itemWidth +
+      cardWidth / 2;
+
+    const screenCenter =
+      viewportWidth / 2;
+
+    const distance =
+      Math.abs(cardCenter - screenCenter);
+
+    const maxDistance =
+      itemWidth * 3;
+
+    const normalized =
+      Math.min(distance / maxDistance, 1);
+
+    /*
+      Smoothstep.
+
+      Center = shortest.
+      Edges = tallest.
+    */
+
+    const curved =
+      normalized *
+      normalized *
+      (3 - 2 * normalized);
+
+    const height =
+      minHeight +
+      (maxHeight - minHeight) * curved;
+
+    scale.set(height / maxHeight);
+  });
+
+  return scale;
 }
