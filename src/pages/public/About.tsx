@@ -1,4 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+
+/* =========================================================
+   TYPES
+========================================================= */
 
 type TeamMember = {
   _id: string;
@@ -7,457 +12,637 @@ type TeamMember = {
   bio?: string;
   image?: string;
   order?: number;
-  status?: "Active" | "Hidden";
+  status?: string;
 };
 
-const API_URL =
-  import.meta.env.VITE_API_URL ||
-  "http://localhost:5000";
+/* =========================================================
+   IMAGE HELPER
+========================================================= */
+
+const getImageUrl = (image?: string) => {
+  if (!image) return "";
+
+  const apiUrl = import.meta.env.VITE_API_URL || "";
+
+  if (image.startsWith("http://localhost:5000")) {
+    return image.replace("http://localhost:5000", apiUrl);
+  }
+
+  if (image.startsWith("/uploads")) {
+    return `${apiUrl}${image}`;
+  }
+
+  return image;
+};
+
+/* =========================================================
+   ABOUT PAGE
+========================================================= */
 
 export default function About() {
-  const [team, setTeam] = useState<TeamMember[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
-  const [teamError, setTeamError] = useState("");
 
-  // ==========================================
-  // LOAD TEAM FROM BACKEND
-  // ==========================================
+  /* Team slider */
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [visibleCards, setVisibleCards] = useState(4);
+
+  /* =======================================================
+     FETCH TEAM
+  ======================================================= */
+
   useEffect(() => {
-    const loadTeam = async () => {
+    const fetchTeam = async () => {
       try {
         setLoading(true);
-        setTeamError("");
 
         const response = await fetch(
-          `${API_URL}/api/teams`
+          `${import.meta.env.VITE_API_URL}/api/teams/public`
         );
 
         if (!response.ok) {
-          throw new Error(
-            `Failed to fetch team members: ${response.status}`
-          );
+          throw new Error("Failed to fetch team members");
         }
 
-        const data: TeamMember[] =
-          await response.json();
+        const data = await response.json();
 
-        // Public page only shows Active members
-        // and follows the order set in admin.
-        const activeMembers = data
-          .filter(
-            (member) =>
-              member.status === "Active"
-          )
-          .sort(
-            (a, b) =>
-              (a.order ?? 0) -
-              (b.order ?? 0)
-          );
+        const members: TeamMember[] = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.data)
+            ? data.data
+            : [];
 
-        setTeam(activeMembers);
+        setTeamMembers(members);
       } catch (error) {
-        console.error(
-          "TEAM FETCH ERROR:",
-          error
-        );
-
-        setTeamError(
-          "Team information is currently unavailable."
-        );
+        console.error("TEAM FETCH ERROR:", error);
+        setTeamMembers([]);
       } finally {
         setLoading(false);
       }
     };
 
-    loadTeam();
+    fetchTeam();
   }, []);
 
+  /* =======================================================
+     FIND CEO
+  ======================================================= */
+
+  const ceo = useMemo(() => {
+    return teamMembers.find((member) => {
+      const designation = member.designation?.toLowerCase().trim() || "";
+
+      return (
+        designation === "ceo" ||
+        designation.includes("chief executive officer") ||
+        designation.includes("founder & ceo") ||
+        designation.includes("founder and ceo")
+      );
+    });
+  }, [teamMembers]);
+
+  /*
+   * CEO is displayed in the leadership section,
+   * so remove them from the team slider.
+   */
+  const sliderMembers = useMemo(() => {
+    if (!ceo) return teamMembers;
+
+    return teamMembers.filter((member) => member._id !== ceo._id);
+  }, [teamMembers, ceo]);
+
+  /* =======================================================
+     RESPONSIVE TEAM CARDS
+  ======================================================= */
+
+  useEffect(() => {
+    const updateVisibleCards = () => {
+      const width = window.innerWidth;
+
+      if (width < 640) {
+        setVisibleCards(1);
+      } else if (width < 900) {
+        setVisibleCards(2);
+      } else if (width < 1200) {
+        setVisibleCards(3);
+      } else {
+        setVisibleCards(4);
+      }
+    };
+
+    updateVisibleCards();
+
+    window.addEventListener("resize", updateVisibleCards);
+
+    return () => {
+      window.removeEventListener("resize", updateVisibleCards);
+    };
+  }, []);
+
+  /* =======================================================
+     SLIDER CALCULATIONS
+  ======================================================= */
+
+  const totalSlides = Math.max(
+    sliderMembers.length - visibleCards + 1,
+    1
+  );
+
+  useEffect(() => {
+    if (activeSlide >= totalSlides) {
+      setActiveSlide(0);
+    }
+  }, [totalSlides, activeSlide]);
+
+  const nextSlide = () => {
+    setActiveSlide((current) =>
+      current >= totalSlides - 1 ? 0 : current + 1
+    );
+  };
+
+  const previousSlide = () => {
+    setActiveSlide((current) =>
+      current <= 0 ? totalSlides - 1 : current - 1
+    );
+  };
+
+  /* =======================================================
+     AUTO SLIDE
+     Change 2200 if you want different speed.
+  ======================================================= */
+
+  useEffect(() => {
+    if (totalSlides <= 1) return;
+
+    const timer = window.setInterval(() => {
+      setActiveSlide((current) =>
+        current >= totalSlides - 1 ? 0 : current + 1
+      );
+    }, 2200);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [totalSlides]);
+
+  /* =======================================================
+     PAGE
+  ======================================================= */
+
   return (
-    <div className="overflow-hidden bg-white text-[#3A2A2F]">
-      {/* ==========================================
+    <main className="overflow-hidden bg-[#FFF5F8]">
+
+      {/* ===================================================
           HERO
-      ========================================== */}
-      <section className="relative bg-[#FFF5F8] px-6 py-24 md:py-32">
-        <div className="mx-auto max-w-7xl text-center">
-          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.35em] text-[#E75480]">
-            About Nirjara Beauty
-          </p>
+      =================================================== */}
 
-          <h1 className="mx-auto max-w-4xl font-serif text-5xl leading-tight md:text-6xl lg:text-7xl">
-            Beauty, Confidence
-            <span className="block italic text-[#E75480]">
-              & Care
-            </span>
-          </h1>
+      <section className="relative px-6 pb-20 pt-36 md:px-10 md:pb-24 md:pt-40 lg:px-16">
+        <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-2 lg:gap-20">
 
-          <p className="mx-auto mt-7 max-w-2xl text-base leading-8 text-[#8A6F78] md:text-lg">
-            Nirjara Beauty is dedicated to creating
-            beautiful, confident experiences through
-            professional beauty services, personalized
-            care and quality beauty education.
-          </p>
+          {/* Hero Text */}
+
+          <motion.div
+            initial={{ opacity: 0, y: 25 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="flex items-center gap-4">
+              <div className="h-px w-10 bg-[#E75480]" />
+
+              <p className="text-[11px] font-medium uppercase tracking-[5px] text-[#E75480]">
+                About Nirjara
+              </p>
+            </div>
+
+            <h1 className="mt-7 max-w-xl font-serif text-5xl leading-[1.05] text-[#3A2A2F] sm:text-6xl lg:text-[68px]">
+              Beauty with{" "}
+              <span className="italic text-[#E75480]">
+                purpose.
+              </span>
+            </h1>
+
+            <p className="mt-7 max-w-xl text-[15px] leading-8 text-[#8A6F78] md:text-base">
+              Nirjara Beauty is a space dedicated to beauty, confidence,
+              creativity, and care. We combine professional expertise with
+              thoughtful service to create experiences that help every client
+              feel uniquely beautiful.
+            </p>
+
+            <div className="mt-8 flex flex-wrap gap-3">
+              <a
+                href="/booking"
+                className="rounded-full bg-[#E75480] px-7 py-3.5 text-[10px] font-semibold uppercase tracking-[2px] text-white transition hover:bg-[#D94370]"
+              >
+                Book Appointment
+              </a>
+
+              <a
+                href="/services"
+                className="rounded-full border border-[#E75480]/30 bg-white px-7 py-3.5 text-[10px] font-semibold uppercase tracking-[2px] text-[#E75480] transition hover:border-[#E75480]"
+              >
+                Explore Services
+              </a>
+            </div>
+          </motion.div>
+
+          {/* CEO Hero Image */}
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.7 }}
+            className="relative mx-auto w-full max-w-[520px]"
+          >
+            <div className="overflow-hidden rounded-[36px] bg-[#FCE7EF]">
+              {ceo?.image ? (
+                <img
+                  src={getImageUrl(ceo.image)}
+                  alt={ceo.name}
+                  className="h-[480px] w-full object-cover object-top sm:h-[560px]"
+                />
+              ) : (
+                <div className="flex h-[480px] items-center justify-center sm:h-[560px]">
+                  <span className="font-serif text-8xl text-[#E75480]/20">
+                    N
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {ceo && (
+              <div className="absolute bottom-5 left-5 right-5 rounded-[22px] bg-white/95 px-6 py-5 shadow-sm backdrop-blur">
+                <p className="text-[9px] font-semibold uppercase tracking-[3px] text-[#E75480]">
+                  Leadership
+                </p>
+
+                <h2 className="mt-1 font-serif text-2xl text-[#3A2A2F]">
+                  {ceo.name}
+                </h2>
+
+                <p className="mt-1 text-xs uppercase tracking-[2px] text-[#8A6F78]">
+                  {ceo.designation}
+                </p>
+              </div>
+            )}
+          </motion.div>
         </div>
       </section>
 
-      {/* ==========================================
-          OUR STORY
-      ========================================== */}
-      <section className="px-6 py-20 md:py-28">
-        <div className="mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-2">
-          {/* IMAGE PLACEHOLDER */}
-          <div className="relative">
-            <div className="aspect-[4/5] overflow-hidden rounded-[35px] bg-[#FCE7EF]">
-              <div className="flex h-full items-center justify-center text-center text-[#E75480]">
-                <div>
-                  <p className="font-serif text-3xl">
-                    Nirjara Beauty
-                  </p>
+      {/* ===================================================
+          WHO WE ARE
+      =================================================== */}
 
-                  <p className="mt-2 text-sm">
-                    Add salon image here
-                  </p>
-                </div>
+      <section className="bg-white px-6 py-20 md:px-10 lg:px-16">
+        <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
+
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[5px] text-[#E75480]">
+              Who We Are
+            </p>
+
+            <h2 className="mt-4 font-serif text-4xl leading-tight text-[#3A2A2F] md:text-5xl">
+              Beauty that feels
+              <br />
+              <span className="italic text-[#E75480]">
+                personal.
+              </span>
+            </h2>
+          </div>
+
+          <div>
+            <p className="text-base leading-8 text-[#8A6F78]">
+              We believe beauty is more than appearance. It is about
+              confidence, expression, and feeling comfortable in your own
+              style.
+            </p>
+
+            <p className="mt-5 text-base leading-8 text-[#8A6F78]">
+              Our team brings together creativity, technique, and genuine care
+              to provide services designed around each individual client.
+              Whether it is an everyday appointment or a special occasion, we
+              aim to make every Nirjara experience warm, professional, and
+              memorable.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ===================================================
+          VALUES
+      =================================================== */}
+
+      <section className="px-6 py-20 md:px-10 lg:px-16">
+        <div className="mx-auto max-w-6xl">
+
+          <div className="text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-[5px] text-[#E75480]">
+              Our Approach
+            </p>
+
+            <h2 className="mt-4 font-serif text-4xl text-[#3A2A2F]">
+              What makes Nirjara{" "}
+              <span className="italic text-[#E75480]">
+                different.
+              </span>
+            </h2>
+          </div>
+
+          <div className="mt-12 grid gap-4 md:grid-cols-3">
+
+            <div className="rounded-[24px] bg-white p-8">
+              <span className="font-serif text-3xl text-[#E75480]">
+                01
+              </span>
+
+              <h3 className="mt-7 font-serif text-2xl text-[#3A2A2F]">
+                Personal Care
+              </h3>
+
+              <p className="mt-3 text-sm leading-7 text-[#8A6F78]">
+                Every service is shaped around the individual, their style,
+                preferences, and needs.
+              </p>
+            </div>
+
+            <div className="rounded-[24px] bg-white p-8">
+              <span className="font-serif text-3xl text-[#E75480]">
+                02
+              </span>
+
+              <h3 className="mt-7 font-serif text-2xl text-[#3A2A2F]">
+                Professional Craft
+              </h3>
+
+              <p className="mt-3 text-sm leading-7 text-[#8A6F78]">
+                Our professionals combine skill, creativity, and attention to
+                detail in every experience.
+              </p>
+            </div>
+
+            <div className="rounded-[24px] bg-white p-8">
+              <span className="font-serif text-3xl text-[#E75480]">
+                03
+              </span>
+
+              <h3 className="mt-7 font-serif text-2xl text-[#3A2A2F]">
+                Modern Beauty
+              </h3>
+
+              <p className="mt-3 text-sm leading-7 text-[#8A6F78]">
+                We blend contemporary beauty trends with timeless techniques
+                and thoughtful service.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* ===================================================
+          CEO MESSAGE
+      =================================================== */}
+
+      {ceo && (
+        <section className="bg-white px-6 py-20 md:px-10 lg:px-16">
+          <div className="mx-auto max-w-5xl">
+
+            <div className="text-center">
+              <p className="text-[10px] font-semibold uppercase tracking-[5px] text-[#E75480]">
+                Leadership
+              </p>
+
+              <h2 className="mt-4 font-serif text-4xl text-[#3A2A2F]">
+                A message from our{" "}
+                <span className="italic text-[#E75480]">
+                  CEO.
+                </span>
+              </h2>
+            </div>
+
+            <div className="mx-auto mt-10 max-w-3xl text-center">
+              <span className="font-serif text-6xl leading-none text-[#E75480]/25">
+                “
+              </span>
+
+              <p className="-mt-2 text-lg leading-9 text-[#6F5961]">
+                {ceo.bio ||
+                  "At Nirjara, our purpose is to create a place where beauty, confidence, creativity, and care come together. Every experience we create begins with understanding the person behind it."}
+              </p>
+
+              <div className="mt-7">
+                <p className="font-serif text-xl text-[#3A2A2F]">
+                  {ceo.name}
+                </p>
+
+                <p className="mt-1 text-[9px] font-semibold uppercase tracking-[3px] text-[#E75480]">
+                  {ceo.designation}
+                </p>
               </div>
             </div>
 
-            <div className="absolute -bottom-6 -right-3 rounded-3xl bg-white px-8 py-6 shadow-xl md:right-8">
-              <p className="font-serif text-4xl text-[#E75480]">
-                2013
-              </p>
-
-              <p className="mt-1 text-sm text-[#8A6F78]">
-                Our journey began
-              </p>
-            </div>
           </div>
+        </section>
+      )}
 
-          {/* CONTENT */}
-          <div>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-[#E75480]">
-              Our Story
+      {/* ===================================================
+          TEAM
+      =================================================== */}
+
+      <section className="px-6 py-16 md:px-10 md:py-20 lg:px-16">
+        <div className="mx-auto max-w-[1440px]">
+
+          {/* Team Heading */}
+
+          <div className="text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-[5px] text-[#E75480]">
+              Our Team
             </p>
 
-            <h2 className="font-serif text-4xl leading-tight md:text-5xl">
-              A Passion for Beauty,
-              <span className="block italic text-[#E75480]">
-                Built With Care
+            <h2 className="mt-4 font-serif text-3xl text-[#3A2A2F] sm:text-4xl">
+              Meet our{" "}
+              <span className="italic text-[#E75480]">
+                professionals.
               </span>
             </h2>
 
-            <p className="mt-7 leading-8 text-[#8A6F78]">
-              Nirjara Beauty was created with a vision
-              to provide professional beauty services
-              in a welcoming and comfortable
-              environment.
-            </p>
-
-            <p className="mt-5 leading-8 text-[#8A6F78]">
-              Over the years, we have continued to grow
-              while keeping personalized care at the
-              heart of everything we do. From beauty
-              services to professional training, our
-              focus remains on quality, confidence and
-              helping every client feel their best.
-            </p>
-
-            <div className="mt-9 border-l-2 border-[#E75480] pl-6">
-              <p className="font-serif text-xl italic leading-8">
-                "Beauty is not simply about how you
-                look. It is about how you feel."
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ==========================================
-          MISSION / VISION / VALUES
-      ========================================== */}
-      <section className="bg-[#FFF5F8] px-6 py-20 md:py-28">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-14 text-center">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-[#E75480]">
-              What Defines Us
-            </p>
-
-            <h2 className="font-serif text-4xl md:text-5xl">
-              The Heart of Nirjara
-            </h2>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-3">
-            {/* MISSION */}
-            <div className="rounded-[30px] bg-white p-9 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md">
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-[#FCE7EF] text-xl text-[#E75480]">
-                ♡
-              </div>
-
-              <h3 className="font-serif text-2xl">
-                Our Mission
-              </h3>
-
-              <p className="mt-4 leading-7 text-[#8A6F78]">
-                To provide professional, personalized
-                beauty services that help every client
-                feel confident, cared for and beautiful.
-              </p>
-            </div>
-
-            {/* VISION */}
-            <div className="rounded-[30px] bg-white p-9 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md">
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-[#FCE7EF] text-xl text-[#E75480]">
-                ✦
-              </div>
-
-              <h3 className="font-serif text-2xl">
-                Our Vision
-              </h3>
-
-              <p className="mt-4 leading-7 text-[#8A6F78]">
-                To continue growing as a trusted beauty
-                destination while inspiring future
-                beauty professionals through education
-                and practical training.
-              </p>
-            </div>
-
-            {/* VALUES */}
-            <div className="rounded-[30px] bg-white p-9 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md">
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-[#FCE7EF] text-xl text-[#E75480]">
-                ✧
-              </div>
-
-              <h3 className="font-serif text-2xl">
-                Our Values
-              </h3>
-
-              <p className="mt-4 leading-7 text-[#8A6F78]">
-                Professionalism, creativity, respect,
-                continuous learning and genuine care
-                guide the experience we create for our
-                clients and students.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ==========================================
-          WHY NIRJARA
-      ========================================== */}
-      <section className="px-6 py-20 md:py-28">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid gap-14 lg:grid-cols-2">
-            <div>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-[#E75480]">
-                Why Nirjara Beauty
-              </p>
-
-              <h2 className="font-serif text-4xl leading-tight md:text-5xl">
-                More Than a
-                <span className="italic text-[#E75480]">
-                  {" "}
-                  Beauty Salon
-                </span>
-              </h2>
-
-              <p className="mt-6 max-w-xl leading-8 text-[#8A6F78]">
-                We believe every beauty experience
-                should feel personal. Our approach
-                combines professional techniques,
-                thoughtful consultation and attention
-                to the individual needs of every
-                client.
-              </p>
-            </div>
-
-            <div className="grid gap-5 sm:grid-cols-2">
-              {[
-                {
-                  number: "01",
-                  title: "Experienced Team",
-                  text: "Professional beauty specialists committed to quality care.",
-                },
-                {
-                  number: "02",
-                  title: "Personalized Service",
-                  text: "Beauty services tailored to individual needs and preferences.",
-                },
-                {
-                  number: "03",
-                  title: "Professional Academy",
-                  text: "Practical beauty education designed for aspiring professionals.",
-                },
-                {
-                  number: "04",
-                  title: "Quality Experience",
-                  text: "A welcoming environment focused on comfort, care and confidence.",
-                },
-              ].map((item) => (
-                <div
-                  key={item.number}
-                  className="rounded-[25px] border border-[#F4D6E0] p-7"
-                >
-                  <span className="text-xs font-semibold tracking-widest text-[#E75480]">
-                    {item.number}
-                  </span>
-
-                  <h3 className="mt-4 font-serif text-xl">
-                    {item.title}
-                  </h3>
-
-                  <p className="mt-3 text-sm leading-6 text-[#8A6F78]">
-                    {item.text}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ==========================================
-          TEAM — FROM ADMIN / MONGODB
-      ========================================== */}
-      <section className="bg-[#FFF5F8] px-6 py-20 md:py-28">
-        <div className="mx-auto max-w-7xl">
-          <div className="mx-auto mb-14 max-w-2xl text-center">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-[#E75480]">
-              The People Behind Nirjara
-            </p>
-
-            <h2 className="font-serif text-4xl md:text-5xl">
-              Meet Our Team
-            </h2>
-
-            <p className="mt-5 leading-7 text-[#8A6F78]">
-              Meet the professionals who bring
-              experience, creativity and care to
-              Nirjara Beauty.
+            <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-[#8A6F78]">
+              The talented people behind your Nirjara experience.
             </p>
           </div>
 
-          {/* LOADING */}
+          {/* Loading */}
+
           {loading && (
-            <div className="py-12 text-center">
-              <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#FCE7EF] border-t-[#E75480]" />
-
-              <p className="mt-4 text-sm text-[#8A6F78]">
-                Loading our team...
-              </p>
+            <div className="py-20 text-center text-sm text-[#8A6F78]">
+              Loading our team...
             </div>
           )}
 
-          {/* ERROR */}
-          {!loading && teamError && (
-            <div className="py-10 text-center">
-              <p className="text-[#8A6F78]">
-                {teamError}
-              </p>
+          {/* No Members */}
+
+          {!loading && sliderMembers.length === 0 && (
+            <div className="py-20 text-center text-sm text-[#8A6F78]">
+              Our team will be introduced soon.
             </div>
           )}
 
-          {/* TEAM MEMBERS */}
-          {!loading &&
-            !teamError &&
-            team.length > 0 && (
-              <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {team.map((member) => (
-                  <article
-                    key={member._id}
-                    className="group overflow-hidden rounded-[28px] bg-white shadow-sm transition duration-300 hover:-translate-y-2 hover:shadow-lg"
-                  >
-                    {/* PHOTO */}
-                    <div className="aspect-[4/5] overflow-hidden bg-[#FCE7EF]">
-                      {member.image ? (
-                        <img
-                          src={member.image}
-                          alt={`${member.name} - ${member.designation}`}
-                          loading="lazy"
-                          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center">
-                          <span className="font-serif text-6xl text-[#E75480]">
-                            {member.name
-                              .charAt(0)
-                              .toUpperCase()}
-                          </span>
+          {/* Slider */}
+
+          {!loading && sliderMembers.length > 0 && (
+            <>
+              <div className="mt-10 overflow-hidden">
+
+                <motion.div
+                  className="flex"
+                  animate={{
+                    x: `-${activeSlide * (100 / visibleCards)}%`,
+                  }}
+                  transition={{
+                    duration: 0.35,
+                    ease: [0.25, 0.1, 0.25, 1],
+                  }}
+                >
+                  {sliderMembers.map((member) => (
+                    <div
+                      key={member._id}
+                      style={{
+                        width: `${100 / visibleCards}%`,
+                      }}
+                      className="shrink-0 px-2"
+                    >
+                      <article className="group h-full overflow-hidden rounded-[22px] border border-[#E75480]/10 bg-white transition duration-300 hover:-translate-y-1 hover:shadow-[0_14px_40px_rgba(58,42,47,0.08)]">
+
+                        {/* Team Image */}
+
+                        <div className="relative h-[320px] overflow-hidden bg-[#F9EEF1]">
+                          {member.image ? (
+                            <img
+                              src={getImageUrl(member.image)}
+                              alt={member.name}
+                              loading="lazy"
+                              className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.02]"
+                            />
+                          ) : (
+                            <div className="flex h-full items-center justify-center">
+                              <span className="font-serif text-7xl text-[#E75480]/20">
+                                {member.name?.charAt(0)}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                      )}
+
+                        {/* Team Information */}
+
+                        <div className="min-h-[145px] p-5">
+                          <h3 className="font-serif text-xl text-[#3A2A2F]">
+                            {member.name}
+                          </h3>
+
+                          <p className="mt-2 text-[9px] font-semibold uppercase tracking-[2.5px] text-[#E75480]">
+                            {member.designation}
+                          </p>
+
+                          {member.bio && (
+                            <p className="mt-3 line-clamp-2 text-sm leading-6 text-[#8A6F78]">
+                              {member.bio}
+                            </p>
+                          )}
+                        </div>
+
+                      </article>
                     </div>
+                  ))}
+                </motion.div>
 
-                    {/* MEMBER DETAILS */}
-                    <div className="p-6 text-center">
-                      <h3 className="font-serif text-2xl">
-                        {member.name}
-                      </h3>
-
-                      <p className="mt-2 text-xs font-semibold uppercase tracking-[0.15em] text-[#E75480]">
-                        {member.designation}
-                      </p>
-
-                      {member.bio && (
-                        <p className="mt-4 text-sm leading-6 text-[#8A6F78]">
-                          {member.bio}
-                        </p>
-                      )}
-                    </div>
-                  </article>
-                ))}
               </div>
-            )}
 
-          {/* NO TEAM MEMBERS */}
-          {!loading &&
-            !teamError &&
-            team.length === 0 && (
-              <p className="py-10 text-center text-[#8A6F78]">
-                Team information will be available soon.
-              </p>
-            )}
+              {/* Controls */}
+
+              {totalSlides > 1 && (
+                <div className="mt-7 flex items-center justify-center gap-4">
+
+                  {/* Previous */}
+
+                  <button
+                    type="button"
+                    onClick={previousSlide}
+                    aria-label="Previous team members"
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-[#E75480]/20 bg-white text-[#E75480] transition hover:border-[#E75480] hover:bg-[#E75480] hover:text-white"
+                  >
+                    ←
+                  </button>
+
+                  {/* Dots */}
+
+                  <div className="flex items-center justify-center gap-1.5">
+                    {Array.from({
+                      length: totalSlides,
+                    }).map((_, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        aria-label={`Go to team slide ${index + 1}`}
+                        onClick={() => setActiveSlide(index)}
+                        className={`h-[5px] rounded-full transition-all duration-300 ${
+                          activeSlide === index
+                            ? "w-7 bg-[#E75480]"
+                            : "w-[5px] bg-[#E75480]/25 hover:bg-[#E75480]/50"
+                        }`}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Next */}
+
+                  <button
+                    type="button"
+                    onClick={nextSlide}
+                    aria-label="Next team members"
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E75480] text-white transition hover:bg-[#D94370]"
+                  >
+                    →
+                  </button>
+
+                </div>
+              )}
+            </>
+          )}
+
         </div>
       </section>
 
-      {/* ==========================================
+      {/* ===================================================
           FINAL CTA
-      ========================================== */}
-      <section className="px-6 py-20 md:py-28">
-        <div className="mx-auto max-w-6xl rounded-[40px] bg-[#3A2A2F] px-8 py-16 text-center text-white md:px-16 md:py-20">
-          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.35em] text-[#F6A9C0]">
-            Experience Nirjara
+      =================================================== */}
+
+      <section className="bg-[#3A2A2F] px-6 py-20 text-center md:px-10">
+        <div className="mx-auto max-w-2xl">
+
+          <p className="text-[10px] font-semibold uppercase tracking-[5px] text-[#F7A4BD]">
+            Your Nirjara Experience
           </p>
 
-          <h2 className="mx-auto max-w-3xl font-serif text-4xl leading-tight md:text-5xl">
-            Your Beauty Journey
-            <span className="block italic text-[#F6A9C0]">
-              Starts Here
+          <h2 className="mt-5 font-serif text-4xl leading-tight text-white md:text-5xl">
+            Ready to feel your{" "}
+            <span className="italic text-[#F7A4BD]">
+              best?
             </span>
           </h2>
 
-          <p className="mx-auto mt-6 max-w-xl leading-7 text-white/70">
-            Discover professional beauty services,
-            personalized care and an experience
-            designed around you.
+          <p className="mx-auto mt-5 max-w-lg text-sm leading-7 text-white/65">
+            Discover professional beauty services designed around you.
           </p>
 
-          <div className="mt-9 flex flex-wrap justify-center gap-4">
-            <a
-              href="/booking"
-              className="rounded-full bg-[#E75480] px-8 py-4 text-sm font-semibold uppercase tracking-[0.15em] text-white transition hover:opacity-90"
-            >
-              Book Appointment
-            </a>
+          <a
+            href="/booking"
+            className="mt-8 inline-flex rounded-full bg-[#E75480] px-8 py-4 text-[10px] font-semibold uppercase tracking-[2px] text-white transition hover:bg-[#F06292]"
+          >
+            Book Your Appointment
+          </a>
 
-            <a
-              href="/services"
-              className="rounded-full border border-white/30 px-8 py-4 text-sm font-semibold uppercase tracking-[0.15em] text-white transition hover:bg-white hover:text-[#3A2A2F]"
-            >
-              Explore Services
-            </a>
-          </div>
         </div>
       </section>
-    </div>
+
+    </main>
   );
 }
