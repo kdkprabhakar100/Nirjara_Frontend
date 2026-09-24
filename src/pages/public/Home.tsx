@@ -80,7 +80,7 @@ export default function Home() {
   const fetchBranches = async () => {
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/site-settings`
+        `${import.meta.env.VITE_API_URL}/api/branches`
       );
 
       if (!res.ok) {
@@ -91,11 +91,7 @@ export default function Home() {
 
       const data = await res.json();
 
-      setBranches(
-        Array.isArray(data?.branches)
-          ? data.branches
-          : []
-      );
+      setBranches(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("BRANCH FETCH ERROR:", error);
       setBranches([]);
