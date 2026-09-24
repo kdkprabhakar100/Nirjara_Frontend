@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 
-type Item = {
+type GalleryItem = {
   _id: string;
   title: string;
   category?: string;
@@ -10,109 +10,49 @@ type Item = {
 };
 
 export default function Gallery() {
-  const [items, setItems] = useState<Item[]>([]);
-  const [index, setIndex] = useState(0);
+  const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [paused, setPaused] = useState(false);
-
-  // ==========================================
-  // IMAGE URL
-  // ==========================================
-
-  const getImageUrl = (image?: string) => {
-    if (!image) return "";
-
-    if (image.startsWith("http://localhost:5000")) {
-      return image.replace(
-        "http://localhost:5000",
-        import.meta.env.VITE_API_URL
-      );
-    }
-
-    if (image.startsWith("/uploads")) {
-      return `${import.meta.env.VITE_API_URL}${image}`;
-    }
-
-    return image;
-  };
 
   // ==========================================
   // FETCH GALLERY
   // ==========================================
 
-  const fetchGallery = async () => {
-    try {
-      setLoading(true);
-
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/gallery`
-      );
-
-      if (!res.ok) {
-        throw new Error("Failed to fetch gallery");
-      }
-
-      const data = await res.json();
-
-      setItems(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Gallery fetch error:", error);
-      setItems([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchGallery = async () => {
+      try {
+        setLoading(true);
+
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/gallery`
+        );
+
+        if (!res.ok) {
+          throw new Error("Failed to load gallery.");
+        }
+
+        const data = await res.json();
+
+        setItems(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Gallery fetch error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchGallery();
   }, []);
 
   // ==========================================
-  // NEXT / PREVIOUS
+  // DUPLICATE ITEMS FOR INFINITE LOOP
   // ==========================================
 
-  const next = () => {
-    if (items.length <= 1) return;
+  const sliderItems = useMemo(() => {
+    if (!items.length) return [];
 
-    setIndex((prev) => (prev + 1) % items.length);
-  };
-
-  const prev = () => {
-    if (items.length <= 1) return;
-
-    setIndex(
-      (prev) => (prev - 1 + items.length) % items.length
-    );
-  };
-
-  // ==========================================
-  // AUTO SLIDE
-  // ==========================================
-
-  useEffect(() => {
-    if (items.length <= 1 || paused) return;
-
-    const interval = window.setInterval(() => {
-      setIndex((prev) => (prev + 1) % items.length);
-    }, 4000);
-
-    return () => window.clearInterval(interval);
-  }, [items.length, paused]);
-
-  // ==========================================
-  // KEEP INDEX VALID
-  // ==========================================
-
-  useEffect(() => {
-    if (items.length === 0) {
-      setIndex(0);
-      return;
-    }
-
-    if (index >= items.length) {
-      setIndex(0);
-    }
-  }, [items.length, index]);
+    return [...items, ...items];
+  }, [items]);
 
   // ==========================================
   // LOADING
@@ -120,41 +60,10 @@ export default function Gallery() {
 
   if (loading) {
     return (
-      <main
-        className="
-          flex
-          min-h-screen
-          items-center
-          justify-center
-          bg-[#FFF5F8]
-          px-4
-          pt-20
-        "
-      >
-        <div className="text-center">
-          <div
-            className="
-              mx-auto
-              h-8
-              w-8
-              animate-spin
-              rounded-full
-              border-2
-              border-[#E75480]/20
-              border-t-[#E75480]
-            "
-          />
-
-          <p
-            className="
-              mt-4
-              text-[10px]
-              uppercase
-              tracking-[3px]
-              text-[#8A6F78]
-            "
-          >
-            Loading Gallery
+      <main className="min-h-screen bg-[#FFF5F8] pt-24">
+        <div className="flex min-h-[500px] items-center justify-center">
+          <p className="text-xs uppercase tracking-[4px] text-[#E75480]">
+            Loading Gallery...
           </p>
         </div>
       </main>
@@ -165,520 +74,242 @@ export default function Gallery() {
   // EMPTY
   // ==========================================
 
-  if (items.length === 0) {
+  if (!items.length) {
     return (
-      <main
-        className="
-          flex
-          min-h-screen
-          items-center
-          justify-center
-          bg-[#FFF5F8]
-          px-4
-          pt-20
-        "
-      >
-        <div className="text-center">
-          <p
-            className="
-              text-[10px]
-              uppercase
-              tracking-[4px]
-              text-[#E75480]
-            "
-          >
-            Our Gallery
-          </p>
+      <main className="min-h-screen bg-[#FFF5F8] pt-24">
+        <div className="flex min-h-[500px] items-center justify-center">
+          <div className="text-center">
+            <p className="text-xs uppercase tracking-[4px] text-[#E75480]">
+              Our Gallery
+            </p>
 
-          <h1
-            className="
-              mt-4
-              font-serif
-              text-4xl
-              text-[#3A2A2F]
-            "
-          >
-            Beauty{" "}
-            <span className="italic text-[#E75480]">
-              Moments
-            </span>
-          </h1>
+            <h1 className="mt-4 font-serif text-4xl text-[#3A2A2F]">
+              Beauty{" "}
+              <span className="italic text-[#E75480]">
+                Moments
+              </span>
+            </h1>
 
-          <p className="mt-5 text-sm text-[#8A6F78]">
-            No gallery images yet.
-          </p>
+            <p className="mt-4 text-[#8A6F78]">
+              No gallery images available yet.
+            </p>
+          </div>
         </div>
       </main>
     );
   }
 
-  const current = items[index];
-
   return (
-    <main
-      className="
-        min-h-screen
-        overflow-hidden
-        bg-[#FFF5F8]
-        px-4
-        pb-8
-        pt-[92px]
-        sm:px-6
-        sm:pb-10
-        sm:pt-[100px]
-        md:px-8
-        lg:px-12
-      "
-    >
-      <section className="mx-auto max-w-[1280px]">
+    <main className="min-h-screen overflow-hidden bg-[#FFF5F8] pt-24">
+      <section className="relative overflow-hidden pb-20 pt-12 md:pb-24 md:pt-16">
 
-        {/* =====================================
-            HEADING
-        ===================================== */}
+        {/* ================================= */}
+        {/* BACKGROUND DECORATION             */}
+        {/* ================================= */}
 
-        <div
-          className="
-            mb-7
-            text-center
-            sm:mb-8
-            md:mb-9
-          "
-        >
-          <div
-            className="
-              flex
-              items-center
-              justify-center
-              gap-3
-            "
-          >
-            <span className="h-px w-7 bg-[#E75480]/40" />
+        <div className="pointer-events-none absolute left-[-120px] top-[100px] h-[300px] w-[300px] rounded-full bg-[#FAD7E3]/40 blur-[100px]" />
 
-            <p
-              className="
-                text-[8px]
-                font-medium
-                uppercase
-                tracking-[4px]
-                text-[#E75480]
-                sm:text-[9px]
-              "
-            >
+        <div className="pointer-events-none absolute right-[-100px] top-[200px] h-[300px] w-[300px] rounded-full bg-[#E75480]/10 blur-[100px]" />
+
+        {/* ================================= */}
+        {/* HEADER                            */}
+        {/* ================================= */}
+
+        <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
+
+          <div className="flex items-center justify-center gap-4">
+            <div className="h-px w-10 bg-[#E75480]/40" />
+
+            <p className="text-[10px] font-medium uppercase tracking-[5px] text-[#E75480] sm:text-xs">
               Our Gallery
             </p>
 
-            <span className="h-px w-7 bg-[#E75480]/40" />
+            <div className="h-px w-10 bg-[#E75480]/40" />
           </div>
 
-          <h1
-            className="
-              mt-3
-              font-serif
-              text-[36px]
-              font-light
-              leading-none
-              text-[#3A2A2F]
-              sm:text-[42px]
-              md:text-[48px]
-              lg:text-[54px]
-            "
-          >
-            Beauty{" "}
-            <span className="italic text-[#E75480]">
-              Moments
+          <h1 className="mt-5 font-serif text-[42px] leading-[1.05] text-[#3A2A2F] sm:text-5xl md:text-6xl lg:text-7xl">
+            Moments of
+            <span className="ml-3 italic text-[#E75480]">
+              Beauty
             </span>
           </h1>
 
-          <div
-            className="
-              mx-auto
-              mt-4
-              h-px
-              w-16
-              bg-[#E75480]/40
-            "
-          />
-
-          <p
-            className="
-              mx-auto
-              mt-4
-              hidden
-              max-w-2xl
-              text-[13px]
-              leading-6
-              text-[#8A6F78]
-              sm:block
-              md:text-sm
-            "
-          >
-            A glimpse into the artistry, transformations,
-            and experiences that define Nirjara Beauty.
+          <p className="mx-auto mt-5 max-w-xl text-sm leading-7 text-[#8A6F78] md:text-base">
+            Discover the artistry, transformations and
+            unforgettable moments created at Nirjara Beauty.
           </p>
         </div>
 
-        {/* =====================================
-            GALLERY SLIDER
-        ===================================== */}
+        {/* ================================= */}
+        {/* MOVING GALLERY                    */}
+        {/* ================================= */}
 
         <div
-          className="
-            relative
-            mx-auto
-            overflow-hidden
-            rounded-[22px]
-            bg-[#3A2A2F]
-            shadow-[0_20px_60px_rgba(58,42,47,0.12)]
-            sm:rounded-[26px]
-            lg:rounded-[30px]
-          "
+          className="relative mt-12 overflow-hidden md:mt-16"
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
         >
-          {/* RESPONSIVE HEIGHT */}
 
-          <div
-            className="
-              relative
-              h-[430px]
-              sm:h-[470px]
-              md:h-[500px]
-              lg:h-[530px]
-              xl:h-[550px]
-            "
+          {/* LEFT FADE */}
+
+          <div className="pointer-events-none absolute bottom-0 left-0 top-0 z-20 w-12 bg-gradient-to-r from-[#FFF5F8] to-transparent sm:w-20 md:w-32" />
+
+          {/* RIGHT FADE */}
+
+          <div className="pointer-events-none absolute bottom-0 right-0 top-0 z-20 w-12 bg-gradient-to-l from-[#FFF5F8] to-transparent sm:w-20 md:w-32" />
+
+          <motion.div
+            className="flex w-max gap-3 px-3 sm:gap-4 md:gap-5"
+            animate={
+              paused
+                ? {}
+                : {
+                    x: ["0%", "-50%"],
+                  }
+            }
+            transition={{
+              x: {
+                duration: Math.max(items.length * 7, 20),
+                repeat: Infinity,
+                repeatType: "loop",
+                ease: "linear",
+              },
+            }}
           >
-            <AnimatePresence mode="wait">
+            {sliderItems.map((item, index) => {
 
-              <motion.div
-                key={current._id}
-                initial={{
-                  opacity: 0,
-                  scale: 1.02,
-                }}
-                animate={{
-                  opacity: 1,
-                  scale: 1,
-                }}
-                exit={{
-                  opacity: 0,
-                }}
-                transition={{
-                  duration: 0.55,
-                  ease: "easeOut",
-                }}
-                className="absolute inset-0"
-              >
+              // Give cards slightly different dimensions
+              // like the Pinterest reference.
 
-                {/* IMAGE */}
+              const pattern = index % 5;
 
-                <img
-                  src={getImageUrl(current.image)}
-                  alt={current.title || "Nirjara Beauty"}
-                  className="
-                    h-full
-                    w-full
-                    object-cover
-                  "
-                />
+              const sizeClass =
+                pattern === 0
+                  ? "w-[180px] sm:w-[220px] md:w-[260px]"
+                  : pattern === 1
+                  ? "w-[220px] sm:w-[260px] md:w-[310px]"
+                  : pattern === 2
+                  ? "w-[190px] sm:w-[230px] md:w-[270px]"
+                  : pattern === 3
+                  ? "w-[230px] sm:w-[280px] md:w-[320px]"
+                  : "w-[190px] sm:w-[240px] md:w-[280px]";
 
-                {/* FULL IMAGE SOFT OVERLAY */}
-
-                <div
-                  className="
-                    absolute
-                    inset-0
-                    bg-black/5
-                  "
-                />
-
-                {/* BOTTOM GRADIENT */}
-
-                <div
-                  className="
-                    absolute
-                    inset-0
-                    bg-gradient-to-t
-                    from-black/80
-                    via-black/10
-                    to-transparent
-                  "
-                />
-
-                {/* =====================================
-                    IMAGE INFORMATION
-                ===================================== */}
-
-                <div
-                  className="
-                    absolute
-                    bottom-0
-                    left-0
-                    right-0
-                    z-10
-                    p-5
-                    sm:p-7
-                    md:p-9
-                    lg:p-10
-                  "
+              return (
+                <article
+                  key={`${item._id}-${index}`}
+                  className={`
+                    group
+                    relative
+                    h-[340px]
+                    shrink-0
+                    cursor-pointer
+                    overflow-hidden
+                    rounded-[24px]
+                    bg-white
+                    shadow-sm
+                    sm:h-[390px]
+                    md:h-[430px]
+                    ${sizeClass}
+                  `}
                 >
-                  <div className="max-w-2xl">
+                  {/* IMAGE */}
 
-                    {/* CATEGORY */}
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    draggable={false}
+                    loading="lazy"
+                    className="
+                      h-full
+                      w-full
+                      object-cover
+                      transition-transform
+                      duration-700
+                      ease-out
+                      group-hover:scale-105
+                    "
+                  />
 
-                    {current.category && (
-                      <div
-                        className="
-                          mb-2.5
-                          flex
-                          items-center
-                          gap-3
-                        "
-                      >
-                        <span
-                          className="
-                            h-px
-                            w-6
-                            bg-[#FF9DBA]
-                          "
-                        />
+                  {/* DARK GRADIENT */}
 
-                        <p
-                          className="
-                            text-[8px]
-                            font-semibold
-                            uppercase
-                            tracking-[3px]
-                            text-[#FF9DBA]
-                            sm:text-[9px]
-                          "
-                        >
-                          {current.category}
-                        </p>
-                      </div>
+                  <div
+                    className="
+                      absolute
+                      inset-0
+                      bg-gradient-to-t
+                      from-black/75
+                      via-black/5
+                      to-transparent
+                      opacity-70
+                      transition
+                      duration-500
+                      group-hover:opacity-90
+                    "
+                  />
+
+                  {/* CONTENT */}
+
+                  <div className="absolute bottom-0 left-0 right-0 p-5 text-white md:p-6">
+
+                    {item.category && (
+                      <p className="mb-2 text-[9px] font-semibold uppercase tracking-[3px] text-[#FFB8CD]">
+                        {item.category}
+                      </p>
                     )}
 
-                    {/* TITLE */}
-
-                    <h2
-                      className="
-                        font-serif
-                        text-[30px]
-                        leading-[1.05]
-                        text-white
-                        sm:text-[36px]
-                        md:text-[42px]
-                        lg:text-[46px]
-                      "
-                    >
-                      {current.title}
+                    <h2 className="font-serif text-2xl leading-tight md:text-3xl">
+                      {item.title}
                     </h2>
 
-                    {/* DESCRIPTION */}
-
-                    {current.description && (
+                    {item.description && (
                       <p
                         className="
-                          mt-3
-                          max-w-xl
-                          text-[12px]
+                          mt-2
+                          max-h-0
+                          overflow-hidden
+                          text-xs
                           leading-5
-                          text-white/85
-                          sm:text-[13px]
-                          sm:leading-6
-                          md:text-[14px]
+                          text-white/80
+                          opacity-0
+                          transition-all
+                          duration-500
+                          group-hover:max-h-24
+                          group-hover:opacity-100
+                          md:text-sm
                         "
                       >
-                        {current.description}
+                        {item.description}
                       </p>
                     )}
                   </div>
-                </div>
 
-              </motion.div>
+                  {/* NUMBER */}
 
-            </AnimatePresence>
-
-            {/* =====================================
-                IMAGE NUMBER
-            ===================================== */}
-
-            <div
-              className="
-                absolute
-                right-4
-                top-4
-                z-20
-                rounded-full
-                border
-                border-white/30
-                bg-black/20
-                px-3
-                py-1.5
-                backdrop-blur-md
-                sm:right-5
-                sm:top-5
-                sm:px-4
-              "
-            >
-              <span
-                className="
-                  text-[8px]
-                  font-semibold
-                  tracking-[2px]
-                  text-white
-                  sm:text-[9px]
-                "
-              >
-                {String(index + 1).padStart(2, "0")}
-                {" / "}
-                {String(items.length).padStart(2, "0")}
-              </span>
-            </div>
-
-            {/* =====================================
-                ARROWS
-            ===================================== */}
-
-            {items.length > 1 && (
-              <>
-                <button
-                  type="button"
-                  onClick={prev}
-                  aria-label="Previous image"
-                  className="
-                    absolute
-                    left-3
-                    top-1/2
-                    z-20
-                    flex
-                    h-10
-                    w-10
-                    -translate-y-1/2
-                    items-center
-                    justify-center
-                    rounded-full
-                    border
-                    border-white/40
-                    bg-white/95
-                    text-xl
-                    text-[#E75480]
-                    shadow-lg
-                    transition
-                    duration-300
-                    hover:scale-105
-                    hover:bg-[#E75480]
-                    hover:text-white
-                    sm:left-5
-                    sm:h-12
-                    sm:w-12
-                  "
-                >
-                  ‹
-                </button>
-
-                <button
-                  type="button"
-                  onClick={next}
-                  aria-label="Next image"
-                  className="
-                    absolute
-                    right-3
-                    top-1/2
-                    z-20
-                    flex
-                    h-10
-                    w-10
-                    -translate-y-1/2
-                    items-center
-                    justify-center
-                    rounded-full
-                    border
-                    border-white/40
-                    bg-white/95
-                    text-xl
-                    text-[#E75480]
-                    shadow-lg
-                    transition
-                    duration-300
-                    hover:scale-105
-                    hover:bg-[#E75480]
-                    hover:text-white
-                    sm:right-5
-                    sm:h-12
-                    sm:w-12
-                  "
-                >
-                  ›
-                </button>
-              </>
-            )}
-          </div>
+                  <div className="absolute right-4 top-4 rounded-full border border-white/30 bg-black/20 px-3 py-1.5 text-[9px] tracking-[2px] text-white backdrop-blur-md">
+                    {String(
+                      (index % items.length) + 1
+                    ).padStart(2, "0")}
+                  </div>
+                </article>
+              );
+            })}
+          </motion.div>
         </div>
 
-        {/* =====================================
-            DOTS
-        ===================================== */}
+        {/* ================================= */}
+        {/* BOTTOM TEXT                       */}
+        {/* ================================= */}
 
-        {items.length > 1 && (
-          <div
-            className="
-              mt-5
-              flex
-              items-center
-              justify-center
-              gap-2
-            "
-          >
-            {items.map((item, i) => (
-              <button
-                type="button"
-                key={item._id}
-                onClick={() => setIndex(i)}
-                aria-label={`Go to image ${i + 1}`}
-                className={`
-                  h-[6px]
-                  rounded-full
-                  transition-all
-                  duration-300
-                  ${
-                    i === index
-                      ? "w-8 bg-[#E75480]"
-                      : "w-[6px] bg-[#E75480]/25 hover:bg-[#E75480]/50"
-                  }
-                `}
-              />
-            ))}
-          </div>
-        )}
+        <div className="mt-10 flex items-center justify-center gap-4">
 
-        {/* =====================================
-            BOTTOM TEXT
-        ===================================== */}
+          <div className="h-px w-8 bg-[#E75480]/30" />
 
-        <div
-          className="
-            mt-4
-            flex
-            items-center
-            justify-center
-            gap-4
-          "
-        >
-          <span className="h-px w-7 bg-[#E75480]/30" />
-
-          <p
-            className="
-              text-[7px]
-              uppercase
-              tracking-[4px]
-              text-[#B58B99]
-              sm:text-[8px]
-            "
-          >
+          <p className="text-[9px] uppercase tracking-[4px] text-[#C77A95]">
             Discover Nirjara
           </p>
 
-          <span className="h-px w-7 bg-[#E75480]/30" />
+          <div className="h-px w-8 bg-[#E75480]/30" />
+
         </div>
       </section>
     </main>
