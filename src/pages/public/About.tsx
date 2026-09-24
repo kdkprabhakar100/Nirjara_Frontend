@@ -29,7 +29,7 @@ export default function About() {
         setTeamError("");
 
         const response = await fetch(
-          `${API_URL}/api/team`
+          `${API_URL}/api/teams`
         );
 
         if (!response.ok) {
