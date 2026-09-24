@@ -1,637 +1,243 @@
-import { useEffect, useMemo, useRef, useState } from "react";
 import {
   motion,
   useAnimationFrame,
   useMotionValue,
-  wrap,
+  type MotionValue,
 } from "framer-motion";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
+/* =========================================================
+   TYPES
+========================================================= */
 
 type GalleryItem = {
   _id: string;
   title: string;
-  category?: string;
   description?: string;
+  category?: string;
   image: string;
+  status?: string;
 };
 
-export default function Gallery() {
-  const [items, setItems] = useState<GalleryItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-
-  const x = useMotionValue(0);
-
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  /* =========================================================
-     FETCH GALLERY
-  ========================================================= */
-
-  useEffect(() => {
-    const fetchGallery = async () => {
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/gallery`
-        );
-
-        if (!response.ok) {
-          throw new Error("Unable to load gallery.");
-        }
-
-        const data = await response.json();
-
-        setItems(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error("Gallery fetch error:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchGallery();
-  }, []);
-
-  /* =========================================================
-     CREATE ENOUGH CARDS FOR INFINITE SLIDER
-  ========================================================= */
-
-  const repeatedItems = useMemo(() => {
-    if (!items.length) return [];
-
-    let result = [...items];
-
-    while (result.length < 12) {
-      result = [...result, ...items];
-    }
-
-    return [...result, ...result];
-  }, [items]);
-
-  /* =========================================================
-     RESPONSIVE CARD WIDTH
-  ========================================================= */
-
-  const getCardWidth = () => {
-    if (typeof window === "undefined") return 210;
-
-    if (window.innerWidth < 640) return 165;
-    if (window.innerWidth < 1024) return 190;
-
-    return 210;
-  };
-
-  const getGap = () => {
-    if (typeof window === "undefined") return 18;
-
-    if (window.innerWidth < 640) return 12;
-    if (window.innerWidth < 1024) return 16;
-
-    return 18;
-  };
-
-  /* =========================================================
-     INFINITE AUTOMATIC MOVEMENT
-  ========================================================= */
-
-  useAnimationFrame((_, delta) => {
-    if (
-      loading ||
-      !items.length ||
-      isDragging ||
-      isHovered
-    ) {
-      return;
-    }
-
-    const cardWidth = getCardWidth();
-    const gap = getGap();
-
-    const singleSetLength =
-      (cardWidth + gap) * (repeatedItems.length / 2);
-
-    let newX = x.get();
-
-    /*
-      Right -> Left
-    */
-
-    newX -= delta * 0.025;
-
-    /*
-      Invisible infinite reset
-    */
-
-    if (newX <= -singleSetLength) {
-      newX += singleSetLength;
-    }
-
-    x.set(newX);
-  });
-
-  /* =========================================================
-     U-SHAPED CURVE
-
-     THIS IS THE IMPORTANT PART.
-
-     Edge cards = HIGHER
-     Center cards = LOWER
-
-          CARD                 CARD
-            \                 /
-             \               /
-              CARD       CARD
-                  \     /
-                   CARD
-
-  ========================================================= */
-
-  const getCurveY = (
-    cardIndex: number,
-    currentX: number
-  ) => {
-    if (typeof window === "undefined") return 0;
-
-    const cardWidth = getCardWidth();
-    const gap = getGap();
-
-    const step = cardWidth + gap;
-
-    const screenCenter = window.innerWidth / 2;
-
-    /*
-      Actual center position of this card
-    */
-
-    const cardCenter =
-      currentX +
-      cardIndex * step +
-      cardWidth / 2;
-
-    /*
-      Distance from center of screen
-    */
-
-    const distance = Math.abs(
-      cardCenter - screenCenter
-    );
-
-    /*
-      Normalize distance.
-
-      0 = center
-      1 = outer area
-    */
-
-    const normalized = Math.min(
-      distance / (window.innerWidth * 0.48),
-      1
-    );
-
-    /*
-      U CURVE
-
-      center = pushed DOWN
-      edges  = pushed UP
-    */
-
-    const maxDrop =
-      window.innerWidth < 640 ? 35 : 65;
-
-    return maxDrop * (1 - normalized);
-  };
-
-  /* =========================================================
-     CARD SCALE
-
-     Keep center slightly smaller like your reference.
-     Outer cards slightly larger.
-  ========================================================= */
-
-  const getScale = (
-    cardIndex: number,
-    currentX: number
-  ) => {
-    if (typeof window === "undefined") return 1;
-
-    const cardWidth = getCardWidth();
-    const gap = getGap();
-
-    const step = cardWidth + gap;
-
-    const center = window.innerWidth / 2;
-
-    const cardCenter =
-      currentX +
-      cardIndex * step +
-      cardWidth / 2;
-
-    const distance = Math.abs(cardCenter - center);
-
-    const normalized = Math.min(
-      distance / (window.innerWidth * 0.5),
-      1
-    );
-
-    /*
-      center = .94
-      edges = 1
-    */
-
-    return 0.94 + normalized * 0.06;
-  };
-
-  /* =========================================================
-     LOADING
-  ========================================================= */
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-[#FFF5F8] pt-28">
-        <div className="flex min-h-[500px] items-center justify-center">
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#E75480]/20 border-t-[#E75480]" />
-        </div>
-      </main>
-    );
-  }
-
-  /* =========================================================
-     EMPTY
-  ========================================================= */
-
-  if (!items.length) {
-    return (
-      <main className="min-h-screen bg-[#FFF5F8] pt-32">
-        <div className="py-32 text-center text-[#8A6F78]">
-          No gallery images available.
-        </div>
-      </main>
-    );
-  }
-
-  return (
-    <main
-      className="
-        min-h-screen
-        overflow-hidden
-        bg-[#FFF5F8]
-        pt-28
-        text-[#3A2A2F]
-
-        md:pt-32
-      "
-    >
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
-
-      <section className="px-6 text-center">
-        <p
-          className="
-            text-[9px]
-            uppercase
-            tracking-[5px]
-            text-[#E75480]
-
-            md:text-xs
-          "
-        >
-          Our Gallery
-        </p>
-
-        <h1
-          className="
-            mt-3
-            font-serif
-            text-4xl
-
-            md:text-5xl
-            lg:text-6xl
-          "
-        >
-          Beauty{" "}
-          <span className="italic text-[#E75480]">
-            In Motion
-          </span>
-        </h1>
-
-        <p
-          className="
-            mx-auto
-            mt-4
-            max-w-xl
-            text-sm
-            leading-7
-            text-[#8A6F78]
-
-            md:text-base
-          "
-        >
-          Explore beautiful transformations, artistry
-          and unforgettable moments created at Nirjara
-          Beauty.
-        </p>
-      </section>
-
-      {/* =====================================================
-          SMALL TITLE
-      ===================================================== */}
-
-      <div
-        className="
-          mt-10
-          flex
-          items-center
-          justify-center
-          gap-4
-
-          md:mt-12
-        "
-      >
-        <span className="h-px w-8 bg-[#E75480]/30" />
-
-        <span
-          className="
-            text-[8px]
-            uppercase
-            tracking-[5px]
-            text-[#E75480]
-          "
-        >
-          Beauty In Motion
-        </span>
-
-        <span className="h-px w-8 bg-[#E75480]/30" />
-      </div>
-
-      {/* =====================================================
-          CAROUSEL
-      ===================================================== */}
-
-      <section
-        ref={containerRef}
-        className="
-          relative
-          mt-5
-          h-[410px]
-          w-full
-          overflow-hidden
-
-          sm:h-[440px]
-          lg:h-[490px]
-        "
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        {/* LEFT FADE */}
-
-        <div
-          className="
-            pointer-events-none
-            absolute
-            bottom-0
-            left-0
-            top-0
-            z-30
-            w-[5%]
-            bg-gradient-to-r
-            from-[#FFF5F8]
-            to-transparent
-
-            md:w-[8%]
-          "
-        />
-
-        {/* RIGHT FADE */}
-
-        <div
-          className="
-            pointer-events-none
-            absolute
-            bottom-0
-            right-0
-            top-0
-            z-30
-            w-[5%]
-            bg-gradient-to-l
-            from-[#FFF5F8]
-            to-transparent
-
-            md:w-[8%]
-          "
-        />
-
-        {/* =================================================
-            DRAGGABLE TRACK
-        ================================================= */}
-
-        <motion.div
-          drag="x"
-          dragElastic={0.05}
-          dragMomentum
-          dragTransition={{
-            bounceStiffness: 300,
-            bounceDamping: 40,
-            power: 0.15,
-            timeConstant: 250,
-          }}
-          onDragStart={() => setIsDragging(true)}
-          onDragEnd={() => {
-            setTimeout(() => {
-              setIsDragging(false);
-            }, 300);
-          }}
-          style={{
-            x,
-          }}
-          className="
-            absolute
-            left-0
-            top-2
-            flex
-            w-max
-            cursor-grab
-            select-none
-            gap-3
-
-            active:cursor-grabbing
-
-            sm:gap-4
-            lg:gap-[18px]
-          "
-        >
-          {repeatedItems.map((item, index) => (
-            <CurvedGalleryCard
-              key={`${item._id}-${index}`}
-              item={item}
-              index={index}
-              trackX={x}
-              getCurveY={getCurveY}
-              getScale={getScale}
-            />
-          ))}
-        </motion.div>
-      </section>
-
-      {/* =====================================================
-          BOTTOM
-      ===================================================== */}
-
-      <div
-        className="
-          -mt-5
-          flex
-          flex-col
-          items-center
-          pb-16
-
-          lg:-mt-8
-        "
-      >
-        {/* fake progress */}
-
-        <div className="flex items-center gap-2">
-          <span className="h-1.5 w-8 rounded-full bg-[#E75480]" />
-
-          <span className="h-1.5 w-1.5 rounded-full bg-[#E75480]/25" />
-
-          <span className="h-1.5 w-1.5 rounded-full bg-[#E75480]/25" />
-        </div>
-
-        <div className="mt-5 flex items-center gap-4">
-          <span className="h-px w-7 bg-[#E75480]/25" />
-
-          <span
-            className="
-              text-[8px]
-              uppercase
-              tracking-[5px]
-              text-[#C77A95]
-            "
-          >
-            Drag To Explore
-          </span>
-
-          <span className="h-px w-7 bg-[#E75480]/25" />
-        </div>
-      </div>
-    </main>
-  );
-}
-
-/* ===========================================================
-   INDIVIDUAL CURVED CARD
-=========================================================== */
+/* =========================================================
+   CAROUSEL SETTINGS
+========================================================= */
+
+const CARD_WIDTH = 190;
+const CARD_GAP = 16;
+const ITEM_WIDTH = CARD_WIDTH + CARD_GAP;
+
+/*
+  Automatic slider speed.
+  Increase = faster
+  Decrease = slower
+
+  Good range: 25–45
+*/
+const AUTO_SPEED = 128;
+
+/*
+  We repeat the gallery multiple times so that the slider
+  can loop without visibly jumping.
+*/
+const REPEAT_COUNT = 7;
+
+/* =========================================================
+   CURVED GALLERY CARD
+========================================================= */
 
 type CurvedGalleryCardProps = {
   item: GalleryItem;
-
   index: number;
-
-  trackX: ReturnType<typeof useMotionValue<number>>;
-
-  getCurveY: (
-    index: number,
-    currentX: number
-  ) => number;
-
-  getScale: (
-    index: number,
-    currentX: number
-  ) => number;
+  sliderX: MotionValue<number>;
 };
 
 function CurvedGalleryCard({
   item,
   index,
-  trackX,
-  getCurveY,
-  getScale,
+  sliderX,
 }: CurvedGalleryCardProps) {
-  const [curveY, setCurveY] = useState(0);
-  const [scale, setScale] = useState(1);
-
   /*
-    Update the curve while the track moves.
+    Height is a MotionValue instead of React state.
 
-    Therefore the curve belongs to the VIEWPORT,
-    not to individual cards.
-
-    This is what keeps the structure intact.
+    This is important because changing React state every
+    animation frame would cause unnecessary re-renders.
   */
+  const height = useMotionValue(260);
+
+  const opacity = useMotionValue(1);
+
+  const scale = useMotionValue(1);
 
   useAnimationFrame(() => {
-    const currentX = trackX.get();
+    const viewportWidth = window.innerWidth;
 
-    setCurveY(
-      getCurveY(index, currentX)
+    /* ---------------------------------------------
+       Find this card's position mathematically.
+
+       IMPORTANT:
+       We do NOT use getBoundingClientRect().
+       That avoids repeated layout calculations.
+    --------------------------------------------- */
+
+    const cardLeft =
+      sliderX.get() + index * ITEM_WIDTH;
+
+    const cardCenter =
+      cardLeft + CARD_WIDTH / 2;
+
+    const screenCenter =
+      viewportWidth / 2;
+
+    const distanceFromCenter = Math.abs(
+      cardCenter - screenCenter
     );
 
-    setScale(
-      getScale(index, currentX)
+    /*
+      Convert distance to 0 → 1.
+
+      0 = exact center of screen
+      1 = edge of screen
+    */
+    const normalizedDistance = Math.min(
+      distanceFromCenter /
+        (viewportWidth / 2),
+      1
     );
+
+    /*
+      This controls the curve.
+
+      Higher exponent:
+      flatter center + stronger edges
+
+      Lower exponent:
+      softer curve
+    */
+    const curve = Math.pow(
+      normalizedDistance,
+      1.55
+    );
+
+    /* ---------------------------------------------
+       RESPONSIVE HEIGHTS
+    --------------------------------------------- */
+
+    let centerHeight = 235;
+    let edgeHeight = 430;
+
+    if (viewportWidth < 640) {
+      centerHeight = 190;
+      edgeHeight = 310;
+    } else if (viewportWidth < 1024) {
+      centerHeight = 215;
+      edgeHeight = 360;
+    }
+
+    /*
+      Center = shortest
+      Edges = tallest
+    */
+    const calculatedHeight =
+      centerHeight +
+      (edgeHeight - centerHeight) *
+        curve;
+
+    /*
+      Set directly.
+
+      NO CSS/Framer height transition here.
+      The curve follows the carousel position itself.
+    */
+    height.set(calculatedHeight);
+
+    /* ---------------------------------------------
+       VERY SUBTLE SCALE
+
+       This gives the edge cards slightly more presence
+       without changing the main curve structure.
+    --------------------------------------------- */
+
+    const calculatedScale =
+      0.985 +
+      curve * 0.015;
+
+    scale.set(calculatedScale);
+
+    /* ---------------------------------------------
+       EDGE FADE
+    --------------------------------------------- */
+
+    if (normalizedDistance > 0.88) {
+      const fadeAmount =
+        (normalizedDistance - 0.88) /
+        0.12;
+
+      opacity.set(
+        Math.max(
+          0.68,
+          1 - fadeAmount * 0.32
+        )
+      );
+    } else {
+      opacity.set(1);
+    }
   });
 
   return (
     <motion.article
-      animate={{
-        y: curveY,
+      style={{
+        width: CARD_WIDTH,
+        height,
+        opacity,
         scale,
-      }}
-      transition={{
-        y: {
-          duration: 0.12,
-          ease: "linear",
-        },
-
-        scale: {
-          duration: 0.12,
-          ease: "linear",
-        },
-      }}
-      whileHover={{
-        scale: scale + 0.025,
+        willChange:
+          "transform, height, opacity",
       }}
       className="
         group
         relative
-
-        h-[285px]
-        w-[165px]
-
         shrink-0
         overflow-hidden
-        rounded-[25px]
-
-        bg-white
-
-        shadow-[0_15px_40px_rgba(58,42,47,0.10)]
-
-        sm:h-[330px]
-        sm:w-[190px]
-
-        lg:h-[370px]
-        lg:w-[210px]
+        rounded-[24px]
+        bg-[#F5E9ED]
+        shadow-[0_12px_40px_rgba(58,42,47,0.07)]
       "
     >
       {/* IMAGE */}
 
       <img
         src={item.image}
-        alt={item.title}
+        alt={item.title || "Nirjara Beauty"}
         draggable={false}
+        loading="lazy"
         className="
           pointer-events-none
           h-full
           w-full
           select-none
           object-cover
+          object-center
+        "
+      />
 
-          transition-transform
-          duration-700
-          ease-out
+      {/* SUBTLE IMAGE OVERLAY */}
 
-          group-hover:scale-[1.04]
+      <div
+        className="
+          pointer-events-none
+          absolute
+          inset-0
+          bg-black/[0.02]
+          transition-colors
+          duration-500
+          group-hover:bg-transparent
         "
       />
 
@@ -641,100 +247,726 @@ function CurvedGalleryCard({
         className="
           pointer-events-none
           absolute
-          inset-0
+          inset-x-0
+          bottom-0
+          h-[38%]
           bg-gradient-to-t
-          from-black/75
-          via-black/5
+          from-black/45
+          via-black/10
           to-transparent
         "
       />
 
-      {/* PINK HOVER */}
+      {/* TEXT */}
 
-      <div
-        className="
-          pointer-events-none
-          absolute
-          inset-0
-          bg-[#E75480]/0
-
-          transition-colors
-          duration-500
-
-          group-hover:bg-[#E75480]/10
-        "
-      />
-
-      {/* CONTENT */}
-
-      <div
-        className="
-          pointer-events-none
-          absolute
-          bottom-0
-          left-0
-          right-0
-          z-10
-          p-4
-
-          lg:p-5
-        "
-      >
-        {item.category && (
-          <p
-            className="
-              mb-2
-              text-[7px]
-              font-semibold
-              uppercase
-              tracking-[3px]
-              text-[#FFB4CA]
-            "
-          >
-            {item.category}
-          </p>
-        )}
-
-        <h2
+      {(item.title || item.category) && (
+        <div
           className="
-            font-serif
-            text-lg
-            leading-tight
-            text-white
-
-            sm:text-xl
-            lg:text-2xl
+            pointer-events-none
+            absolute
+            bottom-4
+            left-4
+            right-4
+            z-10
           "
         >
-          {item.title}
-        </h2>
+          {item.category && (
+            <p
+              className="
+                mb-1
+                text-[7px]
+                font-medium
+                uppercase
+                tracking-[2.5px]
+                text-white/70
+              "
+            >
+              {item.category}
+            </p>
+          )}
 
-        {item.description && (
+          {item.title && (
+            <h3
+              className="
+                font-serif
+                text-[16px]
+                leading-tight
+                text-white
+                drop-shadow-sm
+              "
+            >
+              {item.title}
+            </h3>
+          )}
+        </div>
+      )}
+    </motion.article>
+  );
+}
+
+/* =========================================================
+   GALLERY PAGE
+========================================================= */
+
+export default function Gallery() {
+  const [gallery, setGallery] =
+    useState<GalleryItem[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  /*
+    Pause when user hovers.
+  */
+  const [hovering, setHovering] =
+    useState(false);
+
+  /*
+    Pause automatic animation while user drags.
+  */
+  const [dragging, setDragging] =
+    useState(false);
+
+  /*
+    Main carousel position.
+  */
+  const x = useMotionValue(0);
+
+  /*
+    Width of ONE complete gallery set.
+  */
+  const singleSetWidthRef =
+    useRef(0);
+
+  /* =======================================================
+     FETCH GALLERY FROM BACKEND
+  ======================================================= */
+
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchGallery = async () => {
+      try {
+        setLoading(true);
+
+        const response = await fetch(
+          `${
+            import.meta.env.VITE_API_URL
+          }/api/gallery`
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `Gallery request failed: ${response.status}`
+          );
+        }
+
+        const data =
+          await response.json();
+
+        if (!mounted) return;
+
+        /*
+          Supports:
+          [...]
+          
+          OR
+          
+          { data: [...] }
+          
+          OR
+          
+          { items: [...] }
+        */
+
+        const items: GalleryItem[] =
+          Array.isArray(data)
+            ? data
+            : Array.isArray(data?.data)
+            ? data.data
+            : Array.isArray(data?.items)
+            ? data.items
+            : [];
+
+        setGallery(items);
+      } catch (error) {
+        console.error(
+          "Gallery fetch error:",
+          error
+        );
+
+        if (mounted) {
+          setGallery([]);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchGallery();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  /* =======================================================
+     CREATE REPEATED ITEMS FOR INFINITE LOOP
+  ======================================================= */
+
+  const displayItems =
+    useMemo(() => {
+      if (!gallery.length) {
+        return [];
+      }
+
+      return Array.from(
+        { length: REPEAT_COUNT },
+        () => gallery
+      ).flat();
+    }, [gallery]);
+
+  /* =======================================================
+     INITIAL CAROUSEL POSITION
+  ======================================================= */
+
+  useEffect(() => {
+    if (!gallery.length) return;
+
+    const singleSetWidth =
+      gallery.length * ITEM_WIDTH;
+
+    singleSetWidthRef.current =
+      singleSetWidth;
+
+    /*
+      Start inside the middle repeated copies.
+
+      That gives us plenty of content on both sides.
+    */
+    x.set(-singleSetWidth * 3);
+  }, [gallery, x]);
+
+  /* =======================================================
+     INFINITE LOOP NORMALIZATION
+  ======================================================= */
+
+  const normalizeSlider =
+    useCallback(() => {
+      const setWidth =
+        singleSetWidthRef.current;
+
+      if (!setWidth) return;
+
+      let currentX = x.get();
+
+      /*
+        Because each gallery set is identical,
+        moving exactly one set forward/backward
+        is visually invisible.
+      */
+
+      while (
+        currentX <=
+        -setWidth * 4
+      ) {
+        currentX += setWidth;
+      }
+
+      while (
+        currentX >=
+        -setWidth * 2
+      ) {
+        currentX -= setWidth;
+      }
+
+      x.set(currentX);
+    }, [x]);
+
+  /* =======================================================
+     AUTOMATIC SMOOTH ANIMATION
+  ======================================================= */
+
+  useAnimationFrame(
+    (_time, delta) => {
+      if (!gallery.length) {
+        return;
+      }
+
+      /*
+        Stop automatic movement while interacting.
+      */
+      if (hovering || dragging) {
+        return;
+      }
+
+      /*
+        Sometimes when changing browser tabs,
+        requestAnimationFrame returns a huge delta.
+
+        Clamp it so carousel doesn't suddenly jump.
+      */
+      const safeDelta =
+        Math.min(delta, 32);
+
+      /*
+        Convert pixels/second into pixels/frame.
+      */
+      const movement =
+        AUTO_SPEED *
+        (safeDelta / 1000);
+
+      /*
+        Move right -> left.
+      */
+      x.set(
+        x.get() - movement
+      );
+
+      normalizeSlider();
+    }
+  );
+
+  /* =======================================================
+     LOADING SCREEN
+  ======================================================= */
+
+  if (loading) {
+    return (
+      <main
+        className="
+          flex
+          min-h-screen
+          items-center
+          justify-center
+          bg-[#FFF5F8]
+        "
+      >
+        <div className="text-center">
+          <div
+            className="
+              mx-auto
+              h-8
+              w-8
+              animate-spin
+              rounded-full
+              border-2
+              border-[#E75480]/20
+              border-t-[#E75480]
+            "
+          />
+
           <p
             className="
-              mt-2
-              max-h-0
-              overflow-hidden
-
-              text-[10px]
-              leading-5
-              text-white/80
-
-              opacity-0
-
-              transition-all
-              duration-500
-
-              group-hover:max-h-16
-              group-hover:opacity-100
-
-              lg:text-[11px]
+              mt-5
+              text-[8px]
+              uppercase
+              tracking-[4px]
+              text-[#E75480]
             "
           >
-            {item.description}
+            Loading Gallery
           </p>
-        )}
+        </div>
+      </main>
+    );
+  }
+
+  /* =======================================================
+     EMPTY STATE
+  ======================================================= */
+
+  if (!gallery.length) {
+    return (
+      <main
+        className="
+          flex
+          min-h-screen
+          items-center
+          justify-center
+          bg-[#FFF5F8]
+          px-6
+        "
+      >
+        <div className="text-center">
+          <p
+            className="
+              text-[9px]
+              uppercase
+              tracking-[4px]
+              text-[#E75480]
+            "
+          >
+            Our Gallery
+          </p>
+
+          <h1
+            className="
+              mt-4
+              font-serif
+              text-4xl
+              text-[#3A2A2F]
+            "
+          >
+            Beauty{" "}
+            <span
+              className="
+                italic
+                text-[#E75480]
+              "
+            >
+              In Motion
+            </span>
+          </h1>
+
+          <p
+            className="
+              mt-4
+              text-sm
+              text-[#8A6F78]
+            "
+          >
+            Gallery images will appear here soon.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  /* =======================================================
+     PAGE
+  ======================================================= */
+
+  return (
+    <main
+      className="
+        min-h-screen
+        overflow-hidden
+        bg-[#FFF5F8]
+        pb-16
+        pt-28
+        sm:pt-32
+        lg:pt-36
+      "
+    >
+      {/* =================================================
+          PAGE HEADER
+      ================================================= */}
+
+      <section
+        className="
+          relative
+          z-10
+          px-6
+          text-center
+        "
+      >
+        <p
+          className="
+            text-[9px]
+            font-medium
+            uppercase
+            tracking-[5px]
+            text-[#E75480]
+          "
+        >
+          Our Gallery
+        </p>
+
+        <h1
+          className="
+            mt-4
+            font-serif
+            text-[38px]
+            leading-[1.05]
+            text-[#3A2A2F]
+            sm:text-[46px]
+            lg:text-[52px]
+          "
+        >
+          Beauty{" "}
+          <span
+            className="
+              italic
+              text-[#E75480]
+            "
+          >
+            In Motion
+          </span>
+        </h1>
+
+        <p
+          className="
+            mx-auto
+            mt-5
+            max-w-[560px]
+            text-[13px]
+            leading-7
+            text-[#8A6F78]
+            sm:text-sm
+          "
+        >
+          Explore beautiful transformations,
+          artistry and unforgettable moments
+          created at Nirjara Beauty.
+        </p>
+      </section>
+
+      {/* =================================================
+          SMALL SECTION LABEL
+      ================================================= */}
+
+      <div
+        className="
+          mt-10
+          flex
+          items-center
+          justify-center
+          gap-4
+          sm:mt-12
+        "
+      >
+        <span
+          className="
+            h-px
+            w-9
+            bg-[#E75480]/25
+          "
+        />
+
+        <span
+          className="
+            whitespace-nowrap
+            text-[7px]
+            font-medium
+            uppercase
+            tracking-[5px]
+            text-[#E75480]
+          "
+        >
+          Beauty In Motion
+        </span>
+
+        <span
+          className="
+            h-px
+            w-9
+            bg-[#E75480]/25
+          "
+        />
       </div>
-    </motion.article>
+
+      {/* =================================================
+          CURVED GALLERY
+      ================================================= */}
+
+      <section
+        className="
+          relative
+          mt-4
+          h-[340px]
+          w-full
+          overflow-hidden
+          sm:mt-5
+          sm:h-[390px]
+          lg:h-[455px]
+        "
+        onMouseEnter={() => {
+          setHovering(true);
+        }}
+        onMouseLeave={() => {
+          setHovering(false);
+        }}
+      >
+        {/* ===============================================
+            LEFT SOFT FADE / BLUR
+        =============================================== */}
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            inset-y-0
+            left-0
+            z-30
+            w-[7%]
+            bg-gradient-to-r
+            from-[#FFF5F8]
+            via-[#FFF5F8]/60
+            to-transparent
+            backdrop-blur-[1px]
+          "
+        />
+
+        {/* ===============================================
+            RIGHT SOFT FADE / BLUR
+        =============================================== */}
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            inset-y-0
+            right-0
+            z-30
+            w-[7%]
+            bg-gradient-to-l
+            from-[#FFF5F8]
+            via-[#FFF5F8]/60
+            to-transparent
+            backdrop-blur-[1px]
+          "
+        />
+
+        {/* ===============================================
+            MOVING TRACK
+
+            items-center is IMPORTANT.
+
+            Because cards have different heights,
+            this keeps all of them vertically centered.
+
+            Result:
+
+            LEFT EDGE       CENTER       RIGHT EDGE
+               tall          short           tall
+
+                 \______________/
+        =============================================== */}
+
+        <motion.div
+          drag="x"
+          dragElastic={0.01}
+          dragMomentum={false}
+
+          onDragStart={() => {
+            setDragging(true);
+          }}
+
+          onDragEnd={() => {
+            normalizeSlider();
+
+            window.setTimeout(() => {
+              setDragging(false);
+            }, 80);
+          }}
+
+          style={{
+            x,
+            gap: CARD_GAP,
+            touchAction: "pan-y",
+            willChange: "transform",
+          }}
+
+          className="
+            absolute
+            inset-y-0
+            left-0
+            flex
+            w-max
+            cursor-grab
+            items-center
+            select-none
+            active:cursor-grabbing
+          "
+        >
+          {displayItems.map(
+            (item, index) => (
+              <CurvedGalleryCard
+                key={`${item._id}-${index}`}
+                item={item}
+                index={index}
+                sliderX={x}
+              />
+            )
+          )}
+        </motion.div>
+      </section>
+
+      {/* =================================================
+          CONTROLS / INDICATOR
+      ================================================= */}
+
+      <div
+        className="
+          mt-2
+          flex
+          flex-col
+          items-center
+          justify-center
+          gap-3
+        "
+      >
+        {/* INDICATOR */}
+
+        <div
+          className="
+            flex
+            items-center
+            justify-center
+            gap-[6px]
+          "
+        >
+          <span
+            className="
+              h-[5px]
+              w-[5px]
+              rounded-full
+              bg-[#E75480]/20
+            "
+          />
+
+          <span
+            className="
+              h-[5px]
+              w-[5px]
+              rounded-full
+              bg-[#E75480]/30
+            "
+          />
+
+          <span
+            className="
+              h-[5px]
+              w-8
+              rounded-full
+              bg-[#E75480]
+            "
+          />
+
+          <span
+            className="
+              h-[5px]
+              w-[5px]
+              rounded-full
+              bg-[#E75480]/30
+            "
+          />
+
+          <span
+            className="
+              h-[5px]
+              w-[5px]
+              rounded-full
+              bg-[#E75480]/20
+            "
+          />
+        </div>
+
+        <p
+          className="
+            text-[7px]
+            font-medium
+            uppercase
+            tracking-[4px]
+            text-[#B78B98]
+          "
+        >
+          Drag to explore
+        </p>
+      </div>
+    </main>
   );
 }
