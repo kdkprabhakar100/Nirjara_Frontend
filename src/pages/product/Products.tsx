@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { toast } from "react-toastify";
+import SEO from "../../components/SEO";
 
 type Product = {
   _id: string;
@@ -11,6 +12,15 @@ type Product = {
   category: string;
   images: string[];
   stock: number;
+};
+
+const PRODUCTS_SEO = {
+  title: "Beauty Products | Nirjara Beauty Kathmandu",
+  description: "Explore beauty and personal care products available from Nirjara Beauty in Kathmandu.",
+  keywords: "beauty products Nepal, beauty products Kathmandu, hair products Nepal, skincare products Kathmandu, Nirjara Beauty products",
+  canonical: "/products",
+  image: "/images/nirjara-og.jpg",
+  type: "website"
 };
 
 export default function Products() {
@@ -37,6 +47,15 @@ export default function Products() {
   }, []);
 
   return (
+    <>
+    <SEO
+      title={PRODUCTS_SEO.title}
+      description={PRODUCTS_SEO.description}  
+      keywords={PRODUCTS_SEO.keywords}
+      canonical={PRODUCTS_SEO.canonical}
+      image={PRODUCTS_SEO.image}
+      type="website"
+    />      
     <section className="min-h-screen bg-[#FFF5F8] px-4 pb-20 pt-32 sm:px-6 lg:px-10">
 
       {/* HEADER */}
@@ -187,5 +206,6 @@ export default function Products() {
         ))}
       </div>
     </section>
+    </>
   );
 }

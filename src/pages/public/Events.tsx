@@ -2,6 +2,16 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import SEO from "../../components/SEO";
+
+const EVENTS_SEO = {      
+  title: "Events | Nirjara Beauty Kathmandu",
+  description: "Discover upcoming and recent events, beauty programs, training activities and special moments from Nirjara Beauty in Kathmandu.",
+  keywords: "Nirjara Beauty events, beauty events Kathmandu, beauty academy events Nepal, salon events Kathmandu",
+  canonical: "/events",
+  image: "/images/nirjara-og.jpg",
+  type: "website"
+};
 
 interface EventType {
   _id: string;
@@ -48,6 +58,17 @@ const Events = () => {
   );
 
   return (
+    <>
+      <SEO
+        title={EVENTS_SEO.title}
+        description={EVENTS_SEO.description}
+        keywords={EVENTS_SEO.keywords}
+        canonical={EVENTS_SEO.canonical}
+        image={EVENTS_SEO.image}
+        type="website"
+      />
+
+
     <main className="min-h-screen overflow-hidden bg-[#FFF5F8] text-[#3A2A2F]">
 
       {/* ========================================================
@@ -947,7 +968,9 @@ const Events = () => {
         </div>
       </section>
     </main>
+  </>
   );
 };
+
 
 export default Events;

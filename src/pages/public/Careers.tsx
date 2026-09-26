@@ -1,6 +1,16 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import SEO from "../../components/SEO";
+
+const CAREERS_SEO = {
+  title: "Careers at Nirjara Beauty | Beauty Jobs Kathmandu",
+  description: "Explore career opportunities at Nirjara Beauty and discover opportunities to work with our professional beauty salon and academy team in Kathmandu.",
+  keywords: "Nirjara Beauty careers, beauty jobs Kathmandu, salon jobs Kathmandu, beautician jobs Nepal, beauty career Nepal",
+  canonical: "/careers",
+  image: "/images/nirjara-og.jpg",
+  type: "website"
+};
 
 type Career = {
   _id: string;
@@ -32,6 +42,15 @@ export default function Careers() {
   }, []);
 
   return (
+    <>
+    <SEO
+      title={CAREERS_SEO.title}
+      description={CAREERS_SEO.description}
+      keywords={CAREERS_SEO.keywords}
+      canonical={CAREERS_SEO.canonical}
+      image={CAREERS_SEO.image}
+      type="website"
+    />
     <main className="min-h-screen bg-[#FFF5F8] text-[#3A2A2F]">
       <section className="bg-gradient-to-r from-pink-100 to-pink-200 px-6 py-20 text-center">
         <h1 className="font-serif text-4xl font-bold text-[#E75480] md:text-6xl">
@@ -102,5 +121,6 @@ export default function Careers() {
         )}
       </section>
     </main>
+    </>
   );
 }

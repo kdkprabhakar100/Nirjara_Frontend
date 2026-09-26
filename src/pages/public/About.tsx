@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-
+import SEO from "../../components/SEO";
 /* =========================================================
    TYPES
 ========================================================= */
@@ -33,6 +33,17 @@ const getImageUrl = (image?: string) => {
   }
 
   return image;
+};
+
+
+//SEO
+const ABOUT_SEO = {
+      title: "About Nirjara Beauty | Beauty Salon & Academy Kathmandu",
+      description: "Learn about Nirjara Beauty, our story, leadership and professional team dedicated to beauty, confidence, creativity and client care in Kathmandu.",
+      keywords: "about Nirjara Beauty, Nirjara Beauty Kathmandu, beauty salon Kathmandu, beauty professionals Nepal, Nirjara Beauty team",
+      canonical: "/about",
+      image: "/images/nirjara-og.jpg",
+      type: "website"
 };
 
 /* =========================================================
@@ -190,6 +201,15 @@ export default function About() {
   ======================================================= */
 
   return (
+    <>
+    <SEO
+      title={ABOUT_SEO.title}
+      description={ABOUT_SEO.description}
+      keywords={ABOUT_SEO.keywords}
+      canonical={ABOUT_SEO.canonical}
+      image={ABOUT_SEO.image}
+      type="website"
+    />
     <main className="overflow-hidden bg-[#FFF5F8]">
 
       {/* ===================================================
@@ -644,5 +664,6 @@ export default function About() {
       </section>
 
     </main>
+    </>
   );
 }

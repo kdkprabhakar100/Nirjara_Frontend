@@ -13,6 +13,8 @@ import {
   useMotionValue,
 } from "framer-motion";
 
+import SEO from "./SEO";
+
 /* =========================================================
    TYPES
 ========================================================= */
@@ -52,6 +54,24 @@ const TABLET_HEIGHTS = [
 ];
 
 /* =========================================================
+   SEO
+========================================================= */
+
+const GALLERY_SEO = {
+  title: "Gallery | Nirjara Beauty Kathmandu",
+
+  description:
+    "Explore beauty transformations, professional artistry, hair, makeup and memorable moments created at Nirjara Beauty in Kathmandu, Nepal.",
+
+  keywords:
+    "Nirjara Beauty gallery, beauty salon Kathmandu, beauty parlour Kathmandu, makeup Kathmandu, hair salon Kathmandu, beauty transformations Nepal",
+
+  canonical: "/gallery",
+
+  image: "/images/nirjara-og.jpg",
+};
+
+/* =========================================================
    MAIN PAGE
 ========================================================= */
 
@@ -75,7 +95,9 @@ export default function Gallery() {
         );
 
         if (!response.ok) {
-          throw new Error(`Gallery request failed: ${response.status}`);
+          throw new Error(
+            `Gallery request failed: ${response.status}`
+          );
         }
 
         const data = await response.json();
@@ -120,26 +142,49 @@ export default function Gallery() {
   const isMobile = viewportWidth < 768;
 
   /* =======================================================
+     SEO
+
+     SEO is intentionally rendered ABOVE the loading /
+     empty / normal page conditions so metadata is available
+     regardless of the gallery API state.
+  ======================================================= */
+
+  const seo = (
+    <SEO
+      title={GALLERY_SEO.title}
+      description={GALLERY_SEO.description}
+      keywords={GALLERY_SEO.keywords}
+      canonical={GALLERY_SEO.canonical}
+      image={GALLERY_SEO.image}
+      type="website"
+    />
+  );
+
+  /* =======================================================
      LOADING
   ======================================================= */
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#FFF5F8] pt-24">
-        <div className="flex h-[500px] items-center justify-center">
-          <div
-            className="
-              h-8
-              w-8
-              animate-spin
-              rounded-full
-              border-2
-              border-[#E75480]/20
-              border-t-[#E75480]
-            "
-          />
-        </div>
-      </main>
+      <>
+        {seo}
+
+        <main className="min-h-screen bg-[#FFF5F8] pt-24">
+          <div className="flex h-[500px] items-center justify-center">
+            <div
+              className="
+                h-8
+                w-8
+                animate-spin
+                rounded-full
+                border-2
+                border-[#E75480]/20
+                border-t-[#E75480]
+              "
+            />
+          </div>
+        </main>
+      </>
     );
   }
 
@@ -149,13 +194,17 @@ export default function Gallery() {
 
   if (!gallery.length) {
     return (
-      <main className="min-h-screen bg-[#FFF5F8] pt-24">
-        <div className="flex h-[500px] items-center justify-center">
-          <p className="text-sm text-[#8A6F78]">
-            Gallery coming soon.
-          </p>
-        </div>
-      </main>
+      <>
+        {seo}
+
+        <main className="min-h-screen bg-[#FFF5F8] pt-24">
+          <div className="flex h-[500px] items-center justify-center">
+            <p className="text-sm text-[#8A6F78]">
+              Gallery coming soon.
+            </p>
+          </div>
+        </main>
+      </>
     );
   }
 
@@ -164,118 +213,125 @@ export default function Gallery() {
   ======================================================= */
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#FFF5F8] pt-24 md:pt-32">
-      {/* ===================================================
-          PAGE INTRO
-      =================================================== */}
+    <>
+      {seo}
 
-      <section className="relative z-10 mx-auto max-w-4xl px-5 text-center">
-        <p
+      <main className="min-h-screen overflow-hidden bg-[#FFF5F8] pt-24 md:pt-32">
+
+        {/* ===================================================
+            PAGE INTRO
+        =================================================== */}
+
+        <section className="relative z-10 mx-auto max-w-4xl px-5 text-center">
+
+          <p
+            className="
+              text-[8px]
+              font-medium
+              uppercase
+              tracking-[4px]
+              text-[#E75480]
+
+              md:text-[10px]
+              md:tracking-[5px]
+            "
+          >
+            Our Gallery
+          </p>
+
+          <h1
+            className="
+              mt-3
+              font-serif
+              text-[32px]
+              leading-[1.08]
+              text-[#3A2A2F]
+
+              sm:text-[38px]
+
+              md:mt-4
+              md:text-[48px]
+
+              lg:text-[54px]
+            "
+          >
+            Beauty{" "}
+            <span className="italic text-[#E75480]">
+              In Motion
+            </span>
+          </h1>
+
+          <p
+            className="
+              mx-auto
+              mt-3
+              max-w-[310px]
+              text-[13px]
+              leading-6
+              text-[#8A6F78]
+
+              md:mt-5
+              md:max-w-2xl
+              md:text-[15px]
+              md:leading-7
+            "
+          >
+            Explore beautiful transformations, artistry and unforgettable
+            moments created at Nirjara Beauty.
+          </p>
+        </section>
+
+        {/* ===================================================
+            SMALL SECTION LABEL
+        =================================================== */}
+
+        <div
           className="
-            text-[8px]
-            font-medium
-            uppercase
-            tracking-[4px]
-            text-[#E75480]
+            mt-6
+            flex
+            items-center
+            justify-center
+            gap-3
 
-            md:text-[10px]
-            md:tracking-[5px]
+            md:mt-8
+            md:gap-4
           "
         >
-          Our Gallery
-        </p>
+          <span className="h-px w-8 bg-[#E75480]/25 md:w-10" />
 
-        <h1
-          className="
-            mt-3
-            font-serif
-            text-[32px]
-            leading-[1.08]
-            text-[#3A2A2F]
+          <span
+            className="
+              text-[6px]
+              font-medium
+              uppercase
+              tracking-[4px]
+              text-[#E75480]
 
-            sm:text-[38px]
-
-            md:mt-4
-            md:text-[48px]
-
-            lg:text-[54px]
-          "
-        >
-          Beauty{" "}
-          <span className="italic text-[#E75480]">
-            In Motion
+              md:text-[7px]
+              md:tracking-[5px]
+            "
+          >
+            Beauty In Motion
           </span>
-        </h1>
 
-        <p
-          className="
-            mx-auto
-            mt-3
-            max-w-[310px]
-            text-[13px]
-            leading-6
-            text-[#8A6F78]
+          <span className="h-px w-8 bg-[#E75480]/25 md:w-10" />
+        </div>
 
-            md:mt-5
-            md:max-w-2xl
-            md:text-[15px]
-            md:leading-7
-          "
-        >
-          Explore beautiful transformations, artistry and unforgettable
-          moments created at Nirjara Beauty.
-        </p>
-      </section>
+        {/* ===================================================
+            GALLERY
+        =================================================== */}
 
-      {/* ===================================================
-          SMALL SECTION LABEL
-      =================================================== */}
+        {isMobile ? (
+          <MobileGallery items={gallery} />
+        ) : (
+          <DesktopGallery
+            items={gallery}
+            viewportWidth={viewportWidth}
+          />
+        )}
 
-      <div
-        className="
-          mt-6
-          flex
-          items-center
-          justify-center
-          gap-3
-
-          md:mt-8
-          md:gap-4
-        "
-      >
-        <span className="h-px w-8 bg-[#E75480]/25 md:w-10" />
-
-        <span
-          className="
-            text-[6px]
-            font-medium
-            uppercase
-            tracking-[4px]
-            text-[#E75480]
-
-            md:text-[7px]
-            md:tracking-[5px]
-          "
-        >
-          Beauty In Motion
-        </span>
-
-        <span className="h-px w-8 bg-[#E75480]/25 md:w-10" />
-      </div>
-
-      {/* ===================================================
-          MOBILE
-      =================================================== */}
-
-      {isMobile ? (
-        <MobileGallery items={gallery} />
-      ) : (
-        <DesktopGallery
-          items={gallery}
-          viewportWidth={viewportWidth}
-        />
-      )}
-    </main>
+      </main>
+    </>
   );
 }
 
@@ -289,7 +345,9 @@ function MobileGallery({
   items: GalleryItem[];
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
+
   const [direction, setDirection] = useState(1);
+
   const [paused, setPaused] = useState(false);
 
   const total = items.length;
@@ -343,7 +401,8 @@ function MobileGallery({
   ======================================================= */
 
   const getItem = (offset: number) => {
-    const index = (activeIndex + offset + total) % total;
+    const index =
+      (activeIndex + offset + total) % total;
 
     return items[index];
   };
@@ -368,6 +427,7 @@ function MobileGallery({
       onTouchStart={() => setPaused(true)}
       onTouchEnd={() => setPaused(false)}
     >
+
       {/* =================================================
           CAROUSEL AREA
       ================================================= */}
@@ -383,6 +443,7 @@ function MobileGallery({
           min-[390px]:h-[410px]
         "
       >
+
         {/* =================================================
             PREVIOUS CARD
         ================================================= */}
@@ -429,6 +490,8 @@ function MobileGallery({
               src={previousItem.image}
               alt=""
               draggable={false}
+              loading="lazy"
+              decoding="async"
               className="
                 h-full
                 w-full
@@ -487,6 +550,8 @@ function MobileGallery({
               src={nextItem.image}
               alt=""
               draggable={false}
+              loading="lazy"
+              decoding="async"
               className="
                 h-full
                 w-full
@@ -600,6 +665,7 @@ function MobileGallery({
               src={activeItem.image}
               alt={activeItem.title || "Nirjara Beauty"}
               draggable={false}
+              decoding="async"
               className="
                 pointer-events-none
                 h-full
@@ -610,9 +676,10 @@ function MobileGallery({
               "
             />
 
-            {/* bottom readable gradient */}
+            {/* Bottom readable gradient */}
 
-            {(activeItem.title || activeItem.category) && (
+            {(activeItem.title ||
+              activeItem.category) && (
               <div
                 className="
                   pointer-events-none
@@ -629,9 +696,10 @@ function MobileGallery({
               />
             )}
 
-            {/* text */}
+            {/* Text */}
 
-            {(activeItem.title || activeItem.category) && (
+            {(activeItem.title ||
+              activeItem.category) && (
               <div
                 className="
                   pointer-events-none
@@ -717,7 +785,8 @@ function MobileGallery({
       {total > 1 && (
         <div className="mt-2 flex items-center justify-center gap-2">
           {items.map((item, index) => {
-            const active = index === activeIndex;
+            const active =
+              index === activeIndex;
 
             return (
               <button
@@ -725,7 +794,10 @@ function MobileGallery({
                 type="button"
                 aria-label={`Go to image ${index + 1}`}
                 onClick={() => {
-                  setDirection(index > activeIndex ? 1 : -1);
+                  setDirection(
+                    index > activeIndex ? 1 : -1
+                  );
+
                   setActiveIndex(index);
                 }}
                 className={`
@@ -782,7 +854,9 @@ function DesktopGallery({
 
   const pausedRef = useRef(false);
   const draggingRef = useRef(false);
-  const previousTimeRef = useRef<number | null>(null);
+
+  const previousTimeRef =
+    useRef<number | null>(null);
 
   /* =======================================================
      DIMENSIONS
@@ -794,7 +868,10 @@ function DesktopGallery({
 
       const cardWidth = Math.max(
         150,
-        Math.min(205, (viewportWidth - gap * 6) / 7)
+        Math.min(
+          205,
+          (viewportWidth - gap * 6) / 7
+        )
       );
 
       return {
@@ -827,11 +904,18 @@ function DesktopGallery({
       result.push(...items);
     }
 
-    return result.slice(0, Math.max(14, items.length));
+    return result.slice(
+      0,
+      Math.max(14, items.length)
+    );
   }, [items]);
 
   const repeatedItems = useMemo(
-    () => [...baseItems, ...baseItems, ...baseItems],
+    () => [
+      ...baseItems,
+      ...baseItems,
+      ...baseItems,
+    ],
     [baseItems]
   );
 
@@ -857,7 +941,10 @@ function DesktopGallery({
   useAnimationFrame((time) => {
     if (!singleSetWidth) return;
 
-    if (pausedRef.current || draggingRef.current) {
+    if (
+      pausedRef.current ||
+      draggingRef.current
+    ) {
       previousTimeRef.current = time;
       return;
     }
@@ -868,14 +955,20 @@ function DesktopGallery({
     }
 
     const delta =
-      Math.min(time - previousTimeRef.current, 40) / 1000;
+      Math.min(
+        time - previousTimeRef.current,
+        40
+      ) / 1000;
 
     previousTimeRef.current = time;
 
     let nextX =
       x.get() - DESKTOP_SPEED * delta;
 
-    if (nextX <= -singleSetWidth * 2) {
+    if (
+      nextX <=
+      -singleSetWidth * 2
+    ) {
       nextX += singleSetWidth;
     }
 
@@ -891,11 +984,17 @@ function DesktopGallery({
 
     let current = x.get();
 
-    while (current > -singleSetWidth * 0.25) {
+    while (
+      current >
+      -singleSetWidth * 0.25
+    ) {
       current -= singleSetWidth;
     }
 
-    while (current < -singleSetWidth * 2.5) {
+    while (
+      current <
+      -singleSetWidth * 2.5
+    ) {
       current += singleSetWidth;
     }
 
@@ -926,6 +1025,7 @@ function DesktopGallery({
         pausedRef.current = false;
       }}
     >
+
       {/* LEFT FADE */}
 
       <div
@@ -973,7 +1073,9 @@ function DesktopGallery({
         }}
         onDragEnd={() => {
           draggingRef.current = false;
+
           previousTimeRef.current = null;
+
           normalizeSlider();
         }}
         style={{
@@ -991,18 +1093,26 @@ function DesktopGallery({
           active:cursor-grabbing
         "
       >
-        {repeatedItems.map((item, index) => (
-          <DesktopGalleryCard
-            key={`${item._id}-${index}`}
-            item={item}
-            index={index}
-            cardWidth={dimensions.cardWidth}
-            itemWidth={itemWidth}
-            heights={dimensions.heights}
-            x={x}
-            viewportWidth={viewportWidth}
-          />
-        ))}
+        {repeatedItems.map(
+          (item, index) => (
+            <DesktopGalleryCard
+              key={`${item._id}-${index}`}
+              item={item}
+              index={index}
+              cardWidth={
+                dimensions.cardWidth
+              }
+              itemWidth={itemWidth}
+              heights={
+                dimensions.heights
+              }
+              x={x}
+              viewportWidth={
+                viewportWidth
+              }
+            />
+          )
+        )}
       </motion.div>
     </section>
   );
@@ -1018,7 +1128,11 @@ type DesktopGalleryCardProps = {
   cardWidth: number;
   itemWidth: number;
   heights: number[];
-  x: ReturnType<typeof useMotionValue<number>>;
+
+  x: ReturnType<
+    typeof useMotionValue<number>
+  >;
+
   viewportWidth: number;
 };
 
@@ -1032,6 +1146,7 @@ function DesktopGalleryCard({
   viewportWidth,
 }: DesktopGalleryCardProps) {
   const maxHeight = heights[0];
+
   const minHeight = heights[3];
 
   const scaleY = useDynamicScale({
@@ -1063,7 +1178,8 @@ function DesktopGalleryCard({
           width: cardWidth,
           height: maxHeight,
           scaleY,
-          transformOrigin: "center center",
+          transformOrigin:
+            "center center",
           willChange: "transform",
           backfaceVisibility: "hidden",
         }}
@@ -1078,7 +1194,10 @@ function DesktopGalleryCard({
       >
         <img
           src={item.image}
-          alt={item.title || "Nirjara Beauty"}
+          alt={
+            item.title ||
+            "Nirjara Beauty gallery"
+          }
           draggable={false}
           loading="lazy"
           decoding="async"
@@ -1092,7 +1211,8 @@ function DesktopGalleryCard({
           "
         />
 
-        {(item.title || item.category) && (
+        {(item.title ||
+          item.category) && (
           <div
             className="
               pointer-events-none
@@ -1109,7 +1229,8 @@ function DesktopGalleryCard({
           />
         )}
 
-        {(item.title || item.category) && (
+        {(item.title ||
+          item.category) && (
           <div
             className="
               pointer-events-none
@@ -1162,7 +1283,11 @@ type DynamicScaleProps = {
   index: number;
   itemWidth: number;
   cardWidth: number;
-  x: ReturnType<typeof useMotionValue<number>>;
+
+  x: ReturnType<
+    typeof useMotionValue<number>
+  >;
+
   viewportWidth: number;
   maxHeight: number;
   minHeight: number;
@@ -1190,20 +1315,26 @@ function useDynamicScale({
     const screenCenter =
       viewportWidth / 2;
 
-    const distance =
-      Math.abs(cardCenter - screenCenter);
+    const distance = Math.abs(
+      cardCenter - screenCenter
+    );
 
     const maxDistance =
       itemWidth * 3;
 
-    const normalized =
-      Math.min(distance / maxDistance, 1);
+    const normalized = Math.min(
+      distance / maxDistance,
+      1
+    );
 
     /*
-      Smoothstep.
+      Smoothstep curve.
 
-      Center = shortest.
-      Edges = tallest.
+      Center = shortest
+      Edges = tallest
+
+      This creates the inward curved
+      gallery shape from your reference.
     */
 
     const curved =
@@ -1213,9 +1344,12 @@ function useDynamicScale({
 
     const height =
       minHeight +
-      (maxHeight - minHeight) * curved;
+      (maxHeight - minHeight) *
+        curved;
 
-    scale.set(height / maxHeight);
+    scale.set(
+      height / maxHeight
+    );
   });
 
   return scale;

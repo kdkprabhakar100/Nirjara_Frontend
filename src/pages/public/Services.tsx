@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ServiceCard from "../../components/ServiceCard";
+import SEO from "../../components/SEO";
 
 type ServiceCategory = {
   _id: string;
@@ -128,6 +129,15 @@ export default function Services() {
     return service.category;
   };
 
+  //SEO
+  const SERVICES_SEO = {
+     title: "Beauty Salon Services in Kathmandu | Nirjara Beauty",
+     description: "Explore professional beauty services at Nirjara Beauty in Kathmandu, including hair, makeup, skincare, nails and other salon treatments.",
+     keywords: "beauty services Kathmandu, salon services Kathmandu, hair salon Kathmandu, makeup Kathmandu, skincare Kathmandu, nail salon Kathmandu, Nirjara Beauty services",
+     canonical: "/services",
+     image: "/images/nirjara-og.jpg",
+     type: "website"
+  };
   // ==========================================
   // FILTER SERVICES
   // ==========================================
@@ -179,6 +189,15 @@ export default function Services() {
   }
 
   return (
+    <>
+    <SEO
+      title={SERVICES_SEO.title}
+      description={SERVICES_SEO.description}
+      keywords={SERVICES_SEO.keywords}
+      canonical={SERVICES_SEO.canonical}
+      image={SERVICES_SEO.image}
+      type= "website"
+    />
     <main className="min-h-screen bg-[#FFF5F8] px-4 pb-24 pt-32 sm:px-6 md:px-8 lg:px-12 lg:pt-36">
       {/* ===================================== */}
       {/* PAGE HEADER                           */}
@@ -324,5 +343,6 @@ export default function Services() {
         )}
       </section>
     </main>
+    </>
   );
 }

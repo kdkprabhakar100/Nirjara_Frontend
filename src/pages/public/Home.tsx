@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import SEO from "../../components/SEO";
 
 import ServiceCard from "../../components/ServiceCard";
 import BranchCard from "../../components/BranchCard";
@@ -37,6 +38,15 @@ const stats = [
   { number: "200+", label: "Certified Graduates" },
 ];
 
+//SEO
+const HOME_SEO = {
+  title: "Nirjara Beauty | Beauty Salon & Academy in Kathmandu",
+  description: "Nirjara Beauty is a professional beauty salon and academy in Kathmandu offering hair, makeup, nails, skincare, beauty services and professional beauty training.",
+  keywords: "Nirjara Beauty, beauty salon Kathmandu, beauty parlour Kathmandu, beauty academy Kathmandu, hair salon Kathmandu, makeup artist Kathmandu, beauty training Nepal",
+  canonical: "/",
+  image: "/images/nirjara-og.jpg",
+  type: "website"
+};
 /* ============================================================
    HOME
 ============================================================ */
@@ -181,7 +191,17 @@ export default function Home() {
     );
   };
 
+
   return (
+    <>
+          <SEO
+      title={HOME_SEO.title}
+      description={HOME_SEO.description}
+      keywords={HOME_SEO.keywords}
+      canonical={HOME_SEO.canonical}
+      image={HOME_SEO.image}
+      type="website"
+    />        
     <main className="overflow-x-hidden bg-[#FFF5F8] text-[#3A2A2F]">
 
       {/* ========================================================
@@ -1046,5 +1066,6 @@ export default function Home() {
   )}
 </section>
     </main>
+  </>
   );
 }

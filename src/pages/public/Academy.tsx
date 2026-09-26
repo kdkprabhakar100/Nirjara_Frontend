@@ -1,5 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import SEO from "../../components/SEO";
+
+const ACADEMY_SEO = {
+  title: "Beauty Academy in Kathmandu | Nirjara Beauty Academy",
+  description: "Explore professional beauty training and courses at Nirjara Beauty Academy in Kathmandu and develop practical skills for a career in the beauty industry.",
+  keywords: "beauty academy Kathmandu, beauty training Nepal, beautician course Kathmandu, makeup course Kathmandu, hair training Kathmandu, Nirjara Beauty Academy",
+  canonical: "/academy",
+  image: "/images/nirjara-og.jpg",
+  type: "website"
+};
 
 type Course = {
   _id: string;
@@ -26,6 +36,15 @@ export default function Academy() {
   }, []);
 
   return (
+    <>
+    <SEO
+      title={ACADEMY_SEO.title}
+      description={ACADEMY_SEO.description}
+      keywords={ACADEMY_SEO.keywords}
+      canonical={ACADEMY_SEO.canonical}
+      image={ACADEMY_SEO.image}
+      type="website"
+    />
     <main className="min-h-screen bg-[#FFF5F8] px-6 pb-24 pt-36 text-[#3A2A2F] md:px-12">
       <section className="mx-auto max-w-6xl">
         <div className="mb-12 text-center">
@@ -100,5 +119,6 @@ export default function Academy() {
         </div>
       </section>
     </main>
+    </>
   );
 }

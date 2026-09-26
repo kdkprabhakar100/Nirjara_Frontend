@@ -4,6 +4,16 @@ import {
   useMemo,
   useState,
 } from "react";
+import SEO from "../../components/SEO";
+
+const BOOKING_SEO = {
+  title: "Book an Appointment | Nirjara Beauty Kathmandu",
+  description: "Book your appointment with Nirjara Beauty in Kathmandu for professional hair, makeup, skincare, nail and beauty services.",
+  keywords: "book beauty salon Kathmandu, salon appointment Kathmandu, Nirjara Beauty booking, hair appointment Kathmandu, makeup appointment Kathmandu",
+  canonical: "/booking",
+  image: "/images/nirjara-og.jpg",
+  type: "website"
+};
 
 type Service = {
   _id: string;
@@ -790,6 +800,15 @@ export default function Booking() {
   ========================================================== */
 
   return (
+    <>
+    <SEO
+      title={BOOKING_SEO.title}
+      description={BOOKING_SEO.description}
+      keywords={BOOKING_SEO.keywords}
+      canonical={BOOKING_SEO.canonical}
+      image={BOOKING_SEO.image}
+      type="website"
+    />
     <main
       className="
         min-h-screen
@@ -1904,6 +1923,7 @@ export default function Booking() {
         </form>
       </section>
     </main>
+    </>
   );
 }
 

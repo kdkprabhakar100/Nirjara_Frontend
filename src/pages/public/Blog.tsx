@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import SEO from "../../components/SEO";
+
 type Blog = {
   _id: string;
   title: string;
@@ -19,7 +21,25 @@ export default function Blog() {
       .then((data) => setBlogs(data));
   }, []);
 
+  const BLOG_SEO = {
+  title: "Beauty Tips & Insights | Nirjara Beauty Blog",
+  description: "Explore beauty tips, hair care, skincare, makeup ideas, salon advice and professional insights from Nirjara Beauty.",
+  keywords: "beauty blog Nepal, beauty tips Kathmandu, hair care tips, skincare tips, makeup tips Nepal, Nirjara Beauty blog",
+  canonical: "/blog",
+  image: "/images/nirjara-og.jpg",
+  type: "website"
+  }
+
   return (
+    <>
+    <SEO
+      title={BLOG_SEO.title}
+      description={BLOG_SEO.description}
+      keywords={BLOG_SEO.keywords}    
+      canonical={BLOG_SEO.canonical}
+      image={BLOG_SEO.image}
+      type="website"    
+    />
     <main className="min-h-screen bg-[#FFF5F8] px-6 pb-24 pt-36 text-[#3A2A2F] md:px-12">
       <section className="mx-auto max-w-6xl">
         <div className="mb-12 text-center">
@@ -127,5 +147,6 @@ export default function Blog() {
       </section>
 
     </main>
+    </>
   );
 }

@@ -1,4 +1,14 @@
 import { useState } from "react";
+import SEO from "../../components/SEO";
+
+const CONTACT_SEO = {
+  title: "Contact Nirjara Beauty | Beauty Salon Kathmandu",
+  description: "Contact Nirjara Beauty in Kathmandu for salon services, beauty treatments, academy information, appointments and general enquiries.",
+  keywords: "contact Nirjara Beauty, beauty salon Kathmandu contact, Nirjara Beauty Kathmandu, book beauty salon Kathmandu",
+  canonical: "/contact",
+  image: "/images/nirjara-og.jpg",
+  type: "website"
+}
 
 export default function Contact() {
   const [sent, setSent] = useState(false);
@@ -35,6 +45,15 @@ export default function Contact() {
   };
 
   return (
+    <>
+    <SEO
+      title={CONTACT_SEO.title}
+      description={CONTACT_SEO.description}
+      keywords={CONTACT_SEO.keywords}
+      canonical={CONTACT_SEO.canonical}
+      image={CONTACT_SEO.image}
+      type="website"
+    />
     <main className="min-h-screen bg-[#FFF5F8] px-6 pb-24 pt-36 text-[#3A2A2F] md:px-12">
       <section className="mx-auto max-w-6xl">
         <div className="mb-12 text-center">
@@ -144,5 +163,6 @@ export default function Contact() {
         </div>
       </section>
     </main>
+    </>
   );
 }

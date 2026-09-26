@@ -1,11 +1,30 @@
 import BranchCard from "../../components/BranchCard";
 import { branches } from "../../data/branches";
 import { useNavigate } from "react-router-dom";
+import SEO from "../../components/SEO";
 
 export default function Branches() {
   const navigate = useNavigate();
+  const BRANCHES_SEO = {
+      title: "Nirjara Beauty Branches | Beauty Salon in Kathmandu",
+      description: "Find Nirjara Beauty branches in Kathmandu and discover professional salon, beauty and customer care services near you.",
+      keywords: "Nirjara Beauty branches, beauty salon Kathmandu, salon Teku, salon Chabahil, beauty parlour Kathmandu, Nirjara Beauty locations",
+      canonical: "/branches",
+      image: "/images/nirjara-og.jpg",
+      type: "website"
+
+  };
 
   return (
+    <>
+    <SEO
+      title={BRANCHES_SEO.title}
+      description={BRANCHES_SEO.description}
+      keywords={BRANCHES_SEO.keywords}
+      canonical={BRANCHES_SEO.canonical}
+      image={BRANCHES_SEO.image}
+      type= "website"
+    />
     <main className="min-h-screen bg-[#FFF5F8] px-6 pb-24 pt-36 text-[#3A2A2F] md:px-12">
       <section className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
@@ -37,5 +56,6 @@ export default function Branches() {
         </div>
       </section>
     </main>
+    </>
   );
 }
