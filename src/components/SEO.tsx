@@ -6,59 +6,99 @@ type SEOProps = {
   keywords?: string;
   canonical?: string;
   image?: string;
-  type?: "website" | "article";
+  type?: "website" | "article" | "product";
   noindex?: boolean;
 };
 
-const SITE_URL = "https://www.nirjarabeauty.com";
 const SITE_NAME = "Nirjara Beauty";
+const SITE_URL = import.meta.env.VITE_SITE_URL || "https://nirjarabeauty.com";
 
 export default function SEO({
   title,
   description,
-  keywords,
+  keywords = "",
   canonical = "/",
-  image = "/images/Nirjara-logo.png",
+  image = "/images/nirjara-og.jpg",
   type = "website",
   noindex = false,
 }: SEOProps) {
   const canonicalUrl = canonical.startsWith("http")
     ? canonical
-    : `${SITE_URL}${canonical.startsWith("/") ? canonical : `/${canonical}`}`;
+    : `${SITE_URL}${canonical}`;
 
   const imageUrl = image.startsWith("http")
     ? image
-    : `${SITE_URL}${image.startsWith("/") ? image : `/${image}`}`;
+    : `${SITE_URL}${image}`;
 
   return (
     <Helmet>
-      {/* Basic SEO */}
+      {/* BASIC SEO */}
       <title>{title}</title>
 
-      <meta name="description" content={description} />
-
-      {keywords && <meta name="keywords" content={keywords} />}
-
       <meta
-        name="robots"
-        content={noindex ? "noindex, nofollow" : "index, follow"}
+        name="description"
+        content={description}
       />
 
-      <link rel="canonical" href={canonicalUrl} />
+      {keywords && (
+        <meta
+          name="keywords"
+          content={keywords}
+        />
+      )}
 
-      {/* Open Graph */}
+      <link
+        rel="canonical"
+        href={canonicalUrl}
+      />
+
+      {noindex && (
+        <meta
+          name="robots"
+          content="noindex,nofollow"
+        />
+      )}
+
+      {/* OPEN GRAPH */}
       <meta property="og:title" content={title} />
-      <meta property="og:description" content={description} />
-      <meta property="og:type" content={type} />
-      <meta property="og:url" content={canonicalUrl} />
-      <meta property="og:image" content={imageUrl} />
-      <meta property="og:site_name" content={SITE_NAME} />
+      <meta
+        property="og:description"
+        content={description}
+      />
+      <meta
+        property="og:type"
+        content={type}
+      />
+      <meta
+        property="og:url"
+        content={canonicalUrl}
+      />
+      <meta
+        property="og:image"
+        content={imageUrl}
+      />
+      <meta
+        property="og:site_name"
+        content={SITE_NAME}
+      />
 
-      {/* Twitter / X */}
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={title} />
-      <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={imageUrl} />
+      {/* TWITTER */}
+      <meta
+        name="twitter:card"
+        content="summary_large_image"
+      />
+      <meta
+        name="twitter:title"
+        content={title}
+      />
+      <meta
+        name="twitter:description"
+        content={description}
+      />
+      <meta
+        name="twitter:image"
+        content={imageUrl}
+      />
     </Helmet>
   );
 }
