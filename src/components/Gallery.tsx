@@ -143,10 +143,6 @@ export default function Gallery() {
 
   /* =======================================================
      SEO
-
-     SEO is intentionally rendered ABOVE the loading /
-     empty / normal page conditions so metadata is available
-     regardless of the gallery API state.
   ======================================================= */
 
   const seo = (
@@ -276,46 +272,11 @@ export default function Gallery() {
               md:leading-7
             "
           >
-            Explore beautiful transformations, artistry and unforgettable
-            moments created at Nirjara Beauty.
+            Explore beautiful transformations, artistry and
+            unforgettable moments created at Nirjara Beauty.
           </p>
+
         </section>
-
-        {/* ===================================================
-            SMALL SECTION LABEL
-        =================================================== */}
-
-        <div
-          className="
-            mt-6
-            flex
-            items-center
-            justify-center
-            gap-3
-
-            md:mt-8
-            md:gap-4
-          "
-        >
-          <span className="h-px w-8 bg-[#E75480]/25 md:w-10" />
-
-          <span
-            className="
-              text-[6px]
-              font-medium
-              uppercase
-              tracking-[4px]
-              text-[#E75480]
-
-              md:text-[7px]
-              md:tracking-[5px]
-            "
-          >
-            Beauty In Motion
-          </span>
-
-          <span className="h-px w-8 bg-[#E75480]/25 md:w-10" />
-        </div>
 
         {/* ===================================================
             GALLERY
@@ -419,7 +380,7 @@ function MobileGallery({
     <section
       className="
         relative
-        mt-7
+        mt-2
         w-full
         overflow-hidden
         pb-14
@@ -429,7 +390,7 @@ function MobileGallery({
     >
 
       {/* =================================================
-          CAROUSEL AREA
+          CAROUSEL
       ================================================= */}
 
       <div
@@ -444,9 +405,7 @@ function MobileGallery({
         "
       >
 
-        {/* =================================================
-            PREVIOUS CARD
-        ================================================= */}
+        {/* PREVIOUS */}
 
         {total > 1 && (
           <motion.button
@@ -504,9 +463,7 @@ function MobileGallery({
           </motion.button>
         )}
 
-        {/* =================================================
-            NEXT CARD
-        ================================================= */}
+        {/* NEXT */}
 
         {total > 1 && (
           <motion.button
@@ -565,7 +522,7 @@ function MobileGallery({
         )}
 
         {/* =================================================
-            ACTIVE CARD
+            ACTIVE
         ================================================= */}
 
         <AnimatePresence
@@ -676,7 +633,7 @@ function MobileGallery({
               "
             />
 
-            {/* Bottom readable gradient */}
+            {/* GRADIENT */}
 
             {(activeItem.title ||
               activeItem.category) && (
@@ -696,7 +653,7 @@ function MobileGallery({
               />
             )}
 
-            {/* Text */}
+            {/* TEXT */}
 
             {(activeItem.title ||
               activeItem.category) && (
@@ -743,9 +700,7 @@ function MobileGallery({
           </motion.article>
         </AnimatePresence>
 
-        {/* =================================================
-            SIDE FADES
-        ================================================= */}
+        {/* SIDE FADES */}
 
         <div
           className="
@@ -776,6 +731,7 @@ function MobileGallery({
             to-transparent
           "
         />
+
       </div>
 
       {/* =================================================
@@ -818,9 +774,7 @@ function MobileGallery({
         </div>
       )}
 
-      {/* =================================================
-          SWIPE TEXT
-      ================================================= */}
+      {/* SWIPE TEXT */}
 
       <div className="mt-5 text-center">
         <p
@@ -835,6 +789,7 @@ function MobileGallery({
           Swipe to explore
         </p>
       </div>
+
     </section>
   );
 }
@@ -1009,7 +964,7 @@ function DesktopGallery({
     <section
       className="
         relative
-        mt-7
+        mt-0
         flex
         h-[390px]
         w-full
@@ -1114,6 +1069,7 @@ function DesktopGallery({
           )
         )}
       </motion.div>
+
     </section>
   );
 }
@@ -1328,13 +1284,10 @@ function useDynamicScale({
     );
 
     /*
-      Smoothstep curve.
+      Smooth curved gallery:
 
-      Center = shortest
-      Edges = tallest
-
-      This creates the inward curved
-      gallery shape from your reference.
+      CENTER = shortest
+      EDGES = tallest
     */
 
     const curved =
