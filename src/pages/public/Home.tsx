@@ -576,14 +576,21 @@ export default function Home() {
           SERVICES
       ======================================================== */}
 
-      <section className="bg-[#FFF5F8] px-6 py-24 md:px-12">
-        <div className="text-center">
+      <section className="overflow-hidden bg-[#FFF5F8] py-16 md:px-12 md:py-24">
+
+        {/* ======================================================
+            HEADING
+        ====================================================== */}
+
+        <div className="px-6 text-center">
+
           <p
             className="
-              text-xs
+              text-[10px]
               uppercase
               tracking-[4px]
               text-[#E75480]
+              sm:text-xs
             "
           >
             Our Services
@@ -593,8 +600,10 @@ export default function Home() {
             className="
               mt-4
               font-serif
-              text-5xl
+              text-[40px]
+              leading-tight
               text-[#3A2A2F]
+              sm:text-5xl
             "
           >
             The Art of{" "}
@@ -614,29 +623,177 @@ export default function Home() {
           />
         </div>
 
+        {/* ======================================================
+            MOBILE SERVICES SLIDER
+            0px - 767px
+
+            Manual swipe
+            One main card
+            Part of next card visible
+        ====================================================== */}
+
+        <div className="mt-10 md:hidden">
+
+          <div
+            className="
+              flex
+              snap-x
+              snap-mandatory
+              gap-4
+              overflow-x-auto
+              scroll-smooth
+              px-5
+              pb-5
+              [scrollbar-width:none]
+              [&::-webkit-scrollbar]:hidden
+            "
+          >
+            {services.map((service, index) => (
+
+              <div
+                key={service._id || index}
+                className="
+                  w-[84vw]
+                  max-w-[340px]
+                  shrink-0
+                  snap-center
+                  first:ml-0
+                "
+              >
+                <ServiceCard
+                  title={service.title}
+                  description={service.description}
+                  price={service.price}
+                  image={service.image || ""}
+                />
+              </div>
+
+            ))}
+          </div>
+
+          {/* SWIPE HINT */}
+
+          {services.length > 1 && (
+            <div className="mt-2 flex items-center justify-center gap-3">
+
+              <span className="h-px w-8 bg-[#E75480]/25" />
+
+              <p
+                className="
+                  text-[9px]
+                  font-medium
+                  uppercase
+                  tracking-[3px]
+                  text-[#8A6F78]/60
+                "
+              >
+                Swipe to explore
+              </p>
+
+              <span className="h-px w-8 bg-[#E75480]/25" />
+
+            </div>
+          )}
+
+        </div>
+
+        {/* ======================================================
+            TABLET + DESKTOP GRID
+            768px+
+
+            Tablet = 2 columns
+            Desktop = 3 columns
+        ====================================================== */}
+
         <div
           className="
             mx-auto
             mt-16
-            grid
+            hidden
             max-w-6xl
             gap-8
+            md:grid
             md:grid-cols-2
             lg:grid-cols-3
           "
         >
           {services.map((service, index) => (
+
             <ServiceCard
               key={service._id || index}
               title={service.title}
               description={service.description}
               price={service.price}
-              //icon={service.icon || "✦"}
               image={service.image || ""}
             />
+
           ))}
         </div>
+
+        {/* ======================================================
+            VIEW ALL SERVICES
+        ====================================================== */}
+
+        <div className="mt-10 flex justify-center px-6 md:mt-14">
+
+          <button
+            type="button"
+            onClick={() => navigate("/services")}
+            className="
+              group
+              inline-flex
+              items-center
+              justify-center
+              gap-4
+              rounded-full
+              border
+              border-[#E75480]/30
+              bg-white
+              px-7
+              py-4
+              text-[10px]
+              font-semibold
+              uppercase
+              tracking-[2.5px]
+              text-[#E75480]
+              shadow-sm
+              transition-all
+              duration-300
+
+              hover:-translate-y-0.5
+              hover:border-[#E75480]
+              hover:bg-[#E75480]
+              hover:text-white
+              hover:shadow-lg
+
+              sm:px-9
+              sm:text-[11px]
+            "
+          >
+            View All Services
+
+            <span
+              className="
+                text-base
+                leading-none
+                transition-transform
+                duration-300
+                group-hover:translate-x-1
+              "
+            >
+              →
+            </span>
+          </button>
+
+        </div>
+
       </section>
+
+      {/* ========================================================
+          GALLERY
+      ======================================================== */}
+
+      <Gallery />
 
       {/* ========================================================
           GALLERY
