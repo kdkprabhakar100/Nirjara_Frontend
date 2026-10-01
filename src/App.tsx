@@ -37,6 +37,9 @@ import ProductDetails from "./pages/product/ProductDetails";
 import Cart from "./pages/product/Cart";
 import Checkout from "./pages/product/Checkout";
 
+//legal pages
+import LegalPage from "./pages/legal/LegalPage";
+
 // ==============================
 // PUBLIC LAYOUT
 // ==============================
@@ -225,6 +228,29 @@ export default function App() {
           element={
             <PublicLayout>
               <About />
+            </PublicLayout>
+          }
+        />
+
+        {/* LEGAL PAGES */}
+        {/* ==============================
+            LEGAL PAGES
+        ============================== */}
+
+        <Route
+          path="/privacy-policy"
+          element={
+            <PublicLayout>
+              <LegalPage slug="privacy-policy" />
+            </PublicLayout>
+          }
+        />
+
+        <Route
+          path="/terms"
+          element={
+            <PublicLayout>
+              <LegalPage slug="terms" />
             </PublicLayout>
           }
         />
