@@ -5,7 +5,10 @@ type Product = {
   name: string;
   description: string;
   price: number;
-  category: string;
+  product_category_id: string;
+  // Filled in by the API; null when the
+  // category is missing.
+  productCategory?: { _id: string; name: string } | null;
   images: string[];
 };
 
@@ -27,7 +30,7 @@ export default function ProductCard({ product }: Props) {
 
       <div className="p-5">
         <p className="text-sm text-[#C77A95]">
-          {product.category}
+          {product.productCategory?.name}
         </p>
 
         <h2 className="mt-2 font-serif text-xl text-[#3A2A2F]">

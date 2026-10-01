@@ -13,7 +13,10 @@ type Product = {
   name: string;
   description: string;
   price: number;
-  category: string;
+  product_category_id: string;
+  // Filled in by the API; null when the
+  // category is missing.
+  productCategory?: { _id: string; name: string } | null;
   images: string[];
   stock: number;
 };
@@ -179,7 +182,7 @@ function ProductCard({
             text-[#E75480]
           "
         >
-          {product.category}
+          {product.productCategory?.name}
         </p>
 
         {/* PRODUCT NAME */}

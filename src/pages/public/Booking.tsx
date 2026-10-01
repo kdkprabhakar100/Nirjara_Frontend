@@ -4,6 +4,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { useSearchParams } from "react-router-dom";
 import SEO from "../../components/SEO";
 
 const BOOKING_SEO = {
@@ -19,16 +20,29 @@ type Service = {
   _id: string;
   title: string;
   duration?: number;
+  // False when switched off in the admin
+  // panel; listed but cannot be picked.
+  available?: boolean;
 };
 
 type Course = {
   _id: string;
   title: string;
+  // False when switched off in the admin
+  // panel; listed but cannot be picked.
+  available?: boolean;
 };
+
+const isBookable = (
+  item: Service | Course
+) => item.available !== false;
 
 type Slot = {
   time: string;
   available: boolean;
+  // Why an unavailable slot cannot be
+  // picked.
+  reason?: "booked" | "past";
 };
 
 type AvailabilityResponse = {
@@ -114,6 +128,26 @@ const formatDate = (date: string) => {
 ============================================================ */
 
 export default function Booking() {
+  /* ==========================================================
+     SERVICE / COURSE FROM THE URL
+
+     "Book Now" on a service card opens
+     /booking?service=<id>, and "Enroll Now"
+     on the Academy page opens
+     /booking?course=<id>, so that item
+     starts selected (and stays selected
+     after a refresh).
+  ========================================================== */
+
+  const [searchParams] = useSearchParams();
+
+  const serviceFromUrl =
+    searchParams.get("service") ?? "";
+
+  const courseFromUrl = serviceFromUrl
+    ? ""
+    : searchParams.get("course") ?? "";
+
   /* ==========================================================
      API DATA
   ========================================================== */
@@ -229,17 +263,56 @@ export default function Booking() {
         const coursesData =
           await coursesResponse.json();
 
-        setServices(
+        const serviceList: Service[] =
           Array.isArray(servicesData)
             ? servicesData
-            : []
-        );
+            : [];
 
-        setCourses(
+        const courseList: Course[] =
           Array.isArray(coursesData)
             ? coursesData
-            : []
-        );
+            : [];
+
+        setServices(serviceList);
+
+        setCourses(courseList);
+
+        // A stale or mistyped link, or an
+        // item switched off since: drop the id
+        // so the visitor picks another instead
+        // of submitting a hidden one.
+        const linkedId =
+          serviceFromUrl || courseFromUrl;
+
+        const linkedItem = serviceFromUrl
+          ? serviceList.find(
+              (service) =>
+                service._id === linkedId
+            )
+          : courseList.find(
+              (course) =>
+                course._id === linkedId
+            );
+
+        if (
+          linkedId &&
+          (!linkedItem ||
+            !isBookable(linkedItem))
+        ) {
+          setSelectedItem((current) =>
+            current === linkedId
+              ? ""
+              : current
+          );
+
+          if (linkedItem) {
+            setSubmitError(
+              serviceFromUrl
+                ? `"${linkedItem.title}" is currently not available for booking. Please choose another service.`
+                : `"${linkedItem.title}" is currently not available for enrollment. Please choose another course.`
+            );
+          }
+        }
       } catch (error) {
         console.error(
           "BOOKING DATA ERROR:",
@@ -251,28 +324,20 @@ export default function Booking() {
     loadData();
 
     /* ========================================================
-       RESTORE COURSE SELECTION
-       FROM YOUR EXISTING COURSE PAGE
+       PRESELECT FROM THE URL
     ======================================================== */
 
-    const savedType =
-      localStorage.getItem(
-        "bookingType"
-      );
-
-    const savedCourse =
-      localStorage.getItem(
-        "selectedCourse"
-      );
-
-    if (savedType === "course") {
+    if (serviceFromUrl) {
+      setType("service");
+      setSelectedItem(serviceFromUrl);
+    } else if (courseFromUrl) {
       setType("course");
+      setSelectedItem(courseFromUrl);
     }
 
-    if (savedCourse) {
-      setSelectedItem(savedCourse);
-    }
-
+    // The Academy page used to hand the
+    // course over through these keys; clear
+    // any left behind by an older visit.
     localStorage.removeItem(
       "bookingType"
     );
@@ -534,6 +599,12 @@ export default function Booking() {
               selectedItem
           );
 
+        if (!selectedCourse) {
+          throw new Error(
+            "Please select a course."
+          );
+        }
+
         payload = {
           name,
           phone,
@@ -541,9 +612,11 @@ export default function Booking() {
 
           type: "course",
 
-          course:
-            selectedCourse?.title ||
-            selectedItem,
+          // The id lets the server check the
+          // course is still open to enroll.
+          courseId: selectedCourse._id,
+
+          course: selectedCourse.title,
 
           branch,
           date,
@@ -736,6 +809,15 @@ export default function Booking() {
                   disabled={
                     !slot.available
                   }
+                  title={
+                    slot.reason ===
+                    "booked"
+                      ? "Already booked"
+                      : slot.reason ===
+                        "past"
+                      ? "This time has passed"
+                      : undefined
+                  }
                   onClick={() =>
                     setSelectedTime(
                       slot.time
@@ -785,6 +867,20 @@ export default function Booking() {
                 >
                   {formatTime(
                     slot.time
+                  )}
+
+                  {slot.reason ===
+                    "booked" && (
+                    <>
+                      <br />
+
+                      {/* inline-block, so the
+                          button's line-through
+                          does not cross it */}
+                      <span className="mt-0.5 inline-block text-[9px] font-semibold uppercase tracking-[1px]">
+                        Booked
+                      </span>
+                    </>
                   )}
                 </button>
               );
@@ -1100,26 +1196,42 @@ export default function Booking() {
                   ? services
                   : courses
                 ).map(
-                  (item) => (
-                    <option
-                      key={
-                        item._id
-                      }
-                      value={
-                        item._id
-                      }
-                    >
-                      {
-                        item.title
-                      }
+                  (item) => {
+                    // Services and courses
+                    // switched off in the admin
+                    // panel stay listed, but
+                    // greyed out.
+                    const unavailable =
+                      !isBookable(item);
 
-                      {"duration" in
-                        item &&
-                      item.duration
-                        ? ` — ${item.duration} min`
-                        : ""}
-                    </option>
-                  )
+                    return (
+                      <option
+                        key={
+                          item._id
+                        }
+                        value={
+                          item._id
+                        }
+                        disabled={
+                          unavailable
+                        }
+                      >
+                        {
+                          item.title
+                        }
+
+                        {"duration" in
+                          item &&
+                        item.duration
+                          ? ` — ${item.duration} min`
+                          : ""}
+
+                        {unavailable
+                          ? " — Currently not available"
+                          : ""}
+                      </option>
+                    );
+                  }
                 )}
               </select>
 

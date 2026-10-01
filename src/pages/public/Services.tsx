@@ -14,6 +14,8 @@ type Service = {
   description: string;
   price: string;
   image?: string;
+  // False when switched off in the admin panel.
+  available?: boolean;
 
   category:
     | {
@@ -306,6 +308,8 @@ export default function Services() {
             {filteredServices.map((service) => (
               <ServiceCard
                 key={service._id}
+                serviceId={service._id}
+                available={service.available !== false}
                 title={service.title}
                 description={service.description}
                 price={service.price}

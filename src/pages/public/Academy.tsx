@@ -19,6 +19,9 @@ type Course = {
   fee: string;
   certificate: string;
   image?: string;
+  // False when switched off in the admin
+  // panel: listed, but not open to enroll.
+  available?: boolean;
 };
 
 export default function Academy() {
@@ -71,11 +74,19 @@ export default function Academy() {
               className="rounded-3xl bg-white p-6 shadow-sm"
             >
               {course.image && (
-                <img
-                  src={course.image}
-                  alt={course.title}
-                  className="mb-5 h-44 w-full rounded-2xl object-cover"
-                />
+                <div className="relative mb-5">
+                  <img
+                    src={course.image}
+                    alt={course.title}
+                    className="h-44 w-full rounded-2xl object-cover"
+                  />
+
+                  {course.available === false && (
+                    <span className="absolute left-3 top-3 rounded-full bg-[#3A2A2F]/80 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[2px] text-white">
+                      Not available
+                    </span>
+                  )}
+                </div>
               )}
 
               <h2 className="font-serif text-2xl text-[#E75480]">
@@ -98,16 +109,29 @@ export default function Academy() {
                 </p>
               </div>
 
-              <button
-                onClick={() => {
-                  localStorage.setItem("bookingType", "course");
-                  localStorage.setItem("selectedCourse", course.title);
-                  navigate("/booking");
-                }}
-                className="mt-6 w-full rounded-full bg-[#E75480] px-6 py-3 text-xs uppercase tracking-[2px] text-white"
-              >
-                Enroll Now
-              </button>
+              {course.available === false ? (
+                <button
+                  type="button"
+                  disabled
+                  className="mt-6 w-full cursor-not-allowed rounded-full bg-[#F4F1F2] px-6 py-3 text-xs uppercase tracking-[2px] text-[#A98D96]"
+                >
+                  Currently Not Available
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() =>
+                    // The booking page opens with
+                    // this course selected.
+                    navigate(
+                      `/booking?course=${encodeURIComponent(course._id)}`
+                    )
+                  }
+                  className="mt-6 w-full rounded-full bg-[#E75480] px-6 py-3 text-xs uppercase tracking-[2px] text-white"
+                >
+                  Enroll Now
+                </button>
+              )}
             </div>
           ))}
 

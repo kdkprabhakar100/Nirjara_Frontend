@@ -16,6 +16,8 @@ type Service = {
   price: string;
   icon?: string;
   image?: string;
+  // False when switched off in the admin panel.
+  available?: boolean;
 };
 
 type Branch = {
@@ -628,6 +630,8 @@ export default function Home() {
           {services.map((service, index) => (
             <ServiceCard
               key={service._id || index}
+              serviceId={service._id}
+              available={service.available !== false}
               title={service.title}
               description={service.description}
               price={service.price}

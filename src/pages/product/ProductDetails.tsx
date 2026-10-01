@@ -8,7 +8,10 @@ type Product = {
   name: string;
   description: string;
   price: number;
-  category: string;
+  product_category_id: string;
+  // Filled in by the API; null when the
+  // category is missing.
+  productCategory?: { _id: string; name: string } | null;
   images: string[];
   stock: number;
   featured: boolean;
@@ -89,7 +92,7 @@ export default function ProductDetails() {
         <div className="flex flex-col justify-center">
 
           <p className="text-xs uppercase tracking-[5px] text-[#E75480]">
-            {product.category}
+            {product.productCategory?.name}
           </p>
 
           <h1 className="mt-5 font-serif text-5xl text-[#3A2A2F] sm:text-6xl">
