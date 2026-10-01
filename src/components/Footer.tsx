@@ -1,5 +1,13 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  Link,
+  useLocation,
+} from "react-router-dom";
+
 import {
   Phone,
   Mail,
@@ -77,14 +85,38 @@ const defaultSettings: SiteSettings = {
 ========================================================= */
 
 const pages = [
-  { label: "Home", path: "/" },
-  { label: "Services", path: "/services" },
-  { label: "Branches", path: "/branches" },
-  { label: "Academy", path: "/academy" },
-  { label: "Blog", path: "/blog" },
-  { label: "Products", path: "/products" },
-  { label: "Contact", path: "/contact" },
-  { label: "Careers", path: "/careers" },
+  {
+    label: "Home",
+    path: "/",
+  },
+  {
+    label: "Services",
+    path: "/services",
+  },
+  {
+    label: "Branches",
+    path: "/branches",
+  },
+  {
+    label: "Academy",
+    path: "/academy",
+  },
+  {
+    label: "Blog",
+    path: "/blog",
+  },
+  {
+    label: "Products",
+    path: "/products",
+  },
+  {
+    label: "Contact",
+    path: "/contact",
+  },
+  {
+    label: "Careers",
+    path: "/careers",
+  },
 ];
 
 /* =========================================================
@@ -92,55 +124,76 @@ const pages = [
 ========================================================= */
 
 export default function Footer() {
+  const location = useLocation();
+
   const [settings, setSettings] =
-    useState<SiteSettings>(defaultSettings);
+    useState<SiteSettings>(
+      defaultSettings
+    );
 
   const API_URL =
-    import.meta.env.VITE_API_URL;
+    import.meta.env.VITE_API_URL ||
+    "http://localhost:5000";
 
   /* =======================================================
      LOAD SETTINGS
   ======================================================= */
 
   useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const response = await fetch(
-          `${API_URL}/api/site-settings`
-        );
+    const loadSettings =
+      async () => {
+        try {
+          const response =
+            await fetch(
+              `${API_URL}/api/site-settings`
+            );
 
-        if (!response.ok) {
-          throw new Error(
-            "Could not load site settings."
+          if (!response.ok) {
+            throw new Error(
+              "Could not load site settings."
+            );
+          }
+
+          const data =
+            await response.json();
+
+          setSettings({
+            ...defaultSettings,
+            ...data,
+
+            socialLinks: {
+              ...defaultSettings.socialLinks,
+              ...(data.socialLinks ??
+                {}),
+            },
+
+            footer: {
+              ...defaultSettings.footer,
+              ...(data.footer ?? {}),
+            },
+          });
+        } catch (error) {
+          console.error(
+            "Footer settings error:",
+            error
           );
         }
-
-        const data = await response.json();
-
-        setSettings({
-          ...defaultSettings,
-          ...data,
-
-          socialLinks: {
-            ...defaultSettings.socialLinks,
-            ...(data.socialLinks ?? {}),
-          },
-
-          footer: {
-            ...defaultSettings.footer,
-            ...(data.footer ?? {}),
-          },
-        });
-      } catch (error) {
-        console.error(
-          "Footer settings error:",
-          error
-        );
-      }
-    };
+      };
 
     loadSettings();
   }, [API_URL]);
+
+  /* =======================================================
+     SCROLL TO TOP ON PAGE CHANGE
+  ======================================================= */
+
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "auto",
+    });
+  }, [location.pathname]);
 
   /* =======================================================
      VALUES
@@ -149,21 +202,26 @@ export default function Footer() {
   const footer = settings.footer;
 
   const whatsappNumber =
-    settings.whatsapp.replace(/\D/g, "");
+    settings.whatsapp.replace(
+      /\D/g,
+      ""
+    );
 
   const hasSocialLinks =
-    Object.values(settings.socialLinks).some(
-      Boolean
-    );
+    Object.values(
+      settings.socialLinks
+    ).some(Boolean);
 
   const currentYear =
     new Date().getFullYear();
 
   const copyrightText =
     footer.copyrightText ||
-    `© ${currentYear} ${
-      settings.salonName
-    }. All rights reserved.`;
+    `© ${currentYear} ${settings.salonName}. All rights reserved.`;
+
+  /* =======================================================
+     RENDER
+  ======================================================= */
 
   return (
     <footer
@@ -188,7 +246,6 @@ export default function Footer() {
           lg:py-10
         "
       >
-
         {/* =================================================
             BOOKING CTA
         ================================================= */}
@@ -255,7 +312,7 @@ export default function Footer() {
               </div>
 
               <Link
-                to="/contact"
+                to="/booking"
                 className="
                   inline-flex
                   w-fit
@@ -290,7 +347,9 @@ export default function Footer() {
               >
                 Book Appointment
 
-                <ArrowUpRight size={13} />
+                <ArrowUpRight
+                  size={13}
+                />
               </Link>
             </div>
           </div>
@@ -317,7 +376,6 @@ export default function Footer() {
             }
           `}
         >
-
           {/* =================================================
               BRAND
           ================================================= */}
@@ -378,12 +436,13 @@ export default function Footer() {
                   </p>
 
                   <div className="mt-3 flex gap-2.5">
-
-                    {settings.socialLinks
+                    {settings
+                      .socialLinks
                       .facebook && (
                       <SocialButton
                         href={
-                          settings.socialLinks
+                          settings
+                            .socialLinks
                             .facebook
                         }
                         label="Facebook"
@@ -394,11 +453,13 @@ export default function Footer() {
                       </SocialButton>
                     )}
 
-                    {settings.socialLinks
+                    {settings
+                      .socialLinks
                       .instagram && (
                       <SocialButton
                         href={
-                          settings.socialLinks
+                          settings
+                            .socialLinks
                             .instagram
                         }
                         label="Instagram"
@@ -409,11 +470,13 @@ export default function Footer() {
                       </SocialButton>
                     )}
 
-                    {settings.socialLinks
+                    {settings
+                      .socialLinks
                       .tiktok && (
                       <SocialButton
                         href={
-                          settings.socialLinks
+                          settings
+                            .socialLinks
                             .tiktok
                         }
                         label="TikTok"
@@ -424,11 +487,13 @@ export default function Footer() {
                       </SocialButton>
                     )}
 
-                    {settings.socialLinks
+                    {settings
+                      .socialLinks
                       .youtube && (
                       <SocialButton
                         href={
-                          settings.socialLinks
+                          settings
+                            .socialLinks
                             .youtube
                         }
                         label="YouTube"
@@ -438,7 +503,6 @@ export default function Footer() {
                         </span>
                       </SocialButton>
                     )}
-
                   </div>
                 </div>
               )}
@@ -462,40 +526,44 @@ export default function Footer() {
                 gap-y-3
               "
             >
-              {pages.map((page) => (
-                <Link
-                  key={page.path}
-                  to={page.path}
-                  className="
-                    group
-                    flex
-                    w-fit
-                    items-center
-                    gap-1
-
-                    text-sm
-                    text-[#8A6F78]
-
-                    transition-all
-                    duration-200
-
-                    hover:translate-x-1
-                    hover:text-[#E75480]
-                  "
-                >
-                  {page.label}
-
-                  <span
+              {pages.map(
+                (page) => (
+                  <Link
+                    key={
+                      page.path
+                    }
+                    to={page.path}
                     className="
-                      opacity-0
-                      transition-opacity
-                      group-hover:opacity-100
+                      group
+                      flex
+                      w-fit
+                      items-center
+                      gap-1
+
+                      text-sm
+                      text-[#8A6F78]
+
+                      transition-all
+                      duration-200
+
+                      hover:translate-x-1
+                      hover:text-[#E75480]
                     "
                   >
-                    →
-                  </span>
-                </Link>
-              ))}
+                    {page.label}
+
+                    <span
+                      className="
+                        opacity-0
+                        transition-opacity
+                        group-hover:opacity-100
+                      "
+                    >
+                      →
+                    </span>
+                  </Link>
+                )
+              )}
             </div>
           </div>
 
@@ -509,14 +577,19 @@ export default function Footer() {
             </FooterHeading>
 
             <div className="mt-5 space-y-2.5">
-
               {/* PHONE */}
 
               {settings.phone && (
                 <ContactCard
-                  icon={<Phone size={14} />}
+                  icon={
+                    <Phone
+                      size={14}
+                    />
+                  }
                   label="Call Us"
-                  value={settings.phone}
+                  value={
+                    settings.phone
+                  }
                   href={`tel:${settings.phone}`}
                 />
               )}
@@ -525,9 +598,15 @@ export default function Footer() {
 
               {settings.email && (
                 <ContactCard
-                  icon={<Mail size={14} />}
+                  icon={
+                    <Mail
+                      size={14}
+                    />
+                  }
                   label="Email"
-                  value={settings.email}
+                  value={
+                    settings.email
+                  }
                   href={`mailto:${settings.email}`}
                 />
               )}
@@ -596,7 +675,9 @@ export default function Footer() {
                     text-[#E75480]
                   "
                 >
-                  <MapPin size={14} />
+                  <MapPin
+                    size={14}
+                  />
                 </div>
 
                 <div className="min-w-0 flex-1">
@@ -619,7 +700,8 @@ export default function Footer() {
                       text-[#8A6F78]
                     "
                   >
-                    Find a Nirjara branch
+                    Find a Nirjara
+                    branch
                   </p>
                 </div>
 
@@ -633,7 +715,6 @@ export default function Footer() {
                   "
                 />
               </Link>
-
             </div>
           </div>
         </div>
@@ -667,7 +748,6 @@ export default function Footer() {
               lg:text-left
             "
           >
-
             {/* COPYRIGHT */}
 
             <p className="shrink-0">
@@ -678,7 +758,8 @@ export default function Footer() {
 
             {footer.developerName && (
               <p className="shrink-0">
-                Designed & Developed by{" "}
+                Designed & Developed
+                by{" "}
 
                 {footer.developerUrl ? (
                   <a
@@ -694,11 +775,15 @@ export default function Footer() {
                       hover:text-[#D94873]
                     "
                   >
-                    {footer.developerName}
+                    {
+                      footer.developerName
+                    }
                   </a>
                 ) : (
                   <span className="font-medium text-[#E75480]">
-                    {footer.developerName}
+                    {
+                      footer.developerName
+                    }
                   </span>
                 )}
               </p>
@@ -739,18 +824,19 @@ export default function Footer() {
               </Link>
 
               {footer.showAdminLogin && (
-                <Link
-                  to="/admin/login"
+                <a
+                  href="http://localhost:5174/login"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="
                     transition
                     hover:text-[#E75480]
                   "
                 >
                   Admin Login
-                </Link>
+                </a>
               )}
             </div>
-
           </div>
         </div>
       </div>
@@ -866,7 +952,9 @@ function ContactCard({
     <a
       href={href}
       target={
-        external ? "_blank" : undefined
+        external
+          ? "_blank"
+          : undefined
       }
       rel={
         external
