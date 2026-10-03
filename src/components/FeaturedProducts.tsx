@@ -1,13 +1,17 @@
 import {
   useCallback,
   useEffect,
-  useMemo,
+  useRef,
   useState,
-  type CSSProperties,
 } from "react";
+
+import {
+  ArrowLeft,
+  ArrowRight,
+  Heart,
+} from "lucide-react";
+
 import { Link } from "react-router-dom";
-import { useCart } from "../context/CartContext";
-import { toast } from "react-toastify";
 
 /* =========================================================
    TYPES
@@ -19,17 +23,19 @@ type Product = {
   description: string;
   price: number;
   product_category_id: string;
-  // Filled in by the API; null when the
-  // category is missing.
-  productCategory?: { _id: string; name: string } | null;
+
+  productCategory?: {
+    _id: string;
+    name: string;
+  } | null;
+
   images: string[];
-  stock: number;
+
   featured?: boolean;
-  brand?: string;
-  clicks?: number;
+  isFeatured?: boolean;
 };
 
-type FeaturedProductsProps = {
+type Props = {
   products: Product[];
 };
 
@@ -37,7 +43,29 @@ type FeaturedProductsProps = {
    SETTINGS
 ========================================================= */
 
-const AUTO_ROTATE_TIME = 4000;
+const GAP = 16;
+
+const AUTO_SLIDE_TIME = 2000;
+
+const SLIDE_ANIMATION_TIME = 550;
+
+/*
+ * Number of cards visible at each screen size.
+ *
+ * Desktop: 5
+ * Small desktop: 4
+ * Tablet: 3
+ * Small tablet: 2
+ * Mobile: 1
+ */
+const getCardsPerView = (width: number) => {
+  if (width >= 1280) return 5;
+  if (width >= 1024) return 4;
+  if (width >= 768) return 3;
+  if (width >= 640) return 2;
+
+  return 1;
+};
 
 /* =========================================================
    COMPONENT
@@ -45,1177 +73,1204 @@ const AUTO_ROTATE_TIME = 4000;
 
 export default function FeaturedProducts({
   products,
-}: FeaturedProductsProps) {
-  const { addToCart } = useCart();
+}: Props) {
+  const viewportRef =
+    useRef<HTMLDivElement>(null);
 
-  const [activeIndex, setActiveIndex] = useState(0);
+  const touchStartX = useRef(0);
 
-  const [isPaused, setIsPaused] = useState(false);
+  const [index, setIndex] = useState(0);
 
-  /* =========================================================
-     CREATE FEATURED PRODUCTS
+  const [cardsPerView, setCardsPerView] =
+    useState(5);
 
-     RULE:
+  const [cardWidth, setCardWidth] =
+    useState(180);
 
-     1. If products have clicks:
-        highest clicked products appear first.
+  const [activeCard, setActiveCard] =
+    useState<string | null>(null);
 
-     2. Remaining spaces are filled with normal products.
+  const [isAnimating, setIsAnimating] =
+    useState(false);
 
-     3. If there are no clicks:
-        first 6 products are used.
-  ========================================================= */
+  const [isHovered, setIsHovered] =
+    useState(false);
 
-  const featuredProducts = useMemo(() => {
-    if (!products?.length) {
-      return [];
+  /* =======================================================
+     FEATURED PRODUCTS
+  ======================================================= */
+
+  const markedFeatured = products.filter(
+    (product) =>
+      product.featured === true ||
+      product.isFeatured === true
+  );
+
+  /*
+   * If products are explicitly marked featured,
+   * use them.
+   *
+   * Otherwise show the first products so the
+   * section never becomes empty.
+   */
+  const featuredProducts =
+    markedFeatured.length > 0
+      ? markedFeatured
+      : products.slice(0, 10);
+
+  /* =======================================================
+     RESPONSIVE LAYOUT
+  ======================================================= */
+
+  const calculateLayout = useCallback(() => {
+    if (!viewportRef.current) {
+      return;
     }
 
-    const clickedProducts = [...products]
-      .filter((product) => (product.clicks ?? 0) > 0)
-      .sort(
-        (a, b) =>
-          (b.clicks ?? 0) - (a.clicks ?? 0)
+    const viewportWidth =
+      viewportRef.current.clientWidth;
+
+    const screenWidth =
+      window.innerWidth;
+
+    const perView =
+      getCardsPerView(screenWidth);
+
+    setCardsPerView(perView);
+
+    /*
+     * Desired card sizes.
+     *
+     * We intentionally keep the featured
+     * cards smaller than normal product cards.
+     */
+    let desiredWidth = 180;
+
+    if (screenWidth < 640) {
+      desiredWidth = Math.min(
+        220,
+        viewportWidth * 0.76
+      );
+    } else if (screenWidth < 768) {
+      desiredWidth = 180;
+    } else if (screenWidth < 1024) {
+      desiredWidth = 175;
+    } else if (screenWidth < 1280) {
+      desiredWidth = 180;
+    } else {
+      desiredWidth = 185;
+    }
+
+    /*
+     * Calculate the largest possible card
+     * width without overlap.
+     */
+    const totalGap =
+      GAP * (perView - 1);
+
+    const availableWidth =
+      viewportWidth - totalGap;
+
+    const maximumCardWidth =
+      availableWidth / perView;
+
+    /*
+     * On mobile we intentionally allow the
+     * card to be narrower than the viewport.
+     */
+    const finalWidth =
+      perView === 1
+        ? Math.min(
+            desiredWidth,
+            viewportWidth
+          )
+        : Math.min(
+            desiredWidth,
+            maximumCardWidth
+          );
+
+    setCardWidth(finalWidth);
+  }, []);
+
+  useEffect(() => {
+    calculateLayout();
+
+    window.addEventListener(
+      "resize",
+      calculateLayout
+    );
+
+    return () => {
+      window.removeEventListener(
+        "resize",
+        calculateLayout
+      );
+    };
+  }, [calculateLayout]);
+
+  /* =======================================================
+     CAROUSEL LIMIT
+  ======================================================= */
+
+  const maxIndex = Math.max(
+    0,
+    featuredProducts.length -
+      cardsPerView
+  );
+
+  /*
+   * Prevent an old index from becoming
+   * invalid after resizing.
+   */
+  useEffect(() => {
+    setIndex((current) =>
+      Math.min(current, maxIndex)
+    );
+  }, [maxIndex]);
+
+  /* =======================================================
+     MOVE TO SLIDE
+  ======================================================= */
+
+  const moveTo = useCallback(
+    (newIndex: number) => {
+      if (isAnimating) {
+        return;
+      }
+
+      const safeIndex = Math.max(
+        0,
+        Math.min(newIndex, maxIndex)
       );
 
-    /* No clicks yet */
-
-    if (clickedProducts.length === 0) {
-      return products.slice(0, 6);
-    }
-
-    const result: Product[] = [];
-
-    /* Add clicked products */
-
-    clickedProducts.forEach((product) => {
-      if (result.length >= 6) return;
-
-      if (
-        !result.some(
-          (item) => item._id === product._id
-        )
-      ) {
-        result.push(product);
+      if (safeIndex === index) {
+        return;
       }
-    });
 
-    /* Fill empty positions */
+      setIsAnimating(true);
 
-    products.forEach((product) => {
-      if (result.length >= 6) return;
+      setIndex(safeIndex);
 
-      if (
-        !result.some(
-          (item) => item._id === product._id
-        )
-      ) {
-        result.push(product);
-      }
-    });
+      window.setTimeout(() => {
+        setIsAnimating(false);
+      }, SLIDE_ANIMATION_TIME);
+    },
+    [
+      index,
+      maxIndex,
+      isAnimating,
+    ]
+  );
 
-    return result.slice(0, 6);
-  }, [products]);
-
-  /* =========================================================
-     KEEP ACTIVE INDEX VALID
-  ========================================================= */
-
-  useEffect(() => {
-    if (!featuredProducts.length) {
-      setActiveIndex(0);
-      return;
-    }
-
-    if (activeIndex >= featuredProducts.length) {
-      setActiveIndex(0);
-    }
-  }, [featuredProducts.length, activeIndex]);
-
-  /* =========================================================
+  /* =======================================================
      NEXT
-  ========================================================= */
+  ======================================================= */
 
-  const nextProduct = useCallback(() => {
-    if (featuredProducts.length <= 1) {
+  const next = useCallback(() => {
+    if (isAnimating) {
       return;
     }
 
-    setActiveIndex(
-      (current) =>
-        (current + 1) % featuredProducts.length
-    );
-  }, [featuredProducts.length]);
+    setIsAnimating(true);
 
-  /* =========================================================
+    setIndex((current) => {
+      if (current >= maxIndex) {
+        return 0;
+      }
+
+      return current + 1;
+    });
+
+    window.setTimeout(() => {
+      setIsAnimating(false);
+    }, SLIDE_ANIMATION_TIME);
+  }, [
+    maxIndex,
+    isAnimating,
+  ]);
+
+  /* =======================================================
      PREVIOUS
-  ========================================================= */
+  ======================================================= */
 
-  const previousProduct = useCallback(() => {
-    if (featuredProducts.length <= 1) {
+  const previous = useCallback(() => {
+    if (isAnimating) {
       return;
     }
 
-    setActiveIndex(
-      (current) =>
-        (current -
-          1 +
-          featuredProducts.length) %
-        featuredProducts.length
-    );
-  }, [featuredProducts.length]);
+    setIsAnimating(true);
 
-  /* =========================================================
-     AUTO ROTATE
+    setIndex((current) => {
+      if (current <= 0) {
+        return maxIndex;
+      }
 
-     Automatically changes center product every 4 seconds.
+      return current - 1;
+    });
 
-     Stops while mouse is over carousel.
-  ========================================================= */
+    window.setTimeout(() => {
+      setIsAnimating(false);
+    }, SLIDE_ANIMATION_TIME);
+  }, [
+    maxIndex,
+    isAnimating,
+  ]);
+
+  /* =======================================================
+     AUTO SLIDE
+  ======================================================= */
 
   useEffect(() => {
+    /*
+     * No reason to auto-slide when every
+     * product already fits.
+     */
     if (
-      featuredProducts.length <= 1 ||
-      isPaused
+      featuredProducts.length <=
+      cardsPerView
     ) {
       return;
     }
 
-    const interval = window.setInterval(() => {
-      setActiveIndex(
-        (current) =>
-          (current + 1) %
-          featuredProducts.length
-      );
-    }, AUTO_ROTATE_TIME);
-
-    return () => {
-      window.clearInterval(interval);
-    };
-  }, [featuredProducts.length, isPaused]);
-
-  /* =========================================================
-     RELATIVE POSITION
-
-     Example:
-
-     active = product 3
-
-     product 1 = -2
-     product 2 = -1
-     product 3 =  0
-     product 4 =  1
-     product 5 =  2
-  ========================================================= */
-
-  const getRelativePosition = (
-    index: number
-  ) => {
-    const total = featuredProducts.length;
-
-    if (!total) {
-      return 0;
-    }
-
-    let difference = index - activeIndex;
-
-    if (difference > total / 2) {
-      difference -= total;
-    }
-
-    if (difference < -total / 2) {
-      difference += total;
-    }
-
-    return difference;
-  };
-
-  /* =========================================================
-     CARD POSITION / ANIMATION
-
-     Center:
-        biggest
-
-     Near cards:
-        slightly smaller
-
-     Outer cards:
-        smaller
-
-     IMPORTANT:
-     Spacing prevents overlapping.
-  ========================================================= */
-
-  const getCardStyle = (
-    relativePosition: number
-  ): CSSProperties => {
-    const absolutePosition = Math.abs(
-      relativePosition
-    );
-
-    /* HIDDEN */
-
-    if (absolutePosition > 2) {
-      return {
-        opacity: 0,
-
-        pointerEvents: "none",
-
-        transform: `translateX(${
-          relativePosition > 0 ? 760 : -760
-        }px) translateY(35px) scale(0.72)`,
-
-        zIndex: 0,
-      };
-    }
-
-    /* CENTER */
-
-    if (relativePosition === 0) {
-      return {
-        transform:
-          "translateX(0px) translateY(-24px) scale(1.08)",
-
-        opacity: 1,
-
-        zIndex: 30,
-      };
-    }
-
-    /* LEFT */
-
-    if (relativePosition === -1) {
-      return {
-        transform:
-          "translateX(-292px) translateY(8px) scale(0.92)",
-
-        opacity: 1,
-
-        zIndex: 20,
-      };
-    }
-
-    /* RIGHT */
-
-    if (relativePosition === 1) {
-      return {
-        transform:
-          "translateX(292px) translateY(8px) scale(0.92)",
-
-        opacity: 1,
-
-        zIndex: 20,
-      };
-    }
-
-    /* FAR LEFT */
-
-    if (relativePosition === -2) {
-      return {
-        transform:
-          "translateX(-535px) translateY(27px) scale(0.82)",
-
-        opacity: 0.88,
-
-        zIndex: 10,
-      };
-    }
-
-    /* FAR RIGHT */
-
-    return {
-      transform:
-        "translateX(535px) translateY(27px) scale(0.82)",
-
-      opacity: 0.88,
-
-      zIndex: 10,
-    };
-  };
-
-  /* =========================================================
-     ADD TO CART
-  ========================================================= */
-
-  const handleAddToCart = (
-    product: Product
-  ) => {
-    if (product.stock <= 0) {
-      toast.error(
-        `${product.name} is currently out of stock.`
-      );
-
+    /*
+     * Pause auto slide while the user is
+     * interacting with the carousel.
+     */
+    if (isHovered) {
       return;
     }
 
-    addToCart({
-      _id: product._id,
+    const timer =
+      window.setInterval(() => {
+        setIndex((current) => {
+          if (current >= maxIndex) {
+            return 0;
+          }
 
-      name: product.name,
+          return current + 1;
+        });
+      }, AUTO_SLIDE_TIME);
 
-      price: product.price,
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [
+    featuredProducts.length,
+    cardsPerView,
+    maxIndex,
+    isHovered,
+  ]);
 
-      image: product.images?.[0],
+  /* =======================================================
+     TOUCH / SWIPE
+  ======================================================= */
 
-      quantity: 1,
-    });
-
-    toast.success(
-      `${product.name} added to cart 💖`
-    );
+  const handleTouchStart = (
+    event: React.TouchEvent
+  ) => {
+    touchStartX.current =
+      event.touches[0].clientX;
   };
 
-  /* =========================================================
-     NOTHING TO SHOW
-  ========================================================= */
+  const handleTouchEnd = (
+    event: React.TouchEvent
+  ) => {
+    const touchEndX =
+      event.changedTouches[0].clientX;
+
+    const difference =
+      touchStartX.current -
+      touchEndX;
+
+    /*
+     * Ignore tiny finger movements.
+     */
+    if (Math.abs(difference) < 45) {
+      return;
+    }
+
+    if (difference > 0) {
+      next();
+    } else {
+      previous();
+    }
+  };
+
+  /* =======================================================
+     EMPTY STATE
+  ======================================================= */
 
   if (!featuredProducts.length) {
     return null;
   }
 
+  const step =
+    cardWidth + GAP;
+
+  const showControls =
+    featuredProducts.length >
+    cardsPerView;
+
+  /* =======================================================
+     RENDER
+  ======================================================= */
+
   return (
     <section
       className="
+        relative
         overflow-hidden
-        bg-[#FBF5EC]
+
+        bg-[#FFF9FB]
+
         px-4
-        pb-16
-        pt-24
+        pt-7
+        pb-7
 
         sm:px-6
-        sm:pb-20
-        sm:pt-28
+        sm:pt-8
+        sm:pb-8
 
         lg:px-10
-        lg:pb-24
-        lg:pt-28
+        lg:pt-8
+        lg:pb-9
       "
     >
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
-
       <div
         className="
           mx-auto
-          max-w-7xl
-          text-center
+          max-w-6xl 
+          pt-16
         "
       >
-        <p
-          className="
-            text-[10px]
-            uppercase
-            tracking-[5px]
-            text-[#9B7A55]
-          "
-        >
-          Our Collection
-        </p>
+        {/* =================================================
+            HEADER
+        ================================================= */}
 
-        <h2
-          className="
-            mt-3
-            font-serif
-            text-4xl
-            text-[#302520]
+<div
+  className="
+    grid
+    grid-cols-1
+    gap-2
 
-            sm:text-5xl
+    md:grid-cols-[1fr_auto_1fr]
+    md:items-center
+    md:gap-8
+  "
+>
+  {/* LEFT */}
+  <div className="md:justify-self-start">
+    <p
+      className="
+        text-[8px]
+        font-bold
+        uppercase
+        tracking-[0.34em]
+        text-[#E75480]
 
-            lg:text-[54px]
-          "
-        >
-          Featured Products
-        </h2>
+        sm:text-[9px]
+      "
+    >
+      Our Collection
+    </p>
+  </div>
 
-        <p
-          className="
-            mx-auto
-            mt-3
-            max-w-xl
-            text-sm
-            leading-7
-            text-[#8C7569]
+  {/* CENTER */}
+  <div className="min-w-0 md:justify-self-center">
+    <h2
+      className="
+        whitespace-nowrap
+        font-serif
+        text-[20px]
+        leading-none
+        text-[#3A2A2F]
 
-            sm:text-base
-          "
-        >
-          Explore our most popular beauty
-          products loved by customers.
-        </p>
-      </div>
+        sm:text-[22px]
+        md:text-[24px]
+        lg:text-[28px]
+      "
+    >
+      Featured Products
+    </h2>
+  </div>
 
-      {/* =====================================================
-          DESKTOP / TABLET CAROUSEL
-      ===================================================== */}
+  {/* RIGHT */}
+  <div className="md:justify-self-end">
+    <p
+      className="
+        max-w-[280px]
+        text-[10px]
+        leading-[1.5]
+        text-[#8A6F78]
 
-      <div
-        onMouseEnter={() =>
-          setIsPaused(true)
-        }
-        onMouseLeave={() =>
-          setIsPaused(false)
-        }
-        className="
-          relative
-          mx-auto
-          mt-16
-          hidden
-          h-[510px]
-          max-w-[1280px]
-          md:block
-        "
-      >
-        {/* ===================================================
-            PRODUCTS
-        =================================================== */}
+        sm:text-[11px]
+
+        md:text-right
+      "
+    >
+      Discover our most-loved beauty essentials, selected
+      from our collection.
+    </p>
+  </div>
+</div>
+
+        {/* =================================================
+            CAROUSEL
+        ================================================= */}
 
         <div
           className="
-            absolute
-            inset-0
-            flex
-            items-center
-            justify-center
+            relative
+
+            mx-auto
+
+            mt-9
+
+            sm:mt-10
           "
+          onMouseEnter={() =>
+            setIsHovered(true)
+          }
+          onMouseLeave={() =>
+            setIsHovered(false)
+          }
         >
-          {featuredProducts.map(
-            (product, index) => {
-              const relativePosition =
-                getRelativePosition(index);
-
-              const isActive =
-                relativePosition === 0;
-
-              return (
-                <article
-                  key={product._id}
-                  onClick={() =>
-                    setActiveIndex(index)
-                  }
-                  style={getCardStyle(
-                    relativePosition
-                  )}
-                  className="
-                    absolute
-                    w-[250px]
-                    cursor-pointer
-                    overflow-hidden
-                    rounded-[22px]
-                    border
-                    border-[#E9DFD1]
-                    bg-[#FFFCF7]
-
-                    shadow-[0_15px_40px_rgba(92,67,46,0.08)]
-
-                    will-change-transform
-
-                    transition-[transform,opacity]
-                    duration-200
-                    ease-in-out
-                  "
-                >
-                  {/* =========================================
-                      IMAGE
-                  ========================================= */}
-
-                  <Link
-                    to={`/products/${product._id}`}
-                    onClick={(event) =>
-                      event.stopPropagation()
-                    }
-                    className="block"
-                  >
-                    <div
-                      className="
-                        relative
-                        h-[235px]
-                        overflow-hidden
-                        bg-[#F4ECE1]
-                      "
-                    >
-                      {product.images?.[0] ? (
-                        <img
-                          src={
-                            product.images[0]
-                          }
-                          alt={product.name}
-                          loading="lazy"
-                          className="
-                            h-full
-                            w-full
-                            object-cover
-
-                            transition-transform
-                            duration-200
-
-                            hover:scale-105
-                          "
-                        />
-                      ) : (
-                        <div
-                          className="
-                            flex
-                            h-full
-                            items-center
-                            justify-center
-                            px-5
-                            text-center
-                            text-xs
-                            uppercase
-                            tracking-[2px]
-                            text-[#A58E7C]
-                          "
-                        >
-                          No Image
-                        </div>
-                      )}
-
-                      {/* BADGE */}
-
-                      <span
-                        className="
-                          absolute
-                          left-4
-                          top-4
-
-                          rounded-md
-
-                          bg-[#F3E5CA]
-
-                          px-3
-                          py-1.5
-
-                          text-[8px]
-                          uppercase
-                          tracking-[1px]
-                          text-[#8B6B42]
-                        "
-                      >
-                        {isActive
-                          ? "Best Seller"
-                          : index % 2 === 0
-                            ? "Popular"
-                            : "Trending"}
-                      </span>
-
-                      {/* HEART */}
-
-                      <button
-                        type="button"
-                        aria-label={`Save ${product.name}`}
-                        onClick={(event) => {
-                          event.preventDefault();
-
-                          event.stopPropagation();
-                        }}
-                        className="
-                          absolute
-                          right-4
-                          top-4
-
-                          flex
-                          h-9
-                          w-9
-                          items-center
-                          justify-center
-
-                          rounded-full
-
-                          bg-white/90
-
-                          text-lg
-                          text-[#806E61]
-
-                          shadow-sm
-                        "
-                      >
-                        ♡
-                      </button>
-                    </div>
-                  </Link>
-
-                  {/* =========================================
-                      CONTENT
-                  ========================================= */}
-
-                  <div className="p-5">
-                    <p
-                      className="
-                        truncate
-                        text-[8px]
-                        uppercase
-                        tracking-[2px]
-                        text-[#B28A62]
-                      "
-                    >
-                      {product.productCategory?.name}
-                    </p>
-
-                    <Link
-                      to={`/products/${product._id}`}
-                      onClick={(event) =>
-                        event.stopPropagation()
-                      }
-                    >
-                      <h3
-                        className="
-                          mt-2
-                          truncate
-                          font-serif
-                          text-[21px]
-                          text-[#302520]
-                        "
-                      >
-                        {product.name}
-                      </h3>
-                    </Link>
-
-                    {/* DESCRIPTION */}
-
-                    <p
-                      className="
-                        mt-2
-                        line-clamp-2
-                        min-h-[40px]
-
-                        text-[11px]
-                        leading-5
-                        text-[#927D71]
-                      "
-                    >
-                      {product.description}
-                    </p>
-
-                    {/* STOCK */}
-
-                    <p
-                      className="
-                        mt-3
-                        text-[9px]
-                        text-[#A58E7C]
-                      "
-                    >
-                      {product.stock > 0
-                        ? `${product.stock} in stock`
-                        : "Out of stock"}
-                    </p>
-
-                    {/* =======================================
-                        PRICE / BUTTON
-                    ======================================= */}
-
-                    <div
-                      className="
-                        mt-2
-                        flex
-                        items-end
-                        justify-between
-                        gap-3
-                      "
-                    >
-                      <p
-                        className="
-                          font-serif
-                          text-2xl
-                          font-semibold
-                          text-[#302520]
-                        "
-                      >
-                        ${product.price}
-                      </p>
-
-                      {isActive ? (
-                        <button
-                          type="button"
-                          disabled={
-                            product.stock <= 0
-                          }
-                          onClick={(event) => {
-                            event.stopPropagation();
-
-                            handleAddToCart(
-                              product
-                            );
-                          }}
-                          className="
-                            rounded-xl
-
-                            bg-[#BE9663]
-
-                            px-5
-                            py-3
-
-                            text-[9px]
-                            font-semibold
-                            uppercase
-                            tracking-[1.5px]
-                            text-white
-
-                            transition
-
-                            hover:bg-[#A77D4E]
-
-                            disabled:cursor-not-allowed
-                            disabled:opacity-50
-                          "
-                        >
-                          {product.stock > 0
-                            ? "Add to Cart"
-                            : "Sold Out"}
-                        </button>
-                      ) : (
-                        <Link
-                          to={`/products/${product._id}`}
-                          onClick={(event) =>
-                            event.stopPropagation()
-                          }
-                          className="
-                            rounded-xl
-
-                            bg-[#F4EBDD]
-
-                            px-4
-                            py-3
-
-                            text-[9px]
-                            uppercase
-                            tracking-[1.5px]
-                            text-[#9A7954]
-
-                            transition
-
-                            hover:bg-[#EADCC8]
-                          "
-                        >
-                          View
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              );
-            }
-          )}
-        </div>
-
-        {/* ===================================================
-            PREVIOUS BUTTON
-        =================================================== */}
-
-        <button
-          type="button"
-          onClick={previousProduct}
-          aria-label="Previous featured product"
-          className="
-            absolute
-            left-0
-            top-1/2
-            z-50
-
-            flex
-            h-11
-            w-11
-            -translate-y-1/2
-            items-center
-            justify-center
-
-            rounded-full
-
-            bg-white
-
-            text-xl
-            text-[#705D51]
-
-            shadow-[0_8px_25px_rgba(73,54,39,0.12)]
-
-            transition
-
-            hover:scale-110
-          "
-        >
-          ‹
-        </button>
-
-        {/* ===================================================
-            NEXT BUTTON
-        =================================================== */}
-
-        <button
-          type="button"
-          onClick={nextProduct}
-          aria-label="Next featured product"
-          className="
-            absolute
-            right-0
-            top-1/2
-            z-50
-
-            flex
-            h-11
-            w-11
-            -translate-y-1/2
-            items-center
-            justify-center
-
-            rounded-full
-
-            bg-white
-
-            text-xl
-            text-[#705D51]
-
-            shadow-[0_8px_25px_rgba(73,54,39,0.12)]
-
-            transition
-
-            hover:scale-110
-          "
-        >
-          ›
-        </button>
-      </div>
-
-      {/* =====================================================
-          DESKTOP DOTS
-      ===================================================== */}
-
-      <div
-        className="
-          mt-2
-          hidden
-          items-center
-          justify-center
-          gap-2
-          md:flex
-        "
-      >
-        {featuredProducts.map(
-          (product, index) => (
+          {/* =================================================
+              LEFT ARROW
+          ================================================= */}
+
+          {showControls && (
             <button
-              key={product._id}
               type="button"
-              onClick={() =>
-                setActiveIndex(index)
-              }
-              aria-label={`Show featured product ${
-                index + 1
-              }`}
-              className={`
-                h-2
+              onClick={previous}
+              disabled={isAnimating}
+              aria-label="Previous products"
+              className="
+                absolute
+
+                left-0
+                top-1/2
+
+                z-30
+
+                flex
+                h-9
+                w-9
+
+                -translate-y-1/2
+
+                items-center
+                justify-center
+
                 rounded-full
 
+                border
+                border-[#E75480]/15
+
+                bg-white
+
+                text-[#E75480]
+
+                shadow-[0_6px_20px_rgba(58,42,47,0.10)]
+
                 transition-all
-                duration-500
+                duration-300
 
-                ${
-                  activeIndex === index
-                    ? "w-7 bg-[#BE9663]"
-                    : "w-2 bg-[#D9CFC2]"
-                }
-              `}
-            />
-          )
-        )}
-      </div>
+                hover:scale-110
+                hover:border-[#E75480]
+                hover:bg-[#E75480]
+                hover:text-white
 
-      {/* =====================================================
-          MOBILE
+                active:scale-95
 
-          Manual swipe instead of automatic rotation.
-          This is better UX for touch screens.
-      ===================================================== */}
+                disabled:pointer-events-none
 
-      <div className="mt-10 md:hidden">
-        <div
-          className="
-            -mx-4
-            flex
-            snap-x
-            snap-mandatory
-            gap-4
-            overflow-x-auto
+                lg:h-10
+                lg:w-10
+              "
+            >
+              <ArrowLeft size={16} />
+            </button>
+          )}
 
-            px-4
-            pb-5
+          {/* =================================================
+              CAROUSEL SAFE AREA
 
-            [scrollbar-width:none]
+              This padding reserves space for
+              the arrows so cards cannot run
+              underneath them.
+          ================================================= */}
 
-            [&::-webkit-scrollbar]:hidden
-          "
-        >
-          {featuredProducts.map(
-            (product, index) => (
-              <article
-                key={product._id}
+          <div
+            className="
+              px-11
+
+              sm:px-12
+
+              lg:px-14
+            "
+          >
+            {/* ===============================================
+                VIEWPORT
+            ================================================ */}
+
+            <div
+              ref={viewportRef}
+              onTouchStart={
+                handleTouchStart
+              }
+              onTouchEnd={
+                handleTouchEnd
+              }
+              className="
+                overflow-hidden
+
+                py-3
+
+                touch-pan-y
+              "
+            >
+              {/* =============================================
+                  ANIMATED TRACK
+
+                  KEEP:
+                  transition-transform
+                  duration-[550ms]
+                  translate3d
+              ============================================== */}
+
+              <div
                 className="
-                  w-[82vw]
-                  max-w-[330px]
-                  flex-none
-                  snap-center
+                  flex
+                  items-center
 
-                  overflow-hidden
+                  will-change-transform
 
-                  rounded-[24px]
+                  transition-transform
+                  duration-[550ms]
 
-                  border
-                  border-[#E9DFD1]
-
-                  bg-[#FFFCF7]
-
-                  shadow-[0_12px_30px_rgba(92,67,46,0.08)]
+                  ease-[cubic-bezier(0.22,1,0.36,1)]
                 "
+                style={{
+                  gap: `${GAP}px`,
+
+                  transform: `translate3d(-${
+                    index * step
+                  }px, 0, 0)`,
+                }}
               >
                 {/* ===========================================
-                    MOBILE IMAGE
-                =========================================== */}
+                    PRODUCT CARDS
+                ============================================ */}
 
-                <Link
-                  to={`/products/${product._id}`}
-                  className="block"
-                >
-                  <div
-                    className="
-                      relative
-                      h-[290px]
-                      overflow-hidden
-                      bg-[#F4ECE1]
-                    "
-                  >
-                    {product.images?.[0] ? (
-                      <img
-                        src={
-                          product.images[0]
+                {featuredProducts.map(
+                  (product) => {
+                    const image =
+                      product.images?.[0];
+
+                    const isActive =
+                      activeCard ===
+                      product._id;
+
+                    return (
+                      <article
+                        key={
+                          product._id
                         }
-                        alt={product.name}
-                        loading="lazy"
+                        style={{
+                          width: `${cardWidth}px`,
+                          minWidth: `${cardWidth}px`,
+                        }}
+                        onClick={() => {
+                          setActiveCard(
+                            isActive
+                              ? null
+                              : product._id
+                          );
+                        }}
                         className="
-                          h-full
-                          w-full
-                          object-cover
-                        "
-                      />
-                    ) : (
-                      <div
-                        className="
-                          flex
-                          h-full
-                          items-center
-                          justify-center
+                          group
 
-                          text-sm
-                          text-[#9C8678]
-                        "
-                      >
-                        No image
-                      </div>
-                    )}
+                          relative
 
-                    {/* BADGE */}
+                          aspect-square
 
-                    <span
-                      className="
-                        absolute
-                        left-4
-                        top-4
+                          flex-none
 
-                        rounded-md
+                          cursor-pointer
 
-                        bg-[#F3E5CA]
+                          overflow-hidden
 
-                        px-3
-                        py-1.5
+                          rounded-[18px]
 
-                        text-[8px]
-                        uppercase
-                        tracking-[1px]
-                        text-[#8B6B42]
-                      "
-                    >
-                      {index === 0
-                        ? "Best Seller"
-                        : index % 2 === 0
-                          ? "Popular"
-                          : "Trending"}
-                    </span>
+                          border
+                          border-[#E75480]/10
 
-                    {/* HEART */}
+                          bg-[#FCE7EE]
 
-                    <button
-                      type="button"
-                      aria-label={`Save ${product.name}`}
-                      onClick={(event) => {
-                        event.preventDefault();
+                          shadow-[0_8px_24px_rgba(96,52,67,0.07)]
 
-                        event.stopPropagation();
-                      }}
-                      className="
-                        absolute
-                        right-4
-                        top-4
+                          transition-all
+                          duration-500
 
-                        flex
-                        h-10
-                        w-10
-                        items-center
-                        justify-center
+                          ease-[cubic-bezier(0.22,1,0.36,1)]
 
-                        rounded-full
+                          md:hover:-translate-y-1.5
 
-                        bg-white/90
-
-                        text-xl
-                        text-[#806E61]
-
-                        shadow-sm
-                      "
-                    >
-                      ♡
-                    </button>
-                  </div>
-                </Link>
-
-                {/* ===========================================
-                    MOBILE CONTENT
-                =========================================== */}
-
-                <div className="p-5">
-                  <p
-                    className="
-                      truncate
-
-                      text-[9px]
-                      uppercase
-                      tracking-[2px]
-                      text-[#B28A62]
-                    "
-                  >
-                    {product.productCategory?.name}
-                  </p>
-
-                  <Link
-                    to={`/products/${product._id}`}
-                  >
-                    <h3
-                      className="
-                        mt-2
-                        truncate
-
-                        font-serif
-                        text-2xl
-                        text-[#302520]
-                      "
-                    >
-                      {product.name}
-                    </h3>
-                  </Link>
-
-                  <p
-                    className="
-                      mt-2
-                      line-clamp-2
-                      min-h-[40px]
-
-                      text-xs
-                      leading-5
-                      text-[#927D71]
-                    "
-                  >
-                    {product.description}
-                  </p>
-
-                  {/* PRICE + STOCK */}
-
-                  <div
-                    className="
-                      mt-5
-                      flex
-                      items-center
-                      justify-between
-                      gap-4
-                    "
-                  >
-                    <div>
-                      <p
-                        className="
-                          font-serif
-                          text-2xl
-                          font-semibold
-                          text-[#302520]
+                          md:hover:shadow-[0_16px_36px_rgba(96,52,67,0.15)]
                         "
                       >
-                        ${product.price}
-                      </p>
+                        {/* ===================================
+                            IMAGE
+                        ==================================== */}
 
-                      <p
-                        className="
-                          mt-1
-                          text-[9px]
-                          text-[#A58E7C]
-                        "
-                      >
-                        {product.stock > 0
-                          ? `${product.stock} in stock`
-                          : "Out of stock"}
-                      </p>
-                    </div>
+                        {image ? (
+                          <img
+                            src={image}
+                            alt={
+                              product.name
+                            }
+                            draggable={
+                              false
+                            }
+                            className="
+                              absolute
+                              inset-0
 
-                    <button
-                      type="button"
-                      disabled={
-                        product.stock <= 0
-                      }
-                      onClick={() =>
-                        handleAddToCart(product)
-                      }
-                      className="
-                        rounded-xl
+                              h-full
+                              w-full
 
-                        bg-[#BE9663]
+                              object-cover
 
-                        px-5
-                        py-3
+                              transition-transform
+                              duration-700
 
-                        text-[9px]
-                        font-semibold
-                        uppercase
-                        tracking-[1.5px]
-                        text-white
+                              ease-[cubic-bezier(0.22,1,0.36,1)]
 
-                        transition
+                              md:group-hover:scale-[1.07]
+                            "
+                          />
+                        ) : (
+                          <div
+                            className="
+                              absolute
+                              inset-0
 
-                        active:scale-95
+                              bg-gradient-to-br
 
-                        disabled:cursor-not-allowed
-                        disabled:opacity-50
-                      "
-                    >
-                      {product.stock > 0
-                        ? "Add to Cart"
-                        : "Sold Out"}
-                    </button>
-                  </div>
-                </div>
-              </article>
-            )
+                              from-[#FCE7EE]
+
+                              via-[#FBE1EA]
+
+                              to-[#F7CEDB]
+                            "
+                          />
+                        )}
+
+                        {/* ===================================
+                            DEFAULT IMAGE SHADE
+                        ==================================== */}
+
+                        <div
+                          className="
+                            pointer-events-none
+
+                            absolute
+                            inset-0
+
+                            bg-gradient-to-t
+
+                            from-[#3A2A2F]/10
+
+                            via-transparent
+
+                            to-transparent
+                          "
+                        />
+
+                        {/* ===================================
+                            CATEGORY PILL
+                        ==================================== */}
+
+                        {product
+                          .productCategory
+                          ?.name && (
+                          <div
+                            className="
+                              absolute
+
+                              left-2.5
+                              top-2.5
+
+                              z-20
+
+                              max-w-[65%]
+
+                              truncate
+
+                              rounded-full
+
+                              bg-white/95
+
+                              px-2.5
+                              py-1
+
+                              text-[7px]
+
+                              font-bold
+                              uppercase
+
+                              tracking-[0.13em]
+
+                              text-[#E75480]
+
+                              shadow-sm
+
+                              backdrop-blur-sm
+                            "
+                          >
+                            {
+                              product
+                                .productCategory
+                                .name
+                            }
+                          </div>
+                        )}
+
+                        {/* ===================================
+                            HEART
+                        ==================================== */}
+
+                        <button
+                          type="button"
+                          aria-label="Add to favourites"
+                          onClick={(
+                            event
+                          ) => {
+                            event.stopPropagation();
+
+                            /*
+                             * Add your favourite
+                             * functionality here.
+                             */
+                          }}
+                          className="
+                            absolute
+
+                            right-2.5
+                            top-2.5
+
+                            z-30
+
+                            flex
+                            h-7
+                            w-7
+
+                            items-center
+                            justify-center
+
+                            rounded-full
+
+                            bg-white/95
+
+                            text-[#E75480]
+
+                            shadow-sm
+
+                            transition-all
+                            duration-300
+
+                            hover:scale-110
+
+                            hover:bg-[#E75480]
+
+                            hover:text-white
+
+                            active:scale-95
+                          "
+                        >
+                          <Heart
+                            size={12}
+                          />
+                        </button>
+
+                        {/* ===================================
+                            INFORMATION OVERLAY
+
+                            Desktop:
+                            hover
+
+                            Mobile / tablet:
+                            tap card
+                        ==================================== */}
+
+                        <div
+                          className={`
+                            absolute
+                            inset-0
+
+                            z-10
+
+                            flex
+                            flex-col
+                            justify-end
+
+                            bg-gradient-to-t
+
+                            from-[#342127]/95
+
+                            via-[#342127]/42
+
+                            to-transparent
+
+                            p-3.5
+
+                            transition-opacity
+                            duration-500
+
+                            ${
+                              isActive
+                                ? "opacity-100"
+                                : "opacity-0"
+                            }
+
+                            md:opacity-0
+
+                            md:group-hover:opacity-100
+                          `}
+                        >
+                          {/* =================================
+                              CONTENT
+                          ================================== */}
+
+                          <div
+                            className={`
+                              transform
+
+                              transition-all
+                              duration-500
+
+                              ease-[cubic-bezier(0.22,1,0.36,1)]
+
+                              ${
+                                isActive
+                                  ? "translate-y-0 opacity-100"
+                                  : "translate-y-4 opacity-0"
+                              }
+
+                              md:translate-y-4
+                              md:opacity-0
+
+                              md:group-hover:translate-y-0
+                              md:group-hover:opacity-100
+                            `}
+                          >
+                            {product
+                              .productCategory
+                              ?.name && (
+                              <p
+                                className="
+                                  text-[7px]
+
+                                  font-bold
+                                  uppercase
+
+                                  tracking-[0.18em]
+
+                                  text-[#FFD7E3]
+                                "
+                              >
+                                {
+                                  product
+                                    .productCategory
+                                    .name
+                                }
+                              </p>
+                            )}
+
+                            {/* NAME */}
+
+                            <h3
+                              className="
+                                mt-1
+
+                                line-clamp-1
+
+                                font-serif
+
+                                text-[15px]
+
+                                leading-tight
+
+                                text-white
+                              "
+                            >
+                              {
+                                product.name
+                              }
+                            </h3>
+
+                            {/* DESCRIPTION */}
+
+                            <p
+                              className="
+                                mt-1
+
+                                line-clamp-2
+
+                                text-[9px]
+
+                                leading-[1.45]
+
+                                text-white/75
+                              "
+                            >
+                              {
+                                product.description
+                              }
+                            </p>
+
+                            {/* PRICE + VIEW */}
+
+                            <div
+                              className="
+                                mt-2.5
+
+                                flex
+
+                                items-center
+
+                                justify-between
+
+                                gap-2
+                              "
+                            >
+                              <p
+                                className="
+                                  font-serif
+
+                                  text-[15px]
+
+                                  font-semibold
+
+                                  text-white
+                                "
+                              >
+                                $
+                                {Number(
+                                  product.price
+                                ).toFixed(
+                                  2
+                                )}
+                              </p>
+
+                              <Link
+                                to={`/products/${product._id}`}
+                                onClick={(
+                                  event
+                                ) => {
+                                  event.stopPropagation();
+                                }}
+                                className="
+                                  inline-flex
+
+                                  items-center
+
+                                  gap-1
+
+                                  rounded-full
+
+                                  bg-white
+
+                                  px-3
+                                  py-1.5
+
+                                  text-[7px]
+
+                                  font-bold
+                                  uppercase
+
+                                  tracking-[0.12em]
+
+                                  text-[#E75480]
+
+                                  transition-all
+                                  duration-300
+
+                                  hover:bg-[#E75480]
+
+                                  hover:text-white
+                                "
+                              >
+                                View
+
+                                <ArrowRight
+                                  size={9}
+                                />
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  }
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* =================================================
+              RIGHT ARROW
+          ================================================= */}
+
+          {showControls && (
+            <button
+              type="button"
+              onClick={next}
+              disabled={isAnimating}
+              aria-label="Next products"
+              className="
+                absolute
+
+                right-0
+                top-1/2
+
+                z-30
+
+                flex
+                h-9
+                w-9
+
+                -translate-y-1/2
+
+                items-center
+                justify-center
+
+                rounded-full
+
+                border
+                border-[#E75480]/15
+
+                bg-white
+
+                text-[#E75480]
+
+                shadow-[0_6px_20px_rgba(58,42,47,0.10)]
+
+                transition-all
+                duration-300
+
+                hover:scale-110
+                hover:border-[#E75480]
+                hover:bg-[#E75480]
+                hover:text-white
+
+                active:scale-95
+
+                disabled:pointer-events-none
+
+                lg:h-10
+                lg:w-10
+              "
+            >
+              <ArrowRight size={16} />
+            </button>
           )}
         </div>
 
-        {/* MOBILE MESSAGE */}
+        {/* =================================================
+            DOTS
+        ================================================= */}
 
-        <p
+        {maxIndex > 0 && (
+          <div
+            className="
+              mt-2
+
+              flex
+              items-center
+              justify-center
+
+              gap-1.5
+            "
+          >
+            {Array.from({
+              length: maxIndex + 1,
+            }).map(
+              (_, dotIndex) => (
+                <button
+                  key={dotIndex}
+                  type="button"
+                  aria-label={`Go to slide ${
+                    dotIndex + 1
+                  }`}
+                  onClick={() =>
+                    moveTo(
+                      dotIndex
+                    )
+                  }
+                  className={`
+                    h-1.5
+
+                    rounded-full
+
+                    transition-all
+                    duration-300
+
+                    ${
+                      dotIndex ===
+                      index
+                        ? "w-6 bg-[#E75480]"
+                        : "w-1.5 bg-[#E9C8D2] hover:bg-[#E75480]/60"
+                    }
+                  `}
+                />
+              )
+            )}
+          </div>
+        )}
+
+        {/* =================================================
+            VIEW ALL PRODUCTS
+        ================================================= */}
+
+        <div
           className="
-            mt-2
+            mt-4
             text-center
-
-            text-[9px]
-            uppercase
-            tracking-[4px]
-            text-[#B79A7C]
           "
         >
-          Swipe to explore
-        </p>
+          <a
+            href="#all-products"
+            className="
+              inline-flex
+
+              items-center
+
+              gap-2
+
+              text-[8px]
+
+              font-bold
+              uppercase
+
+              tracking-[0.28em]
+
+              text-[#E75480]
+
+              transition-all
+              duration-300
+
+              hover:gap-3
+            "
+          >
+            View All Products
+
+            <ArrowRight
+              size={12}
+            />
+          </a>
+        </div>
       </div>
     </section>
   );
