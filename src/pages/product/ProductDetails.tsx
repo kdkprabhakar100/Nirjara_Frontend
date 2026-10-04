@@ -1,40 +1,78 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  Link,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
+
 import { useCart } from "../../context/CartContext";
+
 import { toast } from "react-toastify";
+
 import SEO from "../../components/SEO";
+
+/* =========================================================
+   TYPES
+========================================================= */
 
 type Product = {
   _id: string;
+
   name: string;
+
   description: string;
+
   price: number;
+
   product_category_id: string;
-  // Filled in by the API; null when the
-  // category is missing.
-  productCategory?: { _id: string; name: string } | null;
+
+  productCategory?: {
+    _id: string;
+    name: string;
+  } | null;
+
   images: string[];
+
   stock: number;
+
   featured: boolean;
+
   brand: string;
 
-  // Analytics
   views?: number;
+
   cartCount?: number;
+
   salesCount?: number;
 };
+
+/* =========================================================
+   COMPONENT
+========================================================= */
 
 export default function ProductDetails() {
   const { id } = useParams();
 
+  const navigate = useNavigate();
+
   const { addToCart } = useCart();
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [product, setProduct] =
+    useState<Product | null>(null);
 
-  /* =========================================================
+  const [loading, setLoading] =
+    useState(true);
+
+  const [selectedImage, setSelectedImage] =
+    useState(0);
+
+  /* =======================================================
      FETCH PRODUCT
-  ========================================================= */
+  ======================================================= */
 
   const fetchProduct = async () => {
     if (!id) return;
@@ -43,19 +81,18 @@ export default function ProductDetails() {
       setLoading(true);
 
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/products/${id}`
+        `${
+          import.meta.env.VITE_API_URL
+        }/api/products/${id}`,
       );
 
       if (!res.ok) {
-        throw new Error(`Failed to fetch product (${res.status})`);
+        throw new Error(
+          `Failed to fetch product (${res.status})`,
+        );
       }
 
       const data = await res.json();
-
-      // Supports both:
-      // { ...product }
-      // { data: { ...product } }
-      // { product: { ...product } }
 
       const productData =
         data?.product ??
@@ -63,37 +100,37 @@ export default function ProductDetails() {
         data;
 
       setProduct(productData);
+
+      setSelectedImage(0);
     } catch (error) {
-      console.error("PRODUCT FETCH ERROR:", error);
+      console.error(
+        "PRODUCT FETCH ERROR:",
+        error,
+      );
+
       setProduct(null);
     } finally {
       setLoading(false);
     }
   };
 
-  /* =========================================================
+  /* =======================================================
      LOAD PRODUCT
-  ========================================================= */
+  ======================================================= */
 
   useEffect(() => {
     fetchProduct();
   }, [id]);
 
-  /* =========================================================
+  /* =======================================================
      TRACK PRODUCT VIEW
-  ========================================================= */
+  ======================================================= */
 
   useEffect(() => {
     if (!id) return;
 
-    /*
-      Prevent duplicate views in the same browser tab.
-
-      This is especially useful because React StrictMode
-      can run effects twice during development.
-    */
-
-    const viewKey = `nirjara-product-view-${id}`;
+    const viewKey =
+      `nirjara-product-view-${id}`;
 
     const alreadyViewed =
       sessionStorage.getItem(viewKey);
@@ -103,23 +140,28 @@ export default function ProductDetails() {
     const trackView = async () => {
       try {
         const res = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/products/${id}/view`,
+          `${
+            import.meta.env.VITE_API_URL
+          }/api/products/${id}/view`,
           {
             method: "POST",
-          }
+          },
         );
 
         if (res.ok) {
-          sessionStorage.setItem(viewKey, "1");
+          sessionStorage.setItem(
+            viewKey,
+            "1",
+          );
         } else {
           console.warn(
-            `View tracking failed: ${res.status}`
+            `View tracking failed: ${res.status}`,
           );
         }
       } catch (error) {
         console.error(
           "Failed to track product view:",
-          error
+          error,
         );
       }
     };
@@ -127,26 +169,20 @@ export default function ProductDetails() {
     trackView();
   }, [id]);
 
-  /* =========================================================
+  /* =======================================================
      ADD TO CART
-  ========================================================= */
+  ======================================================= */
 
   const handleAddToCart = async () => {
     if (!product) return;
 
     if (product.stock <= 0) {
       toast.error(
-        "This product is currently out of stock."
+        "This product is currently out of stock.",
       );
+
       return;
     }
-
-    /*
-      Add to local cart FIRST.
-
-      Analytics should never prevent
-      the customer from adding something.
-    */
 
     addToCart({
       _id: product._id,
@@ -157,114 +193,246 @@ export default function ProductDetails() {
     });
 
     toast.success(
-      `${product.name} added to cart 💖`
+      `${product.name} added to cart 💖`,
     );
-
-    /* Track cart action */
 
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/products/${product._id}/cart`,
+        `${
+          import.meta.env.VITE_API_URL
+        }/api/products/${product._id}/cart`,
         {
           method: "POST",
-        }
+        },
       );
 
       if (!res.ok) {
         console.warn(
-          `Cart tracking failed: ${res.status}`
+          `Cart tracking failed: ${res.status}`,
         );
       }
     } catch (error) {
       console.error(
         "Failed to track add to cart:",
-        error
+        error,
       );
     }
   };
 
-  /* =========================================================
+  /* =======================================================
      BUY NOW
-  ========================================================= */
+  ======================================================= */
 
-  const handleBuyNow = async () => {
-    if (!product) return;
+/* =======================================================
+   BUY NOW
+======================================================= */
 
-    if (product.stock <= 0) {
-      toast.error(
-        "This product is currently out of stock."
-      );
-      return;
-    }
+const handleBuyNow = async () => {
+  if (!product) return;
 
-    /*
-      For now Buy Now adds the product to the cart.
-
-      Later we can navigate directly to checkout.
-    */
-
-    addToCart({
-      _id: product._id,
-      name: product.name,
-      price: product.price,
-      image: product.images?.[0],
-      quantity: 1,
-    });
-
-    toast.success(
-      `${product.name} added to cart 💖`
+  if (product.stock <= 0) {
+    toast.error(
+      "This product is currently out of stock.",
     );
 
-    try {
-      await fetch(
-        `${import.meta.env.VITE_API_URL}/api/products/${product._id}/cart`,
-        {
-          method: "POST",
-        }
-      );
-    } catch (error) {
-      console.error(
-        "Failed to track Buy Now:",
-        error
+    return;
+  }
+
+  addToCart({
+    _id: product._id,
+    name: product.name,
+    price: product.price,
+    image: product.images?.[0],
+    quantity: 1,
+  });
+
+  try {
+    const res = await fetch(
+      `${
+        import.meta.env.VITE_API_URL
+      }/api/products/${product._id}/cart`,
+      {
+        method: "POST",
+      },
+    );
+
+    if (!res.ok) {
+      console.warn(
+        `Buy Now tracking failed: ${res.status}`,
       );
     }
-  };
+  } catch (error) {
+    console.error(
+      "Failed to track Buy Now:",
+      error,
+    );
+  }
 
-  /* =========================================================
+  navigate("/cart");
+};
+
+  /* =======================================================
      LOADING
-  ========================================================= */
+  ======================================================= */
 
   if (loading) {
     return (
-      <section className="flex min-h-screen items-center justify-center bg-[#FFF5F8] pt-32">
-        <p className="text-lg text-[#8A6F78]">
-          Loading product...
-        </p>
+      <section
+        className="
+          min-h-screen
+          bg-[#FFFAFC]
+          px-4
+          pb-12
+          pt-24
+
+          sm:px-6
+          sm:pt-28
+
+          lg:px-10
+        "
+      >
+        <div
+          className="
+            mx-auto
+            grid
+            max-w-5xl
+            gap-7
+
+            lg:grid-cols-[0.85fr_1.15fr]
+            lg:gap-10
+          "
+        >
+          <div
+            className="
+              aspect-[4/3]
+              animate-pulse
+              rounded-[18px]
+              bg-[#F7E9EE]
+            "
+          />
+
+          <div
+            className="
+              flex
+              flex-col
+              justify-center
+            "
+          >
+            <div
+              className="
+                h-3
+                w-24
+                animate-pulse
+                rounded-full
+                bg-[#F2DCE4]
+              "
+            />
+
+            <div
+              className="
+                mt-4
+                h-9
+                w-3/4
+                animate-pulse
+                rounded-xl
+                bg-[#F2DCE4]
+              "
+            />
+
+            <div
+              className="
+                mt-4
+                h-14
+                animate-pulse
+                rounded-xl
+                bg-[#F7E9EE]
+              "
+            />
+          </div>
+        </div>
       </section>
     );
   }
 
-  /* =========================================================
+  /* =======================================================
      NOT FOUND
-  ========================================================= */
+  ======================================================= */
 
   if (!product) {
     return (
-      <section className="flex min-h-screen items-center justify-center bg-[#FFF5F8] pt-32">
-        <p className="text-lg text-[#8A6F78]">
-          Product not found
-        </p>
+      <section
+        className="
+          flex
+          min-h-screen
+          items-center
+          justify-center
+          bg-[#FFFAFC]
+          px-4
+          pt-24
+        "
+      >
+        <div
+          className="
+            max-w-md
+            text-center
+          "
+        >
+          <h1
+            className="
+              font-serif
+              text-3xl
+              text-[#3A2A2F]
+            "
+          >
+            Product not found
+          </h1>
+
+          <p
+            className="
+              mt-3
+              text-sm
+              leading-6
+              text-[#8A6F78]
+            "
+          >
+            This product may no longer be available.
+          </p>
+
+          <Link
+            to="/products"
+            className="
+              mt-6
+              inline-flex
+              rounded-full
+              bg-[#3A2A2F]
+              px-6
+              py-3
+              text-[9px]
+              font-semibold
+              uppercase
+              tracking-[0.16em]
+              text-white
+              transition
+              hover:bg-[#E75480]
+            "
+          >
+            Back to Products
+          </Link>
+        </div>
       </section>
     );
   }
 
-  /* =========================================================
+  /* =======================================================
      SEO
-  ========================================================= */
+  ======================================================= */
 
   const seoDescription =
     product.description.length > 155
-      ? `${product.description.slice(0, 152)}...`
+      ? `${product.description.slice(
+          0,
+          152,
+        )}...`
       : product.description;
 
   const seoKeywords = [
@@ -278,14 +446,67 @@ export default function ProductDetails() {
     .filter(Boolean)
     .join(", ");
 
-  const outOfStock = product.stock <= 0;
+  const outOfStock =
+    product.stock <= 0;
+
+  const images =
+    product.images?.filter(Boolean) ?? [];
+
+  const currentImage =
+    images[selectedImage] ??
+    images[0];
+
+  /* =======================================================
+     STRUCTURED DATA
+  ======================================================= */
+
+  const productSchema = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+
+    name: product.name,
+
+    description: product.description,
+
+    image: images,
+
+    category:
+      product.productCategory?.name,
+
+    brand: {
+      "@type": "Brand",
+
+      name:
+        product.brand ||
+        "Nirjara Beauty",
+    },
+
+    offers: {
+      "@type": "Offer",
+
+      priceCurrency: "NPR",
+
+      price: Number(
+        product.price,
+      ).toFixed(2),
+
+      availability: outOfStock
+        ? "https://schema.org/OutOfStock"
+        : "https://schema.org/InStock",
+
+      url:
+        typeof window !== "undefined"
+          ? window.location.href
+          : `/products/${product._id}`,
+    },
+  };
+
+  /* =======================================================
+     PAGE
+  ======================================================= */
 
   return (
     <>
-      {/* =====================================================
-          DYNAMIC PRODUCT SEO
-      ===================================================== */}
-
       <SEO
         title={`${product.name} | Nirjara Beauty Kathmandu`}
         description={seoDescription}
@@ -298,197 +519,701 @@ export default function ProductDetails() {
         type="product"
       />
 
-      {/* =====================================================
-          PRODUCT DETAILS
-      ===================================================== */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            productSchema,
+          ),
+        }}
+      />
 
-      <section className="min-h-screen bg-[#FFF5F8] px-4 pb-20 pt-32 sm:px-6 lg:px-10">
-        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-2 lg:gap-14">
+      <section
+        className="
+          min-h-screen
+          bg-[#FFFAFC]
 
+          px-4
+          pb-8
+          pt-24
+
+          sm:px-6
+          sm:pb-12
+          sm:pt-28
+
+          lg:px-10
+        "
+      >
+        <div
+          className="
+            mx-auto
+            max-w-5xl
+          "
+        >
           {/* =================================================
-              IMAGE
+              BREADCRUMB
           ================================================= */}
 
-          <div className="overflow-hidden rounded-[26px] bg-white shadow-sm sm:rounded-[32px]">
-            {product.images?.[0] ? (
-              <img
-                src={product.images[0]}
-                alt={product.name}
-                className="
-                  h-full
-                  min-h-[350px]
-                  w-full
-                  object-cover
-                  transition
-                  duration-500
-                  hover:scale-105
+          <div
+            className="
+              mb-4
 
-                  sm:min-h-[450px]
-                  lg:min-h-[600px]
-                "
-              />
-            ) : (
-              <div className="flex min-h-[350px] items-center justify-center bg-[#FCECF1] sm:min-h-[450px] lg:min-h-[600px]">
-                <span className="font-serif text-8xl text-[#E75480]/20">
-                  {product.name.charAt(0)}
-                </span>
-              </div>
-            )}
+              flex
+              items-center
+              gap-2
+
+              text-[6px]
+              font-medium
+              uppercase
+              tracking-[0.16em]
+
+              text-[#A88993]
+
+              sm:text-[7px]
+            "
+          >
+            <Link
+              to="/products"
+              className="
+                transition-colors
+                hover:text-[#E75480]
+              "
+            >
+              Products
+            </Link>
+
+            <span>/</span>
+
+            <span
+              className="
+                max-w-[220px]
+                truncate
+                text-[#C77A95]
+              "
+            >
+              {product.name}
+            </span>
           </div>
 
           {/* =================================================
-              CONTENT
+              MAIN GRID
           ================================================= */}
 
-          <div className="flex flex-col justify-center">
+          <div
+            className="
+              grid
+              items-start
+              gap-5
 
-            {/* CATEGORY */}
+              sm:gap-7
 
-            <p className="text-[10px] uppercase tracking-[4px] text-[#E75480] sm:text-xs sm:tracking-[5px]">
-              {product.productCategory?.name}
-            </p>
+              lg:grid-cols-[0.85fr_1.15fr]
+              lg:gap-10
 
-            {/* NAME */}
-
-            <h1 className="mt-4 font-serif text-4xl leading-tight text-[#3A2A2F] sm:mt-5 sm:text-5xl lg:text-6xl">
-              {product.name}
-            </h1>
-
-            {/* DESCRIPTION */}
-
-            <p className="mt-6 text-[15px] leading-8 text-[#8A6F78] sm:mt-8 sm:text-lg sm:leading-9">
-              {product.description}
-            </p>
-
+              xl:gap-12
+            "
+          >
             {/* =================================================
-                PRICE + STOCK
+                IMAGE
             ================================================= */}
 
-            <div className="mt-8 flex flex-wrap items-center gap-4 sm:mt-10 sm:gap-6">
+            <div
+              className="
+                min-w-0
 
-              <p className="font-serif text-4xl font-semibold text-[#E75480] sm:text-5xl">
-                ${product.price}
-              </p>
-
-              <span
-                className={`
-                  rounded-full
-                  px-5
-                  py-2
-                  text-sm
-
-                  ${
-                    outOfStock
-                      ? "bg-[#EFE4E7] text-[#A17F89]"
-                      : "bg-[#FCE7EF] text-[#E75480]"
-                  }
-                `}
-              >
-                {outOfStock
-                  ? "Out of Stock"
-                  : `Stock: ${product.stock}`}
-              </span>
-            </div>
-
-            {/* =================================================
-                BUTTONS
-            ================================================= */}
-
-            <div className="mt-8 flex flex-col gap-3 sm:mt-12 sm:flex-row sm:gap-4">
-
-              {/* ADD TO CART */}
-
-              <button
-                type="button"
-                disabled={outOfStock}
-                onClick={handleAddToCart}
+                lg:sticky
+                lg:top-28
+              "
+            >
+              <div
                 className="
-                  rounded-full
-                  bg-[#E75480]
-                  px-8
-                  py-4
-                  text-[11px]
-                  uppercase
-                  tracking-[2px]
-                  text-white
-                  transition
-                  hover:bg-[#d63c6d]
+                  mx-auto
 
-                  disabled:cursor-not-allowed
-                  disabled:bg-[#E7CBD3]
-                  disabled:text-white/80
+                  max-w-[400px]
 
-                  sm:text-sm
-                  sm:tracking-[3px]
-                "
-              >
-                {outOfStock
-                  ? "Out of Stock"
-                  : "Add to Cart"}
-              </button>
+                  overflow-hidden
 
-              {/* BUY NOW */}
+                  rounded-[18px]
 
-              <button
-                type="button"
-                disabled={outOfStock}
-                onClick={handleBuyNow}
-                className="
-                  rounded-full
                   border
-                  border-[#E75480]/20
+                  border-[#EADDE2]
+
                   bg-white
-                  px-8
-                  py-4
-                  text-[11px]
-                  uppercase
-                  tracking-[2px]
-                  text-[#E75480]
-                  transition
-                  hover:border-[#E75480]/40
-                  hover:bg-[#FFF0F5]
 
-                  disabled:cursor-not-allowed
-                  disabled:opacity-40
+                  shadow-[0_6px_18px_rgba(58,42,47,0.035)]
 
-                  sm:text-sm
-                  sm:tracking-[3px]
+                  sm:max-w-[460px]
+                  sm:rounded-[20px]
                 "
               >
-                Buy Now
-              </button>
+                {currentImage ? (
+                  <div
+                    className="
+                      aspect-[4/3]
+                      overflow-hidden
+                      bg-[#F7ECEF]
+                    "
+                  >
+                    <img
+                      src={currentImage}
+                      alt={product.name}
+                      className="
+                        h-full
+                        w-full
+                        object-cover
+
+                        transition-transform
+                        duration-700
+
+                        hover:scale-[1.02]
+                      "
+                    />
+                  </div>
+                ) : (
+                  <div
+                    className="
+                      flex
+                      aspect-[4/3]
+                      items-center
+                      justify-center
+
+                      bg-gradient-to-br
+                      from-[#FCECF1]
+                      to-[#FFF8FA]
+                    "
+                  >
+                    <span
+                      className="
+                        font-serif
+                        text-5xl
+                        text-[#E75480]/20
+
+                        sm:text-6xl
+                      "
+                    >
+                      {product.name.charAt(0)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* =================================================
+                  THUMBNAILS
+              ================================================= */}
+
+              {images.length > 1 && (
+                <div
+                  className="
+                    mx-auto
+                    mt-2.5
+
+                    flex
+
+                    max-w-[400px]
+
+                    gap-2
+                    overflow-x-auto
+                    pb-1
+
+                    sm:max-w-[460px]
+                  "
+                >
+                  {images.map(
+                    (
+                      image,
+                      imageIndex,
+                    ) => (
+                      <button
+                        key={`${image}-${imageIndex}`}
+                        type="button"
+                        onClick={() =>
+                          setSelectedImage(
+                            imageIndex,
+                          )
+                        }
+                        aria-label={`View product image ${
+                          imageIndex + 1
+                        }`}
+                        className={`
+                          h-12
+                          w-12
+
+                          shrink-0
+                          overflow-hidden
+
+                          rounded-[9px]
+
+                          border
+                          bg-white
+
+                          transition-all
+
+                          sm:h-14
+                          sm:w-14
+
+                          ${
+                            selectedImage ===
+                            imageIndex
+                              ? "border-[#E75480] shadow-[0_3px_10px_rgba(231,84,128,0.15)]"
+                              : "border-[#E8D9DE] hover:border-[#D9B6C2]"
+                          }
+                        `}
+                      >
+                        <img
+                          src={image}
+                          alt={`${product.name} ${
+                            imageIndex + 1
+                          }`}
+                          className="
+                            h-full
+                            w-full
+                            object-cover
+                          "
+                        />
+                      </button>
+                    ),
+                  )}
+                </div>
+              )}
             </div>
 
             {/* =================================================
-                EXTRA INFO
+                PRODUCT INFO
             ================================================= */}
 
-            <div className="mt-10 grid gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-5">
+            <div
+              className="
+                flex
+                min-w-0
+                flex-col
+
+                lg:pt-1
+              "
+            >
+              {/* CATEGORY */}
+
+              {product.productCategory
+                ?.name && (
+                <p
+                  className="
+                    text-[7px]
+                    font-semibold
+                    uppercase
+                    tracking-[0.2em]
+
+                    text-[#E75480]
+
+                    sm:text-[8px]
+                  "
+                >
+                  {
+                    product
+                      .productCategory
+                      .name
+                  }
+                </p>
+              )}
+
+              {/* TITLE */}
+
+              <h1
+                className="
+                  mt-2.5
+
+                  max-w-[600px]
+
+                  font-serif
+
+                  text-[26px]
+                  leading-[1.08]
+                  tracking-[-0.02em]
+
+                  text-[#3A2A2F]
+
+                  sm:text-[34px]
+
+                  lg:text-[40px]
+
+                  xl:text-[42px]
+                "
+              >
+                {product.name}
+              </h1>
 
               {/* BRAND */}
 
-              <div className="rounded-3xl bg-white p-5 shadow-sm sm:p-6">
-                <p className="text-[9px] uppercase tracking-[3px] text-[#E75480] sm:text-xs sm:tracking-[4px]">
-                  Brand
+              <p
+                className="
+                  mt-2
+
+                  text-[8px]
+                  uppercase
+                  tracking-[0.14em]
+
+                  text-[#A58C95]
+
+                  sm:text-[9px]
+                "
+              >
+                {product.brand ||
+                  "Nirjara Beauty"}
+              </p>
+
+              {/* DESCRIPTION */}
+
+              <p
+                className="
+                  mt-3
+
+                  max-w-[600px]
+
+                  text-[12px]
+                  leading-5
+
+                  text-[#806B73]
+
+                  sm:text-[14px]
+                  sm:leading-7
+                "
+              >
+                {product.description}
+              </p>
+
+              {/* DIVIDER */}
+
+              <div
+                className="
+                  my-3
+                  h-px
+                  bg-[#3A2A2F]/10
+
+                  sm:my-4
+                "
+              />
+
+              {/* =================================================
+                  PRICE + STOCK
+              ================================================= */}
+
+              <div
+                className="
+                  flex
+                  flex-wrap
+                  items-center
+                  gap-2.5
+
+                  sm:gap-3
+                "
+              >
+                <p
+                  className="
+                    font-serif
+
+                    text-[26px]
+                    font-semibold
+                    leading-none
+
+                    text-[#E75480]
+
+                    sm:text-[34px]
+                  "
+                >
+                  $
+                  {Number(
+                    product.price,
+                  ).toFixed(2)}
                 </p>
 
-                <h3 className="mt-3 font-serif text-xl text-[#3A2A2F] sm:text-2xl">
-                  {product.brand ||
-                    "Nirjara Beauty"}
-                </h3>
+                <span
+                  className={`
+                    rounded-full
+
+                    px-2.5
+                    py-1
+
+                    text-[6px]
+                    font-semibold
+                    uppercase
+                    tracking-[0.12em]
+
+                    sm:px-3
+                    sm:py-1.5
+                    sm:text-[7px]
+
+                    ${
+                      outOfStock
+                        ? "bg-[#F1E8EB] text-[#9C7F88]"
+                        : "bg-[#FCE7EF] text-[#D94876]"
+                    }
+                  `}
+                >
+                  {outOfStock
+                    ? "Out of stock"
+                    : `${product.stock} in stock`}
+                </span>
               </div>
 
-              {/* CARE */}
+              {/* =================================================
+                  BUTTONS
+              ================================================= */}
 
-              <div className="rounded-3xl bg-white p-5 shadow-sm sm:p-6">
-                <p className="text-[9px] uppercase tracking-[3px] text-[#E75480] sm:text-xs sm:tracking-[4px]">
-                  Premium Care
-                </p>
+              <div
+                className="
+                  mt-4
 
-                <h3 className="mt-3 font-serif text-xl text-[#3A2A2F] sm:text-2xl">
-                  Luxury Beauty Product
-                </h3>
+                  grid
+                  gap-2.5
+
+                  sm:grid-cols-2
+                  sm:gap-3
+                "
+              >
+                {/* ADD TO CART */}
+
+                <button
+                  type="button"
+                  disabled={outOfStock}
+                  onClick={
+                    handleAddToCart
+                  }
+                  className="
+                    flex
+                    min-h-[42px]
+                    items-center
+                    justify-center
+
+                    rounded-full
+
+                    bg-[#3A2A2F]
+
+                    px-5
+                    py-2.5
+
+                    text-[7px]
+                    font-semibold
+                    uppercase
+                    tracking-[0.14em]
+
+                    text-white
+
+                    transition-all
+                    duration-300
+
+                    hover:-translate-y-[1px]
+                    hover:bg-[#E75480]
+                    hover:shadow-[0_6px_16px_rgba(231,84,128,0.16)]
+
+                    active:translate-y-0
+                    active:scale-[0.985]
+
+                    disabled:cursor-not-allowed
+                    disabled:bg-[#D8C9CE]
+                    disabled:shadow-none
+
+                    sm:min-h-[44px]
+                    sm:text-[8px]
+                  "
+                >
+                  {outOfStock
+                    ? "Out of Stock"
+                    : "Add to Cart"}
+                </button>
+
+                {/* BUY NOW */}
+
+                <button
+                  type="button"
+                  disabled={outOfStock}
+                  onClick={
+                    handleBuyNow
+                  }
+                  className="
+                    flex
+                    min-h-[42px]
+                    items-center
+                    justify-center
+
+                    rounded-full
+
+                    border
+                    border-[#DCCBD1]
+
+                    bg-white
+
+                    px-5
+                    py-2.5
+
+                    text-[7px]
+                    font-semibold
+                    uppercase
+                    tracking-[0.14em]
+
+                    text-[#3A2A2F]
+
+                    transition-all
+                    duration-300
+
+                    hover:border-[#E75480]
+                    hover:bg-[#FFF7F9]
+                    hover:text-[#E75480]
+
+                    active:scale-[0.985]
+
+                    disabled:cursor-not-allowed
+                    disabled:opacity-40
+
+                    sm:min-h-[44px]
+                    sm:text-[8px]
+                  "
+                >
+                  Buy Now
+                </button>
               </div>
+
+              {/* =================================================
+                  DETAILS
+              ================================================= */}
+
+              <div
+                className="
+                  mt-4
+
+                  rounded-[14px]
+
+                  border
+                  border-[#E8D9DE]
+
+                  bg-white
+
+                  px-3.5
+                  py-3
+
+                  shadow-[0_3px_10px_rgba(58,42,47,0.02)]
+
+                  sm:rounded-[16px]
+                  sm:px-4
+                  sm:py-3.5
+                "
+              >
+                <div
+                  className="
+                    grid
+                    gap-3
+
+                    sm:grid-cols-2
+                    sm:gap-0
+                  "
+                >
+                  {/* BRAND */}
+
+                  <div
+                    className="
+                      sm:border-r
+                      sm:border-[#E8D9DE]
+                      sm:pr-4
+                    "
+                  >
+                    <p
+                      className="
+                        text-[6px]
+                        font-semibold
+                        uppercase
+                        tracking-[0.18em]
+
+                        text-[#C77A95]
+                      "
+                    >
+                      Brand
+                    </p>
+
+                    <p
+                      className="
+                        mt-1
+
+                        font-serif
+                        text-[13px]
+
+                        text-[#3A2A2F]
+
+                        sm:text-[14px]
+                      "
+                    >
+                      {product.brand ||
+                        "Nirjara Beauty"}
+                    </p>
+                  </div>
+
+                  {/* CATEGORY */}
+
+                  <div
+                    className="
+                      sm:pl-4
+                    "
+                  >
+                    <p
+                      className="
+                        text-[6px]
+                        font-semibold
+                        uppercase
+                        tracking-[0.18em]
+
+                        text-[#C77A95]
+                      "
+                    >
+                      Category
+                    </p>
+
+                    <p
+                      className="
+                        mt-1
+
+                        font-serif
+                        text-[13px]
+
+                        text-[#3A2A2F]
+
+                        sm:text-[14px]
+                      "
+                    >
+                      {product
+                        .productCategory
+                        ?.name ||
+                        "Beauty Product"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* =================================================
+                  BACK
+              ================================================= */}
+
+              <Link
+                to="/products#all-products"
+                className="
+                  mt-3.5
+
+                  inline-flex
+                  w-fit
+                  items-center
+
+                  text-[6px]
+                  font-semibold
+                  uppercase
+                  tracking-[0.15em]
+
+                  text-[#A88993]
+
+                  transition-colors
+
+                  hover:text-[#E75480]
+
+                  sm:mt-4
+                  sm:text-[7px]
+                "
+              >
+                ← Back to all products
+              </Link>
             </div>
           </div>
         </div>

@@ -421,7 +421,7 @@ export default function FeaturedProducts({
         relative
         overflow-hidden
 
-        bg-[#FFF9FB]
+        bg-[#FFF1F5]
 
         px-4
         pt-7
@@ -499,17 +499,17 @@ export default function FeaturedProducts({
     <p
       className="
         max-w-[280px]
-        text-[10px]
+        text-[11px]
         leading-[1.5]
         text-[#8A6F78]
+        font-semibold
 
         sm:text-[11px]
 
         md:text-right
       "
     >
-      Discover our most-loved beauty essentials, selected
-      from our collection.
+        Most-loved picks from our collection.
     </p>
   </div>
 </div>
@@ -1234,7 +1234,7 @@ export default function FeaturedProducts({
             VIEW ALL PRODUCTS
         ================================================= */}
 
-        <div
+        {/* <div
           className="
             mt-4
             text-center
@@ -1270,7 +1270,7 @@ export default function FeaturedProducts({
               size={12}
             />
           </a>
-        </div>
+        </div> */}
       </div>
     </section>
   );

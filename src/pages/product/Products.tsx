@@ -26,10 +26,14 @@ type Product = {
   description: string;
 
   price: number;
+
   product_category_id: string;
-  // Filled in by the API; null when the
-  // category is missing.
-  productCategory?: { _id: string; name: string } | null;
+
+  productCategory?: {
+    _id: string;
+    name: string;
+  } | null;
+
   images: string[];
 
   stock: number;
@@ -105,37 +109,16 @@ export default function Products() {
       setError("");
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/products`
+        `${import.meta.env.VITE_API_URL}/api/products`,
       );
 
       if (!response.ok) {
         throw new Error(
-          `Failed to load products (${response.status})`
+          `Failed to load products (${response.status})`,
         );
       }
 
       const data = await response.json();
-
-      /*
-        Supports either:
-
-        [
-          {...},
-          {...}
-        ]
-
-        OR
-
-        {
-          data: [...]
-        }
-
-        OR
-
-        {
-          products: [...]
-        }
-      */
 
       const productList = Array.isArray(data)
         ? data
@@ -150,7 +133,7 @@ export default function Products() {
       console.error("Failed to fetch products:", err);
 
       setError(
-        "We couldn't load the products right now."
+        "We couldn't load the products right now.",
       );
     } finally {
       setLoading(false);
@@ -172,9 +155,8 @@ export default function Products() {
   const desktopTotalPages = Math.max(
     1,
     Math.ceil(
-      products.length /
-        DESKTOP_PRODUCTS_PER_PAGE
-    )
+      products.length / DESKTOP_PRODUCTS_PER_PAGE,
+    ),
   );
 
   const desktopProducts = useMemo(() => {
@@ -190,19 +172,13 @@ export default function Products() {
 
   /* =======================================================
      MOBILE PAGINATION
-
-     Each mobile page contains up to 10 products.
-
-     Inside that page the user horizontally swipes
-     through the products.
   ======================================================= */
 
   const mobileTotalPages = Math.max(
     1,
     Math.ceil(
-      products.length /
-        MOBILE_PRODUCTS_PER_PAGE
-    )
+      products.length / MOBILE_PRODUCTS_PER_PAGE,
+    ),
   );
 
   const mobileProducts = useMemo(() => {
@@ -217,12 +193,11 @@ export default function Products() {
   }, [products, mobilePage]);
 
   /* =======================================================
-     RESET PAGINATION WHEN PRODUCTS CHANGE
+     RESET PAGINATION
   ======================================================= */
 
   useEffect(() => {
     setDesktopPage(1);
-
     setMobilePage(1);
   }, [products.length]);
 
@@ -231,11 +206,11 @@ export default function Products() {
   ======================================================= */
 
   const handleAddToCart = (
-    product: Product
+    product: Product,
   ) => {
     if (product.stock <= 0) {
       toast.error(
-        `${product.name} is currently out of stock.`
+        `${product.name} is currently out of stock.`,
       );
 
       return;
@@ -254,7 +229,7 @@ export default function Products() {
     });
 
     toast.success(
-      `${product.name} added to cart 💖`
+      `${product.name} added to cart 💖`,
     );
   };
 
@@ -263,7 +238,7 @@ export default function Products() {
   ======================================================= */
 
   const changeDesktopPage = (
-    page: number
+    page: number,
   ) => {
     if (
       page < 1 ||
@@ -289,7 +264,7 @@ export default function Products() {
   ======================================================= */
 
   const changeMobilePage = (
-    page: number
+    page: number,
   ) => {
     if (
       page < 1 ||
@@ -336,17 +311,16 @@ export default function Products() {
             min-h-screen
             items-center
             justify-center
-            bg-[#FFF5F8]
+            bg-[#FFF9FB]
             px-4
-            pt-28
           "
         >
           <div className="text-center">
             <div
               className="
                 mx-auto
-                h-10
-                w-10
+                h-9
+                w-9
                 animate-spin
                 rounded-full
                 border-2
@@ -357,8 +331,8 @@ export default function Products() {
 
             <p
               className="
-                mt-5
-                text-sm
+                mt-4
+                text-[12px]
                 tracking-wide
                 text-[#8A6F78]
               "
@@ -397,21 +371,15 @@ export default function Products() {
             min-h-screen
             items-center
             justify-center
-            bg-[#FFF5F8]
+            bg-[#FFF9FB]
             px-4
-            pt-28
           "
         >
-          <div
-            className="
-              max-w-md
-              text-center
-            "
-          >
+          <div className="max-w-md text-center">
             <h1
               className="
                 font-serif
-                text-4xl
+                text-3xl
                 text-[#3A2A2F]
               "
             >
@@ -420,8 +388,9 @@ export default function Products() {
 
             <p
               className="
-                mt-4
-                leading-7
+                mt-3
+                text-sm
+                leading-6
                 text-[#8A6F78]
               "
             >
@@ -432,16 +401,18 @@ export default function Products() {
               type="button"
               onClick={fetchProducts}
               className="
-                mt-7
+                mt-6
                 rounded-full
                 bg-[#E75480]
-                px-7
-                py-3
-                text-xs
+                px-6
+                py-2.5
+                text-[9px]
+                font-semibold
                 uppercase
-                tracking-[2px]
+                tracking-[0.16em]
                 text-white
                 transition
+                duration-300
                 hover:bg-[#D63C6D]
               "
             >
@@ -459,10 +430,6 @@ export default function Products() {
 
   return (
     <>
-      {/* ===================================================
-          SEO
-      =================================================== */}
-
       <SEO
         title={PRODUCTS_SEO.title}
         description={
@@ -477,11 +444,9 @@ export default function Products() {
       {/* ===================================================
           FEATURED PRODUCTS
 
-          The FeaturedProducts component handles:
-          - first 6 fallback
-          - click ranking
-          - desktop carousel
-          - mobile swipe
+          Keep this component separate.
+          Existing carousel/click-ranking/animation logic
+          remains inside FeaturedProducts.
       =================================================== */}
 
       {products.length > 0 && (
@@ -498,982 +463,1113 @@ export default function Products() {
         id="all-products"
         className="
           scroll-mt-24
-          bg-[#FFF5F8]
+          overflow-hidden
+          border-t
+          border-[#3A2A2F]/[0.06]
+          bg-[#FFF9FB]
           px-4
-          py-16
+          py-8
 
           sm:px-6
-          sm:py-20
+          sm:py-10
 
-          lg:px-10
-          lg:py-24
+          lg:px-8
+          lg:py-12
         "
       >
-        {/* =================================================
-            HEADER
-        ================================================= */}
-
         <div
           className="
             mx-auto
-            max-w-7xl
-            text-center
+            max-w-[1120px]
           "
         >
-          <p
-            className="
-              text-[10px]
-              uppercase
-              tracking-[5px]
-              text-[#E75480]
-            "
-          >
-            Shop The Collection
-          </p>
+          {/* =================================================
+              HEADER
+          ================================================= */}
+<div
+  className="
+    border-b
+    border-[#3A2A2F]/10
+    pb-4
+  "
+>
+  <div
+    className="
+      flex
+      items-end
+      justify-between
+      gap-4
+    "
+  >
+    <h1
+      className="
+        font-serif
+        text-[28px]
+        leading-none
+        tracking-[-0.025em]
+        text-[#3A2A2F]
+      "
+    >
+      All Products
+    </h1>
 
-          <h1
-            className="
-              mt-4
-              font-serif
-              text-4xl
-              text-[#3A2A2F]
+    <span
+      className="
+        shrink-0
+        pb-[4px]
+        text-[8px]
+        font-medium
+        uppercase
+        tracking-[0.16em]
+        text-[#A88993]
+      "
+    >
+      {products.length} products
+    </span>
+  </div>
 
-              sm:text-5xl
+  <p
+    className="
+      mt-2
+      text-[11px]
+      leading-5
+      text-[#9B818A]
+    "
+  >
+    Beauty and skincare essentials
+  </p>
+</div>
 
-              lg:text-[54px]
-            "
-          >
-            All Products
-          </h1>
+          {/* =================================================
+              EMPTY
+          ================================================= */}
 
-          <p
-            className="
-              mx-auto
-              mt-4
-              max-w-2xl
-              text-sm
-              leading-7
-              text-[#8A6F78]
-
-              sm:text-base
-            "
-          >
-            Discover premium beauty and
-            skincare essentials carefully
-            selected for your everyday beauty
-            routine.
-          </p>
-        </div>
-
-        {/* =================================================
-            EMPTY PRODUCTS
-        ================================================= */}
-
-        {products.length === 0 ? (
-          <div
-            className="
-              mx-auto
-              mt-14
-              max-w-2xl
-              rounded-[30px]
-              bg-white
-              px-6
-              py-16
-              text-center
-              shadow-sm
-            "
-          >
-            <h2
-              className="
-                font-serif
-                text-3xl
-                text-[#3A2A2F]
-              "
-            >
-              Products coming soon
-            </h2>
-
-            <p
-              className="
-                mt-4
-                text-sm
-                leading-7
-                text-[#8A6F78]
-              "
-            >
-              Our beauty collection is being
-              prepared. Please check back soon.
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* ===============================================
-                DESKTOP / TABLET
-
-                Hidden below md.
-            =============================================== */}
-
-            <div className="hidden md:block">
-              {/* PRODUCT COUNT */}
-
-              <div
-                className="
-                  mx-auto
-                  mt-14
-                  flex
-                  max-w-7xl
-                  items-center
-                  justify-between
-                "
-              >
-                <p
-                  className="
-                    text-[10px]
-                    uppercase
-                    tracking-[3px]
-                    text-[#A88993]
-                  "
-                >
-                  {products.length}{" "}
-                  {products.length === 1
-                    ? "Product"
-                    : "Products"}
-                </p>
-
-                <p
-                  className="
-                    text-[10px]
-                    uppercase
-                    tracking-[3px]
-                    text-[#A88993]
-                  "
-                >
-                  Page {desktopPage} of{" "}
-                  {desktopTotalPages}
-                </p>
-              </div>
-
-              {/* GRID */}
-
-              <div
-                className="
-                  mx-auto
-                  mt-7
-                  grid
-                  max-w-7xl
-                  grid-cols-2
-                  gap-6
-
-                  lg:grid-cols-3
-
-                  xl:grid-cols-4
-                "
-              >
-                {desktopProducts.map(
-                  (product) => (
-                    <article
-                      key={product._id}
-                      className="
-                        group
-                        overflow-hidden
-                        rounded-[24px]
-                        border
-                        border-[#F4E4EA]
-                        bg-white
-                        shadow-[0_10px_30px_rgba(112,72,87,0.05)]
-                        transition
-                        duration-300
-                        hover:-translate-y-1
-                        hover:shadow-[0_18px_45px_rgba(112,72,87,0.10)]
-                      "
-                    >
-                      {/* IMAGE */}
-
-                      <Link
-                        to={`/products/${product._id}`}
-                        className="block"
-                      >
-                        <div
-                          className="
-                            relative
-                            aspect-[4/3]
-                            overflow-hidden
-                            bg-[#FDF0F4]
-                          "
-                        >
-                          {product
-                            .images?.[0] ? (
-                            <img
-                              src={
-                                product.images[0]
-                              }
-                              alt={product.name}
-                              loading="lazy"
-                              className="
-                                h-full
-                                w-full
-                                object-cover
-                                transition-transform
-                                duration-500
-                                group-hover:scale-105
-                              "
-                            />
-                          ) : (
-                            <div
-                              className="
-                                flex
-                                h-full
-                                items-center
-                                justify-center
-                                px-5
-                                text-center
-                                text-xs
-                                uppercase
-                                tracking-[2px]
-                                text-[#B2949E]
-                              "
-                            >
-                              No image available
-                            </div>
-                          )}
-
-                          {product.featured && (
-                            <span
-                              className="
-                                absolute
-                                left-4
-                                top-4
-                                rounded-full
-                                bg-white/90
-                                px-3
-                                py-1.5
-                                text-[8px]
-                                uppercase
-                                tracking-[2px]
-                                text-[#E75480]
-                                shadow-sm
-                                backdrop-blur-sm
-                              "
-                            >
-                              Featured
-                            </span>
-                          )}
-                        </div>
-                      </Link>
-
-                      {/* CONTENT */}
-
-                      <div className="p-5">
-                        <p
-                          className="
-                            truncate
-                            text-[9px]
-                            uppercase
-                            tracking-[3px]
-                            text-[#E75480]
-                          "
-                        >
-                          {product.productCategory?.name}
-                        </p>
-
-                        <Link
-                          to={`/products/${product._id}`}
-                        >
-                          <h2
-                            className="
-                              mt-2
-                              truncate
-                              font-serif
-                              text-2xl
-                              text-[#3A2A2F]
-                              transition
-                              hover:text-[#E75480]
-                            "
-                          >
-                            {product.name}
-                          </h2>
-                        </Link>
-
-                        {product.brand && (
-                          <p
-                            className="
-                              mt-1
-                              truncate
-                              text-[11px]
-                              text-[#B0949D]
-                            "
-                          >
-                            {product.brand}
-                          </p>
-                        )}
-
-                        <p
-                          className="
-                            mt-3
-                            line-clamp-2
-                            min-h-[42px]
-                            text-xs
-                            leading-5
-                            text-[#8A6F78]
-                          "
-                        >
-                          {product.description}
-                        </p>
-
-                        {/* PRICE */}
-
-                        <div
-                          className="
-                            mt-5
-                            flex
-                            items-end
-                            justify-between
-                            gap-3
-                          "
-                        >
-                          <div>
-                            <p
-                              className="
-                                font-serif
-                                text-2xl
-                                font-semibold
-                                text-[#E75480]
-                              "
-                            >
-                              ${product.price}
-                            </p>
-
-                            <p
-                              className={`
-                                mt-1
-                                text-[10px]
-
-                                ${
-                                  product.stock >
-                                  0
-                                    ? "text-[#A48B94]"
-                                    : "text-red-400"
-                                }
-                              `}
-                            >
-                              {product.stock > 0
-                                ? `${product.stock} in stock`
-                                : "Out of stock"}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* BUTTONS */}
-
-                        <div
-                          className="
-                            mt-5
-                            flex
-                            gap-2
-                          "
-                        >
-                          <Link
-                            to={`/products/${product._id}`}
-                            className="
-                              flex-1
-                              rounded-full
-                              border
-                              border-[#E75480]/20
-                              bg-[#FFF5F8]
-                              px-3
-                              py-3
-                              text-center
-                              text-[9px]
-                              uppercase
-                              tracking-[1.5px]
-                              text-[#E75480]
-                              transition
-                              hover:bg-[#FCE7EF]
-                            "
-                          >
-                            View
-                          </Link>
-
-                          <button
-                            type="button"
-                            disabled={
-                              product.stock <= 0
-                            }
-                            onClick={() =>
-                              handleAddToCart(
-                                product
-                              )
-                            }
-                            className="
-                              flex-1
-                              rounded-full
-                              bg-[#E75480]
-                              px-3
-                              py-3
-                              text-[9px]
-                              uppercase
-                              tracking-[1.5px]
-                              text-white
-                              transition
-                              hover:bg-[#D63C6D]
-
-                              disabled:cursor-not-allowed
-                              disabled:bg-[#D9BFC7]
-                            "
-                          >
-                            {product.stock > 0
-                              ? "Add"
-                              : "Sold Out"}
-                          </button>
-                        </div>
-                      </div>
-                    </article>
-                  )
-                )}
-              </div>
-
-              {/* =============================================
-                  DESKTOP PAGINATION
-              ============================================= */}
-
-              {desktopTotalPages > 1 && (
-                <div
-                  className="
-                    mt-12
-                    flex
-                    items-center
-                    justify-center
-                    gap-2
-                  "
-                >
-                  <button
-                    type="button"
-                    disabled={
-                      desktopPage === 1
-                    }
-                    onClick={() =>
-                      changeDesktopPage(
-                        desktopPage - 1
-                      )
-                    }
-                    aria-label="Previous page"
-                    className="
-                      flex
-                      h-10
-                      w-10
-                      items-center
-                      justify-center
-                      rounded-full
-                      border
-                      border-[#E75480]/20
-                      bg-white
-                      text-lg
-                      text-[#E75480]
-                      transition
-                      hover:bg-[#FFF0F5]
-
-                      disabled:cursor-not-allowed
-                      disabled:opacity-30
-                    "
-                  >
-                    ‹
-                  </button>
-
-                  {Array.from(
-                    {
-                      length:
-                        desktopTotalPages,
-                    },
-                    (_, index) => index + 1
-                  ).map((page) => (
-                    <button
-                      key={page}
-                      type="button"
-                      onClick={() =>
-                        changeDesktopPage(
-                          page
-                        )
-                      }
-                      className={`
-                        flex
-                        h-10
-                        min-w-10
-                        items-center
-                        justify-center
-                        rounded-full
-                        px-3
-                        text-xs
-                        transition
-
-                        ${
-                          desktopPage ===
-                          page
-                            ? "bg-[#E75480] text-white"
-                            : "border border-[#E75480]/20 bg-white text-[#E75480] hover:bg-[#FFF0F5]"
-                        }
-                      `}
-                    >
-                      {page}
-                    </button>
-                  ))}
-
-                  <button
-                    type="button"
-                    disabled={
-                      desktopPage ===
-                      desktopTotalPages
-                    }
-                    onClick={() =>
-                      changeDesktopPage(
-                        desktopPage + 1
-                      )
-                    }
-                    aria-label="Next page"
-                    className="
-                      flex
-                      h-10
-                      w-10
-                      items-center
-                      justify-center
-                      rounded-full
-                      border
-                      border-[#E75480]/20
-                      bg-white
-                      text-lg
-                      text-[#E75480]
-                      transition
-                      hover:bg-[#FFF0F5]
-
-                      disabled:cursor-not-allowed
-                      disabled:opacity-30
-                    "
-                  >
-                    ›
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* ===============================================
-                MOBILE PRODUCTS
-
-                Up to 10 products per page.
-                Swipe horizontally.
-            =============================================== */}
-
+          {products.length === 0 ? (
             <div
-              id="mobile-products"
               className="
-                mt-10
-                scroll-mt-24
-                md:hidden
+                mt-6
+                rounded-[18px]
+                border
+                border-[#EEE1E6]
+                bg-white
+                px-6
+                py-10
+                text-center
               "
             >
-              {/* COUNT */}
-
-              <div
+              <h2
                 className="
-                  mb-5
-                  flex
-                  items-center
-                  justify-between
+                  font-serif
+                  text-2xl
+                  text-[#3A2A2F]
                 "
               >
-                <p
-                  className="
-                    text-[9px]
-                    uppercase
-                    tracking-[2px]
-                    text-[#A88993]
-                  "
-                >
-                  {products.length} Products
-                </p>
-
-                <p
-                  className="
-                    text-[9px]
-                    uppercase
-                    tracking-[2px]
-                    text-[#A88993]
-                  "
-                >
-                  {mobilePage}/
-                  {mobileTotalPages}
-                </p>
-              </div>
-
-              {/* SWIPE CONTAINER */}
-
-              <div
-                className="
-                  -mx-4
-                  flex
-                  snap-x
-                  snap-mandatory
-                  gap-4
-                  overflow-x-auto
-                  px-4
-                  pb-6
-
-                  [scrollbar-width:none]
-                  [&::-webkit-scrollbar]:hidden
-                "
-              >
-                {mobileProducts.map(
-                  (product) => (
-                    <article
-                      key={product._id}
-                      className="
-                        w-[78vw]
-                        max-w-[300px]
-                        flex-none
-                        snap-center
-                        overflow-hidden
-                        rounded-[24px]
-                        border
-                        border-[#F4E4EA]
-                        bg-white
-                        shadow-[0_10px_30px_rgba(112,72,87,0.06)]
-                      "
-                    >
-                      {/* IMAGE */}
-
-                      <Link
-                        to={`/products/${product._id}`}
-                        className="block"
-                      >
-                        <div
-                          className="
-                            relative
-                            aspect-square
-                            overflow-hidden
-                            bg-[#FDF0F4]
-                          "
-                        >
-                          {product
-                            .images?.[0] ? (
-                            <img
-                              src={
-                                product.images[0]
-                              }
-                              alt={product.name}
-                              loading="lazy"
-                              className="
-                                h-full
-                                w-full
-                                object-cover
-                              "
-                            />
-                          ) : (
-                            <div
-                              className="
-                                flex
-                                h-full
-                                items-center
-                                justify-center
-                                text-xs
-                                text-[#A88993]
-                              "
-                            >
-                              No image
-                            </div>
-                          )}
-
-                          {product.featured && (
-                            <span
-                              className="
-                                absolute
-                                left-3
-                                top-3
-                                rounded-full
-                                bg-white/90
-                                px-3
-                                py-1.5
-                                text-[8px]
-                                uppercase
-                                tracking-[1.5px]
-                                text-[#E75480]
-                              "
-                            >
-                              Featured
-                            </span>
-                          )}
-                        </div>
-                      </Link>
-
-                      {/* CONTENT */}
-
-                      <div className="p-5">
-                        <p
-                          className="
-                            truncate
-                            text-[8px]
-                            uppercase
-                            tracking-[2.5px]
-                            text-[#E75480]
-                          "
-                        >
-                          {product.productCategory?.name}
-                        </p>
-
-                        <Link
-                          to={`/products/${product._id}`}
-                        >
-                          <h2
-                            className="
-                              mt-2
-                              truncate
-                              font-serif
-                              text-2xl
-                              text-[#3A2A2F]
-                            "
-                          >
-                            {product.name}
-                          </h2>
-                        </Link>
-
-                        {product.brand && (
-                          <p
-                            className="
-                              mt-1
-                              truncate
-                              text-[10px]
-                              text-[#B0949D]
-                            "
-                          >
-                            {product.brand}
-                          </p>
-                        )}
-
-                        <p
-                          className="
-                            mt-3
-                            line-clamp-2
-                            min-h-[40px]
-                            text-xs
-                            leading-5
-                            text-[#8A6F78]
-                          "
-                        >
-                          {product.description}
-                        </p>
-
-                        <div
-                          className="
-                            mt-5
-                            flex
-                            items-end
-                            justify-between
-                          "
-                        >
-                          <div>
-                            <p
-                              className="
-                                font-serif
-                                text-2xl
-                                font-semibold
-                                text-[#E75480]
-                              "
-                            >
-                              ${product.price}
-                            </p>
-
-                            <p
-                              className="
-                                mt-1
-                                text-[9px]
-                                text-[#A48B94]
-                              "
-                            >
-                              {product.stock > 0
-                                ? `${product.stock} in stock`
-                                : "Out of stock"}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div
-                          className="
-                            mt-5
-                            flex
-                            gap-2
-                          "
-                        >
-                          <Link
-                            to={`/products/${product._id}`}
-                            className="
-                              flex-1
-                              rounded-full
-                              border
-                              border-[#E75480]/20
-                              bg-[#FFF5F8]
-                              py-3
-                              text-center
-                              text-[9px]
-                              uppercase
-                              tracking-[1.5px]
-                              text-[#E75480]
-                            "
-                          >
-                            View
-                          </Link>
-
-                          <button
-                            type="button"
-                            disabled={
-                              product.stock <= 0
-                            }
-                            onClick={() =>
-                              handleAddToCart(
-                                product
-                              )
-                            }
-                            className="
-                              flex-1
-                              rounded-full
-                              bg-[#E75480]
-                              py-3
-                              text-[9px]
-                              uppercase
-                              tracking-[1.5px]
-                              text-white
-
-                              disabled:cursor-not-allowed
-                              disabled:bg-[#D9BFC7]
-                            "
-                          >
-                            {product.stock > 0
-                              ? "Add"
-                              : "Sold"}
-                          </button>
-                        </div>
-                      </div>
-                    </article>
-                  )
-                )}
-              </div>
-
-              {/* SWIPE TEXT */}
+                Products coming soon
+              </h2>
 
               <p
                 className="
+                  mt-2
+                  text-[12px]
+                  text-[#8A6F78]
+                "
+              >
+                Our beauty collection is being
+                prepared.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* =================================================
+                  TABLET + DESKTOP GRID
+              ================================================= */}
+
+{/* =================================================
+    TABLET + DESKTOP GRID
+================================================= */}
+
+<div className="hidden md:block">
+  <div
+    key={`desktop-page-${desktopPage}`}
+    className="
+      mt-6
+      grid
+      animate-[productPageIn_0.45s_ease-out_both]
+
+      grid-cols-3
+      gap-x-4
+      gap-y-6
+
+      lg:grid-cols-4
+      lg:gap-x-5
+      lg:gap-y-7
+    "
+  >
+    {desktopProducts.map((product, index) => (
+      <article
+        key={product._id}
+        style={{
+          animationDelay: `${index * 45}ms`,
+        }}
+        className="
+          group
+          min-w-0
+          overflow-hidden
+
+          rounded-[18px]
+
+          border
+          border-[#E8D9DE]
+
+          bg-white
+          p-2.5
+
+          shadow-[0_4px_14px_rgba(58,42,47,0.03)]
+
+          transition-all
+          duration-300
+
+          hover:-translate-y-1
+          hover:border-[#D9C0C9]
+          hover:shadow-[0_10px_24px_rgba(58,42,47,0.07)]
+
+          animate-[productCardIn_0.5s_ease-out_both]
+        "
+      >
+        {/* ======================================
+            IMAGE
+        ====================================== */}
+
+        <Link
+          to={`/products/${product._id}`}
+          className="
+            block
+            focus:outline-none
+          "
+        >
+          <div
+            className="
+              relative
+
+              aspect-[4/3]
+
+              overflow-hidden
+
+              rounded-[14px]
+
+              border
+              border-[#EADDE2]
+
+              bg-[#F7ECEF]
+
+              shadow-[0_5px_16px_rgba(58,42,47,0.03)]
+
+              transition-all
+              duration-500
+              ease-out
+
+              group-hover:-translate-y-0.5
+              group-hover:shadow-[0_10px_24px_rgba(58,42,47,0.07)]
+            "
+          >
+            {product.images?.[0] ? (
+              <img
+                src={product.images[0]}
+                alt={product.name}
+                loading="lazy"
+                className="
+                  h-full
+                  w-full
+                  object-cover
+
+                  transition-transform
+                  duration-700
+                  ease-out
+
+                  group-hover:scale-[1.03]
+                "
+              />
+            ) : (
+              <div
+                className="
+                  flex
+                  h-full
+                  items-center
+                  justify-center
+                  px-4
                   text-center
+
                   text-[8px]
                   uppercase
-                  tracking-[4px]
+                  tracking-[0.16em]
                   text-[#B2949E]
                 "
               >
-                Swipe to explore
-              </p>
+                No image
+              </div>
+            )}
 
-              {/* =============================================
-                  MOBILE 10-PRODUCT GROUP PAGINATION
-              ============================================= */}
+            {/* SOFT HOVER GRADIENT */}
 
-              {mobileTotalPages > 1 && (
-                <div
-                  className="
-                    mt-7
-                    flex
-                    items-center
-                    justify-center
-                    gap-2
-                  "
-                >
-                  <button
-                    type="button"
-                    disabled={
-                      mobilePage === 1
-                    }
-                    onClick={() =>
-                      changeMobilePage(
-                        mobilePage - 1
-                      )
-                    }
-                    className="
-                      flex
-                      h-9
-                      w-9
-                      items-center
-                      justify-center
-                      rounded-full
-                      border
-                      border-[#E75480]/20
-                      bg-white
-                      text-[#E75480]
+            <div
+              className="
+                pointer-events-none
+                absolute
+                inset-0
 
-                      disabled:opacity-30
-                    "
-                    aria-label="Previous product group"
-                  >
-                    ‹
-                  </button>
+                bg-gradient-to-t
+                from-[#3A2A2F]/15
+                via-transparent
+                to-transparent
 
-                  {Array.from(
-                    {
-                      length:
-                        mobileTotalPages,
-                    },
-                    (_, index) => index + 1
-                  ).map((page) => (
-                    <button
-                      key={page}
-                      type="button"
-                      onClick={() =>
-                        changeMobilePage(page)
-                      }
-                      aria-label={`Product page ${page}`}
-                      className={`
-                        h-2
-                        rounded-full
-                        transition-all
+                opacity-0
 
-                        ${
-                          mobilePage === page
-                            ? "w-7 bg-[#E75480]"
-                            : "w-2 bg-[#E8CAD4]"
-                        }
-                      `}
-                    />
-                  ))}
+                transition-opacity
+                duration-500
 
-                  <button
-                    type="button"
-                    disabled={
-                      mobilePage ===
-                      mobileTotalPages
-                    }
-                    onClick={() =>
-                      changeMobilePage(
-                        mobilePage + 1
-                      )
-                    }
-                    className="
-                      flex
-                      h-9
-                      w-9
-                      items-center
-                      justify-center
-                      rounded-full
-                      border
-                      border-[#E75480]/20
-                      bg-white
-                      text-[#E75480]
+                group-hover:opacity-100
+              "
+            />
 
-                      disabled:opacity-30
-                    "
-                    aria-label="Next product group"
-                  >
-                    ›
-                  </button>
-                </div>
-              )}
+            {/* FEATURED BADGE */}
+
+            {product.featured && (
+              <span
+                className="
+                  absolute
+                  left-2
+                  top-2
+
+                  rounded-full
+
+                  bg-white/95
+
+                  px-2
+                  py-1
+
+                  text-[6px]
+                  font-semibold
+                  uppercase
+                  tracking-[0.14em]
+                  text-[#E75480]
+
+                  shadow-sm
+                  backdrop-blur-md
+                "
+              >
+                Featured
+              </span>
+            )}
+
+            {/* QUICK VIEW */}
+
+            <div
+              className="
+                absolute
+                inset-x-3
+                bottom-3
+
+                translate-y-2
+                opacity-0
+
+                transition-all
+                duration-300
+                ease-out
+
+                group-hover:translate-y-0
+                group-hover:opacity-100
+              "
+            >
+              <div
+                className="
+                  rounded-full
+                  bg-white/95
+
+                  px-3
+                  py-2
+
+                  text-center
+                  text-[7px]
+                  font-semibold
+                  uppercase
+                  tracking-[0.14em]
+                  text-[#3A2A2F]
+
+                  shadow-md
+                  backdrop-blur-md
+                "
+              >
+                View Product
+              </div>
             </div>
-          </>
-        )}
+          </div>
+        </Link>
+
+        {/* ======================================
+            PRODUCT INFO
+        ====================================== */}
+
+        <div className="px-0.5 pt-2.5">
+          {/* CATEGORY */}
+
+          {product.productCategory?.name && (
+            <p
+              className="
+                truncate
+
+                text-[6px]
+                font-medium
+                uppercase
+                tracking-[0.15em]
+
+                text-[#C77A95]
+              "
+            >
+              {product.productCategory.name}
+            </p>
+          )}
+
+          {/* NAME + PRICE */}
+
+          <div
+            className="
+              mt-1
+
+              flex
+              items-start
+              justify-between
+              gap-2
+            "
+          >
+            <Link
+              to={`/products/${product._id}`}
+              className="
+                min-w-0
+                flex-1
+              "
+            >
+              <h2
+                className="
+                  truncate
+
+                  font-serif
+                  text-[14px]
+                  leading-5
+
+                  text-[#3A2A2F]
+
+                  transition-colors
+                  duration-200
+
+                  hover:text-[#E75480]
+                "
+              >
+                {product.name}
+              </h2>
+            </Link>
+
+            <p
+              className="
+                shrink-0
+                pt-[1px]
+
+                text-[11px]
+                font-semibold
+
+                text-[#E75480]
+              "
+            >
+              ${Number(product.price).toFixed(2)}
+            </p>
+          </div>
+
+          {/* BRAND + STOCK */}
+
+          <div
+            className="
+              mt-0.5
+
+              flex
+              items-center
+              justify-between
+              gap-3
+            "
+          >
+            <p
+              className="
+                min-w-0
+                truncate
+
+                text-[8px]
+
+                text-[#A58C95]
+              "
+            >
+              {product.brand || "Nirjara Beauty"}
+            </p>
+
+            <p
+              className={`
+                shrink-0
+
+                text-[7px]
+
+                ${
+                  product.stock > 0
+                    ? "text-[#A58C95]"
+                    : "text-red-400"
+                }
+              `}
+            >
+              {product.stock > 0
+                ? "In stock"
+                : "Sold out"}
+            </p>
+          </div>
+
+          {/* ADD TO BAG */}
+
+          <button
+            type="button"
+            disabled={product.stock <= 0}
+            onClick={() =>
+              handleAddToCart(product)
+            }
+            className="
+              mt-2
+              w-full
+
+              rounded-full
+
+              bg-[#3A2A2F]
+
+              py-2
+
+              text-[7px]
+              font-semibold
+              uppercase
+              tracking-[0.15em]
+
+              text-white
+
+              transition-all
+              duration-300
+
+              hover:-translate-y-[1px]
+              hover:bg-[#E75480]
+              hover:shadow-[0_5px_14px_rgba(231,84,128,0.16)]
+
+              active:translate-y-0
+              active:scale-[0.985]
+
+              disabled:cursor-not-allowed
+              disabled:bg-[#D8C9CE]
+              disabled:shadow-none
+            "
+          >
+            {product.stock > 0
+              ? "Add to Bag"
+              : "Sold Out"}
+          </button>
+        </div>
+      </article>
+    ))}
+  </div>
+
+  {/* =================================================
+      DESKTOP PAGINATION
+  ================================================= */}
+
+  {desktopTotalPages > 1 && (
+    <div
+      className="
+        mt-8
+
+        flex
+        items-center
+        justify-center
+
+        border-t
+        border-[#3A2A2F]/10
+
+        pt-5
+      "
+    >
+      <div
+        className="
+          flex
+          items-center
+          justify-center
+          gap-2
+        "
+      >
+        {/* PREVIOUS */}
+
+        <button
+          type="button"
+          disabled={desktopPage === 1}
+          onClick={() =>
+            changeDesktopPage(desktopPage - 1)
+          }
+          aria-label="Previous page"
+          className="
+            flex
+            h-9
+            w-9
+            items-center
+            justify-center
+
+            rounded-full
+
+            border
+            border-[#E8D9DE]
+
+            bg-white
+
+            text-[13px]
+            text-[#3A2A2F]
+
+            transition-all
+            duration-200
+
+            hover:border-[#E75480]
+            hover:text-[#E75480]
+
+            disabled:cursor-not-allowed
+            disabled:opacity-30
+          "
+        >
+          ‹
+        </button>
+
+        {/* PAGE NUMBERS */}
+
+        {Array.from(
+          { length: desktopTotalPages },
+          (_, index) => index + 1
+        ).map((page) => (
+          <button
+            key={page}
+            type="button"
+            onClick={() =>
+              changeDesktopPage(page)
+            }
+            aria-label={`Page ${page}`}
+            className={`
+              flex
+              h-9
+              min-w-9
+              items-center
+              justify-center
+
+              rounded-full
+
+              px-3
+
+              text-[10px]
+              font-semibold
+
+              transition-all
+              duration-200
+
+              ${
+                desktopPage === page
+                  ? `
+                    border
+                    border-[#E75480]
+                    bg-[#E75480]
+                    text-white
+                    shadow-[0_4px_12px_rgba(231,84,128,0.20)]
+                  `
+                  : `
+                    border
+                    border-[#E8D9DE]
+                    bg-white
+                    text-[#8A6F78]
+
+                    hover:border-[#E75480]
+                    hover:text-[#E75480]
+                  `
+              }
+            `}
+          >
+            {page}
+          </button>
+        ))}
+
+        {/* NEXT */}
+
+        <button
+          type="button"
+          disabled={
+            desktopPage === desktopTotalPages
+          }
+          onClick={() =>
+            changeDesktopPage(desktopPage + 1)
+          }
+          aria-label="Next page"
+          className="
+            flex
+            h-9
+            w-9
+            items-center
+            justify-center
+
+            rounded-full
+
+            border
+            border-[#E8D9DE]
+
+            bg-white
+
+            text-[13px]
+            text-[#3A2A2F]
+
+            transition-all
+            duration-200
+
+            hover:border-[#E75480]
+            hover:text-[#E75480]
+
+            disabled:cursor-not-allowed
+            disabled:opacity-30
+          "
+        >
+          ›
+        </button>
+      </div>
+    </div>
+  )}
+</div>
+
+              {/* =================================================
+                  MOBILE
+              ================================================= */}
+
+{/* =================================================
+    MOBILE
+================================================= */}
+
+<div
+  id="mobile-products"
+  className="
+    mt-5
+    scroll-mt-24
+    md:hidden
+  "
+>
+  {/* MOBILE GRID */}
+
+  <div
+    key={`mobile-page-${mobilePage}`}
+    className="
+      grid
+      grid-cols-2
+      gap-3
+      animate-[productPageIn_0.4s_ease-out_both]
+    "
+  >
+    {mobileProducts.map((product, index) => (
+      <article
+        key={product._id}
+        style={{
+          animationDelay: `${index * 35}ms`,
+        }}
+        className="
+          group
+          min-w-0
+          overflow-hidden
+          rounded-[18px]
+          border
+          border-[#E8D9DE]
+          bg-white
+          p-2.5
+          shadow-[0_4px_16px_rgba(58,42,47,0.035)]
+          transition-all
+          duration-300
+          active:scale-[0.99]
+          animate-[productCardIn_0.45s_ease-out_both]
+        "
+      >
+        {/* IMAGE */}
+
+        <Link
+          to={`/products/${product._id}`}
+          className="block"
+        >
+          <div
+            className="
+              relative
+              aspect-[4/3]
+              overflow-hidden
+              rounded-[13px]
+              border
+              border-[#EADDE2]
+              bg-[#F7ECEF]
+              shadow-[0_4px_14px_rgba(58,42,47,0.035)]
+              transition-transform
+              duration-300
+              active:scale-[0.985]
+            "
+          >
+            {product.images?.[0] ? (
+              <img
+                src={product.images[0]}
+                alt={product.name}
+                loading="lazy"
+                className="
+                  h-full
+                  w-full
+                  object-cover
+                "
+              />
+            ) : (
+              <div
+                className="
+                  flex
+                  h-full
+                  items-center
+                  justify-center
+                  text-[7px]
+                  uppercase
+                  tracking-[0.15em]
+                  text-[#A88993]
+                "
+              >
+                No image
+              </div>
+            )}
+
+            {product.featured && (
+              <span
+                className="
+                  absolute
+                  left-2
+                  top-2
+                  rounded-full
+                  bg-white/95
+                  px-2
+                  py-1
+                  text-[6px]
+                  font-semibold
+                  uppercase
+                  tracking-[0.12em]
+                  text-[#E75480]
+                  shadow-sm
+                "
+              >
+                Featured
+              </span>
+            )}
+          </div>
+        </Link>
+
+        {/* INFO */}
+
+        <div className="px-0.5 pt-2.5">
+          {product.productCategory?.name && (
+            <p
+              className="
+                truncate
+                text-[7px]
+                font-medium
+                uppercase
+                tracking-[0.14em]
+                text-[#C77A95]
+              "
+            >
+              {product.productCategory.name}
+            </p>
+          )}
+
+          <Link to={`/products/${product._id}`}>
+            <h2
+              className="
+                mt-1
+                truncate
+                font-serif
+                text-[13px]
+                leading-[1.35]
+                text-[#3A2A2F]
+              "
+            >
+              {product.name}
+            </h2>
+          </Link>
+
+          <div
+            className="
+              mt-1
+              flex
+              items-center
+              justify-between
+              gap-2
+            "
+          >
+            <span
+              className="
+                text-[11px]
+                font-semibold
+                text-[#E75480]
+              "
+            >
+              ${Number(product.price).toFixed(2)}
+            </span>
+
+            <span
+              className={`
+                truncate
+                text-[8px]
+
+                ${
+                  product.stock > 0
+                    ? "text-[#A58C95]"
+                    : "text-red-400"
+                }
+              `}
+            >
+              {product.stock > 0
+                ? "In stock"
+                : "Sold out"}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            disabled={product.stock <= 0}
+            onClick={() =>
+              handleAddToCart(product)
+            }
+            className="
+              mt-2.5
+              w-full
+              rounded-full
+              bg-[#3A2A2F]
+              py-2.5
+              text-[8px]
+              font-semibold
+              uppercase
+              tracking-[0.14em]
+              text-white
+              transition-all
+              duration-200
+              active:scale-[0.97]
+              disabled:bg-[#D8C9CE]
+            "
+          >
+            {product.stock > 0
+              ? "Add to Bag"
+              : "Sold Out"}
+          </button>
+        </div>
+      </article>
+    ))}
+  </div>
+
+{/* MOBILE META + PAGINATION */}
+
+<div
+  className="
+    mt-7
+    grid
+    grid-cols-[1fr_auto_1fr]
+    items-center
+    gap-2
+    border-t
+    border-[#3A2A2F]/10
+    pt-4
+  "
+>
+  {/* LEFT: PRODUCT COUNT */}
+
+  <span
+    className="
+      justify-self-start
+      text-[8px]
+      uppercase
+      tracking-[0.17em]
+      text-[#AD969E]
+    "
+  >
+    {products.length} products
+  </span>
+
+  {/* CENTER: PAGINATION */}
+
+  {mobileTotalPages > 1 ? (
+    <div
+      className="
+        flex
+        items-center
+        justify-center
+        gap-1.5
+      "
+    >
+      {/* PREVIOUS */}
+
+      <button
+        type="button"
+        disabled={mobilePage === 1}
+        onClick={() =>
+          changeMobilePage(mobilePage - 1)
+        }
+        aria-label="Previous page"
+        className="
+          flex
+          h-7
+          w-7
+          items-center
+          justify-center
+          rounded-full
+          border
+          border-[#E8D9DE]
+          bg-white
+          text-[11px]
+          text-[#3A2A2F]
+          transition-all
+          duration-200
+          active:scale-[0.96]
+          disabled:cursor-not-allowed
+          disabled:opacity-30
+        "
+      >
+        ‹
+      </button>
+
+      {/* PAGE NUMBERS */}
+
+      {Array.from(
+        { length: mobileTotalPages },
+        (_, index) => index + 1
+      ).map((page) => (
+        <button
+          key={page}
+          type="button"
+          onClick={() =>
+            changeMobilePage(page)
+          }
+          aria-label={`Page ${page}`}
+          className={`
+            flex
+            h-7
+            min-w-7
+            items-center
+            justify-center
+            rounded-full
+            px-2
+            text-[8px]
+            font-semibold
+            transition-all
+            duration-200
+
+            ${
+              mobilePage === page
+                ? "border border-[#E75480] bg-[#E75480] text-white shadow-[0_3px_10px_rgba(231,84,128,0.18)]"
+                : "border border-[#E8D9DE] bg-white text-[#8A6F78]"
+            }
+          `}
+        >
+          {page}
+        </button>
+      ))}
+
+      {/* NEXT */}
+
+      <button
+        type="button"
+        disabled={
+          mobilePage === mobileTotalPages
+        }
+        onClick={() =>
+          changeMobilePage(mobilePage + 1)
+        }
+        aria-label="Next page"
+        className="
+          flex
+          h-7
+          w-7
+          items-center
+          justify-center
+          rounded-full
+          border
+          border-[#E8D9DE]
+          bg-white
+          text-[11px]
+          text-[#3A2A2F]
+          transition-all
+          duration-200
+          active:scale-[0.96]
+          disabled:cursor-not-allowed
+          disabled:opacity-30
+        "
+      >
+        ›
+      </button>
+    </div>
+  ) : (
+    <div />
+  )}
+
+  {/* RIGHT: PAGE COUNT */}
+
+  <span
+    className="
+      justify-self-end
+      text-[8px]
+      uppercase
+      tracking-[0.17em]
+      text-[#AD969E]
+    "
+  >
+    Page {mobilePage} of {mobileTotalPages}
+  </span>
+</div>
+
+
+</div>
+            </>
+          )}
+        </div>
       </section>
+
+      {/* ===================================================
+          LOCAL ANIMATION KEYFRAMES
+
+          No Framer Motion dependency needed.
+      =================================================== */}
+
+      <style>{`
+        @keyframes productPageIn {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes productCardIn {
+          from {
+            opacity: 0;
+            transform: translateY(12px) scale(0.985);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          [class*="productPageIn"],
+          [class*="productCardIn"] {
+            animation: none !important;
+          }
+        }
+      `}</style>
     </>
   );
 }
