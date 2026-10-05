@@ -13,7 +13,7 @@ const navItems = [
   { label: "Blog", path: "/blog" },
   { label: "Contact", path: "/contact" },
   { label: "Products", path: "/products" },
-  { label: "events", path: "/events" },
+  { label: "Events", path: "/events" },
 ];
 
 export default function Navbar() {
@@ -26,14 +26,20 @@ export default function Navbar() {
     0
   );
 
-  /* CLOSE MENU WHEN CLICKING OUTSIDE */
+  /* ============================================================
+     CLOSE MENU WHEN CLICKING OUTSIDE
+  ============================================================ */
+
   useEffect(() => {
     const handleOutsideClick = () => {
       setOpen(false);
     };
 
     if (open) {
-      document.addEventListener("click", handleOutsideClick);
+      document.addEventListener(
+        "click",
+        handleOutsideClick
+      );
     }
 
     return () => {
@@ -45,58 +51,99 @@ export default function Navbar() {
   }, [open]);
 
   return (
-    <nav className="fixed left-0 right-0 top-0 z-50 border-b border-[#E75480]/15 bg-white/95 px-4 py-4 shadow-sm backdrop-blur">
+    <nav
+      className="
+        fixed
+        left-0
+        right-0
+        top-0
+        z-50
+        border-b
+        border-[#E75480]/15
+        bg-white/95
+        px-4
+        py-4
+        shadow-sm
+        backdrop-blur
+      "
+    >
+      {/* ========================================================
+          NAVBAR CONTAINER
+      ======================================================== */}
 
-      {/* NAVBAR CONTAINER */}
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 lg:gap-4">
+      <div
+        className="
+          mx-auto
+          flex
+          max-w-7xl
+          items-center
+          justify-between
+          gap-2
 
-        {/* LOGO */}
-        {/* <NavLink
+          lg:gap-4
+        "
+      >
+        {/* ======================================================
+            LOGO
+        ====================================================== */}
+
+        <NavLink
           to="/"
           onClick={() => setOpen(false)}
-          className="shrink-0 font-serif text-base leading-tight tracking-[2px] text-[#E75480] sm:text-xl xl:text-2xl"
+          className="flex shrink-0 items-center"
+          aria-label="Nirjara Beauty Home"
         >
-          NIRJARA{" "}
-          <span className="block italic tracking-[3px] text-[#C77A95] sm:inline">
-            Beauty
-          </span>
-        </NavLink> */}
-        {/* ========================================
-            NIRJARA LOGO
-        ======================================== */}
+          <img
+            src="/images/Nirjara-logo.png"
+            alt="Nirjara Beauty"
+            className="
+              h-[42px]
+              w-auto
+              object-contain
 
-          <NavLink
-            to="/"
-            onClick={() => setOpen(false)}
-            className="flex shrink-0 items-center"
-            aria-label="Nirjara Beauty Home"
-          >
-            <img
-              src="/images/Nirjara-logo.png"
-              alt="Nirjara Beauty"
-              className="
-                h-[42px]
-                w-auto
-                object-contain
-                sm:h-[46px]
-                lg:h-[48px]
-                xl:h-[52px]
-              "
-            />
-          </NavLink>
+              sm:h-[46px]
 
-        {/* DESKTOP MENU */}
-        <div className="hidden items-center gap-4 lg:flex xl:gap-6">
+              lg:h-[48px]
+
+              xl:h-[52px]
+            "
+          />
+        </NavLink>
+
+        {/* ======================================================
+            DESKTOP MENU
+        ====================================================== */}
+
+        <div
+          className="
+            hidden
+            items-center
+            gap-4
+
+            lg:flex
+
+            xl:gap-6
+          "
+        >
           {navItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
-                `text-[11px] uppercase tracking-[2px] transition ${
-                  isActive
-                    ? "text-[#E75480]"
-                    : "text-[#8A6F78]"
-                } hover:text-[#E75480]`
+                `
+                  text-[11px]
+                  uppercase
+                  tracking-[2px]
+                  transition
+
+                  ${
+                    isActive
+                      ? "text-[#E75480]"
+                      : "text-[#8A6F78]"
+                  }
+
+                  hover:text-[#E75480]
+                `
               }
             >
               {item.label}
@@ -104,12 +151,24 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* RIGHT SIDE */}
-        <div className="hidden items-center gap-3 lg:flex">
+        {/* ======================================================
+            DESKTOP RIGHT SIDE
+        ====================================================== */}
 
-          {/* CART ICON */}
+        <div
+          className="
+            hidden
+            items-center
+            gap-3
+
+            lg:flex
+          "
+        >
+          {/* DESKTOP CART */}
+
           <NavLink
             to="/cart"
+            aria-label="View cart"
             className="
               relative
               flex
@@ -122,11 +181,18 @@ export default function Navbar() {
               border-[#E75480]/20
               bg-[#FFF5F8]
               text-[#E75480]
-              transition
+              transition-all
+              duration-300
+
+              hover:-translate-y-0.5
+              hover:border-[#E75480]/40
               hover:bg-[#FCE7EF]
             "
           >
-            <ShoppingBag size={20} />
+            <ShoppingBag
+              size={20}
+              strokeWidth={1.8}
+            />
 
             {cartCount > 0 && (
               <span
@@ -136,12 +202,14 @@ export default function Navbar() {
                   -top-1
                   flex
                   h-5
-                  w-5
+                  min-w-[20px]
                   items-center
                   justify-center
                   rounded-full
                   bg-[#E75480]
+                  px-1
                   text-[10px]
+                  font-medium
                   text-white
                 "
               >
@@ -150,7 +218,8 @@ export default function Navbar() {
             )}
           </NavLink>
 
-          {/* BOOK BUTTON */}
+          {/* DESKTOP BOOK BUTTON */}
+
           <NavLink
             to="/booking"
             className="
@@ -164,8 +233,12 @@ export default function Navbar() {
               uppercase
               tracking-[2px]
               text-white
-              transition
+              transition-all
+              duration-300
+
+              hover:-translate-y-0.5
               hover:bg-[#d63c6d]
+
               xl:px-6
             "
           >
@@ -173,31 +246,125 @@ export default function Navbar() {
           </NavLink>
         </div>
 
-        {/* MOBILE/TABLET MENU BUTTON */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setOpen(!open);
-          }}
+        {/* ======================================================
+            MOBILE + TABLET RIGHT SIDE
+
+            CART BESIDE MENU
+        ====================================================== */}
+
+        <div
           className="
-            rounded-full
-            border
-            border-[#E75480]/20
-            bg-[#FFF5F8]
-            px-4
-            py-2
-            text-[10px]
-            uppercase
-            tracking-[2px]
-            text-[#E75480]
+            flex
+            items-center
+            gap-2
+
             lg:hidden
           "
         >
-          {open ? "Close" : "Menu"}
-        </button>
+          {/* MOBILE / TABLET CART */}
+
+          <NavLink
+            to="/cart"
+            onClick={() => setOpen(false)}
+            aria-label="View cart"
+            className="
+              relative
+              flex
+              h-10
+              w-10
+              items-center
+              justify-center
+              rounded-full
+              border
+              border-[#E75480]/20
+              bg-[#FFF5F8]
+              text-[#E75480]
+              transition-all
+              duration-300
+
+              hover:border-[#E75480]/40
+              hover:bg-[#FCE7EF]
+
+              sm:h-11
+              sm:w-11
+            "
+          >
+            <ShoppingBag
+              size={18}
+              strokeWidth={1.8}
+            />
+
+            {cartCount > 0 && (
+              <span
+                className="
+                  absolute
+                  -right-1
+                  -top-1
+                  flex
+                  h-[18px]
+                  min-w-[18px]
+                  items-center
+                  justify-center
+                  rounded-full
+                  bg-[#E75480]
+                  px-1
+                  text-[9px]
+                  font-medium
+                  text-white
+                "
+              >
+                {cartCount}
+              </span>
+            )}
+          </NavLink>
+
+          {/* MOBILE / TABLET MENU BUTTON */}
+
+          <button
+            type="button"
+            aria-label={
+              open
+                ? "Close navigation menu"
+                : "Open navigation menu"
+            }
+            aria-expanded={open}
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpen(!open);
+            }}
+            className="
+              flex
+              h-10
+              items-center
+              justify-center
+              rounded-full
+              border
+              border-[#E75480]/20
+              bg-[#FFF5F8]
+              px-4
+              text-[10px]
+              uppercase
+              tracking-[2px]
+              text-[#E75480]
+              transition-all
+              duration-300
+
+              hover:border-[#E75480]/40
+              hover:bg-[#FCE7EF]
+
+              sm:h-11
+              sm:px-5
+            "
+          >
+            {open ? "Close" : "Menu"}
+          </button>
+        </div>
       </div>
 
-      {/* MOBILE + TABLET MENU */}
+      {/* ========================================================
+          MOBILE + TABLET MENU
+      ======================================================== */}
+
       {open && (
         <div
           onClick={(e) => e.stopPropagation()}
@@ -212,74 +379,63 @@ export default function Navbar() {
             border-[#E75480]/10
             bg-white
             p-2
-            shadow-xl
+            shadow-[0_18px_45px_rgba(58,42,47,0.12)]
+
             sm:w-[230px]
+
             lg:hidden
           "
         >
           <div className="flex flex-col gap-1.5">
 
-            {/* MENU ITEMS */}
+            {/* ==================================================
+                MENU ITEMS
+            ================================================== */}
+
             {navItems.map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}
-                onClick={() => setOpen(false)}
+                onClick={() =>
+                  setOpen(false)
+                }
                 className={({ isActive }) =>
-                  `rounded-xl px-3 py-2.5 text-[10px] uppercase tracking-[2px] transition ${
-                    isActive
-                      ? "bg-[#E75480] text-white"
-                      : "bg-[#FFF5F8] text-[#8A6F78]"
-                  }`
+                  `
+                    rounded-xl
+                    px-3
+                    py-2.5
+                    text-[10px]
+                    uppercase
+                    tracking-[2px]
+                    transition-all
+                    duration-200
+
+                    ${
+                      isActive
+                        ? "bg-[#E75480] text-white"
+                        : "bg-[#FFF5F8] text-[#8A6F78]"
+                    }
+
+                    hover:bg-[#FCE7EF]
+                    hover:text-[#E75480]
+                  `
                 }
               >
                 {item.label}
               </NavLink>
             ))}
 
-            {/* MOBILE CART */}
-            <NavLink
-              to="/cart"
-              onClick={() => setOpen(false)}
-              className="
-                relative
-                flex
-                items-center
-                justify-center
-                rounded-xl
-                bg-[#FFF5F8]
-                px-3
-                py-2.5
-                text-[#E75480]
-              "
-            >
-              <ShoppingBag size={18} />
+            {/* ==================================================
+                MOBILE BOOK BUTTON
+            ================================================== */}
 
-              {cartCount > 0 && (
-                <span
-                  className="
-                    absolute
-                    right-3
-                    top-1/2
-                    -translate-y-1/2
-                    rounded-full
-                    bg-[#E75480]
-                    px-1.5
-                    py-[2px]
-                    text-[9px]
-                    text-white
-                  "
-                >
-                  {cartCount}
-                </span>
-              )}
-            </NavLink>
-
-            {/* MOBILE BOOK BUTTON */}
             <NavLink
               to="/booking"
-              onClick={() => setOpen(false)}
+              onClick={() =>
+                setOpen(false)
+              }
               className="
+                mt-1
                 rounded-xl
                 bg-[#E75480]
                 px-3
@@ -289,7 +445,9 @@ export default function Navbar() {
                 uppercase
                 tracking-[2px]
                 text-white
-                transition
+                transition-all
+                duration-300
+
                 hover:bg-[#d63c6d]
               "
             >
