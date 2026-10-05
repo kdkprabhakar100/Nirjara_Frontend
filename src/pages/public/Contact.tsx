@@ -298,11 +298,19 @@ export default function Contact() {
             "
           >
             {/* ==================================================
-                LEFT SIDE
+                VISIT NIRJARA
+
+                MOBILE / TABLET:
+                Second
+
+                DESKTOP 1024+:
+                Left / First
             ================================================== */}
 
             <section
               className="
+                order-2
+
                 rounded-[28px]
                 border
                 border-[#E75480]/10
@@ -311,10 +319,16 @@ export default function Contact() {
                 shadow-[0_8px_30px_rgba(58,42,47,0.05)]
 
                 sm:p-7
+
+                lg:order-1
+                lg:p-6
+
                 xl:p-8
               "
             >
-              {/* HEADING */}
+              {/* ==================================================
+                  HEADING
+              ================================================== */}
 
               <div>
                 <h1
@@ -326,6 +340,9 @@ export default function Contact() {
                     text-[#3A2A2F]
 
                     sm:text-[46px]
+
+                    lg:text-[42px]
+
                     xl:text-[50px]
                   "
                 >
@@ -344,6 +361,10 @@ export default function Contact() {
                     text-[#8A6F78]
 
                     sm:text-[15px]
+
+                    lg:text-[13px]
+
+                    xl:text-[15px]
                   "
                 >
                   Visit one of our locations or contact our team for
@@ -351,7 +372,9 @@ export default function Contact() {
                 </p>
               </div>
 
-              {/* BRANCH TITLE */}
+              {/* ==================================================
+                  BRANCH TITLE
+              ================================================== */}
 
               <div className="mt-7 flex items-center gap-4">
                 <p
@@ -389,6 +412,7 @@ export default function Contact() {
                       key={branch._id || `${branch.name}-${index}`}
                       className="
                         group
+                        min-w-0
                         rounded-[20px]
                         border
                         border-[#E75480]/15
@@ -401,11 +425,30 @@ export default function Contact() {
                         hover:border-[#E75480]/35
                         hover:bg-white
                         hover:shadow-[0_10px_25px_rgba(231,84,128,0.10)]
+
+                        lg:rounded-[18px]
+                        lg:p-3.5
+
+                        xl:rounded-[20px]
+                        xl:p-4
                       "
                     >
-                      {/* LOCATION */}
+                      {/* ============================================
+                          LOCATION
+                      ============================================ */}
 
-                      <div className="flex items-start gap-3">
+                      <div
+                        className="
+                          flex
+                          min-w-0
+                          items-start
+                          gap-3
+
+                          lg:gap-2.5
+
+                          xl:gap-3
+                        "
+                      >
                         {branch.mapUrl ? (
                           <a
                             href={branch.mapUrl}
@@ -429,9 +472,26 @@ export default function Contact() {
                               hover:scale-105
                               hover:bg-[#E75480]
                               hover:text-white
+
+                              lg:h-9
+                              lg:w-9
+
+                              xl:h-10
+                              xl:w-10
                             "
                           >
-                            <LocationIcon className="h-[18px] w-[18px]" />
+                            <LocationIcon
+                              className="
+                                h-[18px]
+                                w-[18px]
+
+                                lg:h-[16px]
+                                lg:w-[16px]
+
+                                xl:h-[18px]
+                                xl:w-[18px]
+                              "
+                            />
                           </a>
                         ) : (
                           <div
@@ -445,24 +505,62 @@ export default function Contact() {
                               rounded-full
                               bg-[#FCE7EF]
                               text-[#E75480]
+
+                              lg:h-9
+                              lg:w-9
+
+                              xl:h-10
+                              xl:w-10
                             "
                           >
-                            <LocationIcon className="h-[18px] w-[18px]" />
+                            <LocationIcon
+                              className="
+                                h-[18px]
+                                w-[18px]
+
+                                lg:h-[16px]
+                                lg:w-[16px]
+
+                                xl:h-[18px]
+                                xl:w-[18px]
+                              "
+                            />
                           </div>
                         )}
 
                         <div className="min-w-0 flex-1">
+                          {/* ========================================
+                              BRANCH NAME
+
+                              Smaller at 1024px so it fits
+                              on one line.
+                          ======================================== */}
+
                           <h2
+                            title={branch.name}
                             className="
+                              max-w-full
+                              truncate
+                              whitespace-nowrap
                               font-serif
-                              text-[17px]
+                              text-[15px]
                               font-semibold
                               leading-[1.25]
                               text-[#3A2A2F]
+
+                              lg:text-[13px]
+
+                              xl:text-[15px]
+
+                              2xl:text-[16px]
                             "
                           >
                             {branch.name}
                           </h2>
+
+                          {/* ========================================
+                              ADDRESS
+                          ======================================== */}
 
                           {branch.address &&
                             (branch.mapUrl ? (
@@ -470,9 +568,11 @@ export default function Contact() {
                                 href={branch.mapUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                title={`Open ${branch.address} in maps`}
                                 className="
                                   mt-1
-                                  inline-flex
+                                  flex
+                                  min-w-0
                                   items-start
                                   gap-1
                                   text-[12px]
@@ -482,26 +582,64 @@ export default function Contact() {
                                   duration-200
 
                                   hover:text-[#E75480]
-                                "
-                                title="Open in maps"
-                              >
-                                <span>{branch.address}</span>
 
-                                <ExternalLinkIcon className="mt-[3px] h-3 w-3 shrink-0" />
+                                  lg:text-[11px]
+
+                                  xl:text-[12px]
+                                "
+                              >
+                                <span className="min-w-0 line-clamp-2">
+                                  {branch.address}
+                                </span>
+
+                                <ExternalLinkIcon
+                                  className="
+                                    mt-[3px]
+                                    h-3
+                                    w-3
+                                    shrink-0
+                                  "
+                                />
                               </a>
                             ) : (
-                              <p className="mt-1 text-[12px] leading-5 text-[#8A6F78]">
+                              <p
+                                className="
+                                  mt-1
+                                  line-clamp-2
+                                  text-[12px]
+                                  leading-5
+                                  text-[#8A6F78]
+
+                                  lg:text-[11px]
+
+                                  xl:text-[12px]
+                                "
+                              >
                                 {branch.address}
                               </p>
                             ))}
                         </div>
                       </div>
 
-                      {/* DIVIDER */}
+                      {/* ============================================
+                          DIVIDER
+                      ============================================ */}
 
-                      <div className="my-3 h-px bg-[#E75480]/10" />
+                      <div
+                        className="
+                          my-3
+                          h-px
+                          bg-[#E75480]/10
 
-                      {/* PHONE */}
+                          lg:my-2.5
+
+                          xl:my-3
+                        "
+                      />
+
+                      {/* ============================================
+                          PHONE
+                      ============================================ */}
 
                       {branch.phone && (
                         <a
@@ -521,6 +659,10 @@ export default function Contact() {
                             duration-200
 
                             hover:text-[#E75480]
+
+                            lg:text-[11px]
+
+                            xl:text-[12px]
                           "
                         >
                           <PhoneIcon
@@ -533,14 +675,24 @@ export default function Contact() {
                               duration-200
 
                               group-hover/phone:scale-110
+
+                              lg:h-[13px]
+                              lg:w-[13px]
+
+                              xl:h-[14px]
+                              xl:w-[14px]
                             "
                           />
 
-                          <span>{branch.phone}</span>
+                          <span className="whitespace-nowrap">
+                            {branch.phone}
+                          </span>
                         </a>
                       )}
 
-                      {/* OPENING HOURS */}
+                      {/* ============================================
+                          OPENING HOURS
+                      ============================================ */}
 
                       {branch.openingHours && (
                         <div
@@ -551,11 +703,30 @@ export default function Contact() {
                             gap-2
                             text-[12px]
                             text-[#6D5860]
+
+                            lg:text-[11px]
+
+                            xl:text-[12px]
                           "
                         >
-                          <ClockIcon className="h-[14px] w-[14px] shrink-0 text-[#E75480]" />
+                          <ClockIcon
+                            className="
+                              h-[14px]
+                              w-[14px]
+                              shrink-0
+                              text-[#E75480]
 
-                          <span>{branch.openingHours}</span>
+                              lg:h-[13px]
+                              lg:w-[13px]
+
+                              xl:h-[14px]
+                              xl:w-[14px]
+                            "
+                          />
+
+                          <span className="whitespace-nowrap">
+                            {branch.openingHours}
+                          </span>
                         </div>
                       )}
                     </article>
@@ -594,7 +765,9 @@ export default function Contact() {
                   sm:grid-cols-2
                 "
               >
-                {/* MAIN PHONE */}
+                {/* ==================================================
+                    MAIN PHONE
+                ================================================== */}
 
                 {settings.phone && (
                   <a
@@ -603,6 +776,7 @@ export default function Contact() {
                     className="
                       group
                       flex
+                      min-w-0
                       items-center
                       gap-3
                       rounded-[18px]
@@ -617,6 +791,12 @@ export default function Contact() {
                       hover:border-[#E75480]/35
                       hover:bg-white
                       hover:shadow-[0_8px_22px_rgba(231,84,128,0.10)]
+
+                      lg:gap-2.5
+                      lg:p-3.5
+
+                      xl:gap-3
+                      xl:p-4
                     "
                   >
                     <div
@@ -635,12 +815,29 @@ export default function Contact() {
 
                         group-hover:bg-[#E75480]
                         group-hover:text-white
+
+                        lg:h-9
+                        lg:w-9
+
+                        xl:h-10
+                        xl:w-10
                       "
                     >
-                      <PhoneIcon className="h-[17px] w-[17px]" />
+                      <PhoneIcon
+                        className="
+                          h-[17px]
+                          w-[17px]
+
+                          lg:h-[15px]
+                          lg:w-[15px]
+
+                          xl:h-[17px]
+                          xl:w-[17px]
+                        "
+                      />
                     </div>
 
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p
                         className="
                           text-[9px]
@@ -648,6 +845,10 @@ export default function Contact() {
                           uppercase
                           tracking-[3px]
                           text-[#3A2A2F]
+
+                          lg:text-[8px]
+
+                          xl:text-[9px]
                         "
                       >
                         Phone
@@ -662,6 +863,10 @@ export default function Contact() {
                           transition-colors
 
                           group-hover:text-[#E75480]
+
+                          lg:text-[12px]
+
+                          xl:text-[14px]
                         "
                       >
                         {settings.phone}
@@ -670,7 +875,9 @@ export default function Contact() {
                   </a>
                 )}
 
-                {/* EMAIL */}
+                {/* ==================================================
+                    EMAIL
+                ================================================== */}
 
                 {settings.email && (
                   <a
@@ -679,6 +886,7 @@ export default function Contact() {
                     className="
                       group
                       flex
+                      min-w-0
                       items-center
                       gap-3
                       rounded-[18px]
@@ -693,6 +901,12 @@ export default function Contact() {
                       hover:border-[#E75480]/35
                       hover:bg-white
                       hover:shadow-[0_8px_22px_rgba(231,84,128,0.10)]
+
+                      lg:gap-2.5
+                      lg:p-3.5
+
+                      xl:gap-3
+                      xl:p-4
                     "
                   >
                     <div
@@ -711,12 +925,29 @@ export default function Contact() {
 
                         group-hover:bg-[#E75480]
                         group-hover:text-white
+
+                        lg:h-9
+                        lg:w-9
+
+                        xl:h-10
+                        xl:w-10
                       "
                     >
-                      <MailIcon className="h-[17px] w-[17px]" />
+                      <MailIcon
+                        className="
+                          h-[17px]
+                          w-[17px]
+
+                          lg:h-[15px]
+                          lg:w-[15px]
+
+                          xl:h-[17px]
+                          xl:w-[17px]
+                        "
+                      />
                     </div>
 
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p
                         className="
                           text-[9px]
@@ -724,6 +955,10 @@ export default function Contact() {
                           uppercase
                           tracking-[3px]
                           text-[#3A2A2F]
+
+                          lg:text-[8px]
+
+                          xl:text-[9px]
                         "
                       >
                         Email
@@ -738,6 +973,10 @@ export default function Contact() {
                           transition-colors
 
                           group-hover:text-[#E75480]
+
+                          lg:text-[12px]
+
+                          xl:text-[14px]
                         "
                       >
                         {settings.email}
@@ -749,11 +988,19 @@ export default function Contact() {
             </section>
 
             {/* ==================================================
-                RIGHT SIDE / CONTACT FORM
+                SEND MESSAGE
+
+                MOBILE / TABLET:
+                First
+
+                DESKTOP 1024+:
+                Right / Second
             ================================================== */}
 
             <section
               className="
+                order-1
+
                 rounded-[28px]
                 border
                 border-[#E75480]/10
@@ -762,9 +1009,17 @@ export default function Contact() {
                 shadow-[0_8px_30px_rgba(58,42,47,0.05)]
 
                 sm:p-7
+
+                lg:order-2
+                lg:p-6
+
                 xl:p-8
               "
             >
+              {/* ==================================================
+                  FORM HEADING
+              ================================================== */}
+
               <h2
                 className="
                   font-serif
@@ -774,6 +1029,9 @@ export default function Contact() {
                   text-[#3A2A2F]
 
                   sm:text-[46px]
+
+                  lg:text-[42px]
+
                   xl:text-[50px]
                 "
               >
@@ -791,10 +1049,18 @@ export default function Contact() {
                   text-[#8A6F78]
 
                   sm:text-[15px]
+
+                  lg:text-[13px]
+
+                  xl:text-[15px]
                 "
               >
                 Fill out the form below and our team will get back to you.
               </p>
+
+              {/* ==================================================
+                  SUCCESS MESSAGE
+              ================================================== */}
 
               {sent && (
                 <div
@@ -814,9 +1080,23 @@ export default function Contact() {
                 </div>
               )}
 
+              {/* ==================================================
+                  FORM
+              ================================================== */}
+
               <form
                 onSubmit={handleSubmit}
-                className="mt-7 grid gap-4"
+                className="
+                  mt-7
+                  grid
+                  gap-4
+
+                  lg:mt-6
+                  lg:gap-3.5
+
+                  xl:mt-7
+                  xl:gap-4
+                "
               >
                 <input
                   required
@@ -850,6 +1130,10 @@ export default function Contact() {
                     focus:bg-white
                     focus:ring-4
                     focus:ring-[#E75480]/5
+
+                    lg:h-[48px]
+
+                    xl:h-[52px]
                   "
                 />
 
@@ -885,6 +1169,10 @@ export default function Contact() {
                     focus:bg-white
                     focus:ring-4
                     focus:ring-[#E75480]/5
+
+                    lg:h-[48px]
+
+                    xl:h-[52px]
                   "
                 />
 
@@ -920,6 +1208,10 @@ export default function Contact() {
                     focus:bg-white
                     focus:ring-4
                     focus:ring-[#E75480]/5
+
+                    lg:h-[48px]
+
+                    xl:h-[52px]
                   "
                 />
 
@@ -957,6 +1249,10 @@ export default function Contact() {
                     focus:bg-white
                     focus:ring-4
                     focus:ring-[#E75480]/5
+
+                    lg:min-h-[130px]
+
+                    xl:min-h-[140px]
                   "
                 />
 
@@ -984,6 +1280,10 @@ export default function Contact() {
 
                     disabled:cursor-not-allowed
                     disabled:opacity-60
+
+                    lg:h-[48px]
+
+                    xl:h-[52px]
                   "
                 >
                   {loading ? "Sending..." : "Send Message"}
