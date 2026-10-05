@@ -62,17 +62,14 @@ type AvailabilityResponse = {
   slots: Slot[];
 };
 
-const branches = [
-  {
-    name: "Teku Branch",
-  },
-  {
-    name: "Chabahil Branch",
-  },
-  {
-    name: "Third Branch",
-  },
-];
+// Managed in the admin panel. The booking
+// sends the id, so renaming a branch never
+// breaks booking.
+type Branch = {
+  _id: string;
+  name: string;
+  address?: string;
+};
 
 /* ============================================================
    HELPERS
@@ -158,6 +155,9 @@ export default function Booking() {
   const [courses, setCourses] =
     useState<Course[]>([]);
 
+  const [branches, setBranches] =
+    useState<Branch[]>([]);
+
   /* ==========================================================
      FORM STATE
   ========================================================== */
@@ -178,8 +178,14 @@ export default function Booking() {
   const [selectedItem, setSelectedItem] =
     useState("");
 
+  // The selected branch's id.
   const [branch, setBranch] =
     useState("");
+
+  const branchName =
+    branches.find(
+      (item) => item._id === branch
+    )?.name ?? "";
 
   const [date, setDate] =
     useState("");
@@ -230,6 +236,35 @@ export default function Booking() {
   ========================================================== */
 
   useEffect(() => {
+    // Loaded on its own, so a branch error
+    // never hides the services.
+    const loadBranches = async () => {
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/branches`
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            "Unable to load branches."
+          );
+        }
+
+        const data = await response.json();
+
+        setBranches(
+          Array.isArray(data) ? data : []
+        );
+      } catch (error) {
+        console.error(
+          "BRANCHES ERROR:",
+          error
+        );
+      }
+    };
+
+    loadBranches();
+
     const loadData = async () => {
       try {
         const [
@@ -1278,17 +1313,17 @@ export default function Booking() {
                   (item) => {
                     const selected =
                       branch ===
-                      item.name;
+                      item._id;
 
                     return (
                       <button
                         key={
-                          item.name
+                          item._id
                         }
                         type="button"
                         onClick={() =>
                           setBranch(
-                            item.name
+                            item._id
                           )
                         }
                         className={`
@@ -1334,6 +1369,21 @@ export default function Booking() {
                         {
                           item.name
                         }
+
+                        {item.address && (
+                          <span
+                            className="
+                              mt-1
+                              block
+                              text-[10px]
+                              font-normal
+                              leading-4
+                              text-[#A98D96]
+                            "
+                          >
+                            {item.address}
+                          </span>
+                        )}
                       </button>
                     );
                   }
@@ -1422,7 +1472,7 @@ export default function Booking() {
                           "
                         >
                           {
-                            branch
+                            branchName
                           }{" "}
                           •{" "}
                           {formatDate(
@@ -1895,7 +1945,7 @@ export default function Booking() {
                       <strong>
                         Branch:
                       </strong>{" "}
-                      {branch}
+                      {branchName}
                     </p>
 
                     <p>
