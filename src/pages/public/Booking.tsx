@@ -41,8 +41,10 @@ type Slot = {
   time: string;
   available: boolean;
   // Why an unavailable slot cannot be
-  // picked.
-  reason?: "booked" | "past";
+  // picked. A time other customers asked
+  // for stays open; the salon confirms
+  // each request.
+  reason?: "past";
 };
 
 type AvailabilityResponse = {
@@ -686,8 +688,8 @@ export default function Booking() {
 
       if (!response.ok) {
         /* ================================================
-           409 = another customer got the slot
-           before this customer submitted.
+           409 = the chosen time passed while
+           the customer was filling the form.
         ================================================ */
 
         if (
@@ -695,7 +697,7 @@ export default function Booking() {
         ) {
           setSubmitError(
             data.message ||
-              "That appointment was just booked. Please choose another time."
+              "That time has already passed. Please choose another time."
           );
 
           setSelectedTime("");
@@ -754,7 +756,7 @@ export default function Booking() {
 
       setSuccessMessage(
         type === "service"
-          ? "Your appointment request has been submitted successfully."
+          ? "Your appointment request has been submitted. The salon will confirm it with you shortly."
           : "Your course enrollment has been submitted successfully."
       );
 
@@ -846,10 +848,7 @@ export default function Booking() {
                   }
                   title={
                     slot.reason ===
-                    "booked"
-                      ? "Already booked"
-                      : slot.reason ===
-                        "past"
+                    "past"
                       ? "This time has passed"
                       : undefined
                   }
@@ -902,20 +901,6 @@ export default function Booking() {
                 >
                   {formatTime(
                     slot.time
-                  )}
-
-                  {slot.reason ===
-                    "booked" && (
-                    <>
-                      <br />
-
-                      {/* inline-block, so the
-                          button's line-through
-                          does not cross it */}
-                      <span className="mt-0.5 inline-block text-[9px] font-semibold uppercase tracking-[1px]">
-                        Booked
-                      </span>
-                    </>
                   )}
                 </button>
               );
