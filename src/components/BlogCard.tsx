@@ -1,41 +1,250 @@
+import { Link } from "react-router-dom";
+
 type BlogCardProps = {
   title: string;
+  slug: string;
   category: string;
   description: string;
-  date: string;
+  image?: string;
+  publishedAt?: string | null;
   readTime: string;
-  icon: string;
+};
+
+const formatDate = (
+  value?: string | null,
+) => {
+  if (!value) {
+    return "";
+  }
+
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime(),
+    )
+  ) {
+    return "";
+  }
+
+  return date.toLocaleDateString(
+    "en-US",
+    {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    },
+  );
 };
 
 export default function BlogCard({
   title,
+  slug,
   category,
   description,
-  date,
+  image,
+  publishedAt,
   readTime,
-  icon,
 }: BlogCardProps) {
   return (
-    <div className="group overflow-hidden rounded-3xl border border-[#E75480]/10 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-[#E75480]/30 hover:shadow-xl">
-      <div className="flex h-44 items-center justify-center bg-[#FCE7EF] text-5xl text-[#E75480]">
-        {icon}
-      </div>
+    <article
+      className="
+        group
+        flex
+        h-full
+        flex-col
+        overflow-hidden
 
-      <div className="p-7">
-        <p className="text-xs uppercase tracking-[2px] text-[#E75480]">
+        rounded-[20px]
+
+        border
+        border-[#E75480]/10
+
+        bg-white
+
+        shadow-[0_6px_18px_rgba(58,42,47,0.035)]
+
+        transition-all
+        duration-300
+
+        hover:-translate-y-1
+        hover:border-[#E75480]/25
+        hover:shadow-[0_15px_35px_rgba(58,42,47,0.08)]
+      "
+    >
+      <Link
+        to={`/blog/${slug}`}
+        aria-label={`Read ${title}`}
+        className="block overflow-hidden"
+      >
+        {image ? (
+          <div
+            className="
+              aspect-[16/10]
+              overflow-hidden
+              bg-[#FCE7EF]
+            "
+          >
+            <img
+              src={image}
+              alt={title}
+              loading="lazy"
+              className="
+                h-full
+                w-full
+                object-cover
+
+                transition-transform
+                duration-500
+
+                group-hover:scale-[1.035]
+              "
+            />
+          </div>
+        ) : (
+          <div
+            className="
+              flex
+              aspect-[16/10]
+              items-center
+              justify-center
+
+              bg-[#FCE7EF]
+
+              font-serif
+              text-5xl
+
+              text-[#E75480]/30
+            "
+          >
+            N
+          </div>
+        )}
+      </Link>
+
+      <div
+        className="
+          flex
+          flex-1
+          flex-col
+
+          p-5
+
+          sm:p-6
+        "
+      >
+        <p
+          className="
+            text-[8px]
+            font-semibold
+            uppercase
+            tracking-[0.2em]
+
+            text-[#E75480]
+          "
+        >
           {category}
         </p>
 
-        <h3 className="mt-3 font-serif text-2xl text-[#3A2A2F]">{title}</h3>
+        <Link
+          to={`/blog/${slug}`}
+        >
+          <h2
+            className="
+              mt-2
+              line-clamp-2
 
-        <p className="mt-3 text-sm leading-7 text-[#8A6F78]">
+              font-serif
+              text-[22px]
+              leading-[1.2]
+
+              text-[#3A2A2F]
+
+              transition-colors
+
+              group-hover:text-[#E75480]
+            "
+          >
+            {title}
+          </h2>
+        </Link>
+
+        <p
+          className="
+            mt-3
+            line-clamp-3
+
+            text-[13px]
+            leading-6
+
+            text-[#806B73]
+          "
+        >
           {description}
         </p>
 
-        <p className="mt-6 text-xs text-[#8A6F78]/70">
-          {date} · {readTime}
-        </p>
+        <div
+          className="
+            mt-auto
+            flex
+            flex-wrap
+            items-center
+            gap-2
+
+            pt-5
+
+            text-[10px]
+
+            text-[#A58C95]
+          "
+        >
+          {publishedAt && (
+            <>
+              <span>
+                {formatDate(
+                  publishedAt,
+                )}
+              </span>
+
+              <span>•</span>
+            </>
+          )}
+
+          <span>
+            {readTime}
+          </span>
+        </div>
+
+        <Link
+          to={`/blog/${slug}`}
+          className="
+            mt-5
+
+            inline-flex
+            w-fit
+            items-center
+            gap-2
+
+            text-[9px]
+            font-semibold
+            uppercase
+            tracking-[0.16em]
+
+            text-[#E75480]
+
+            transition-all
+
+            hover:gap-3
+          "
+        >
+          Read Article
+
+          <span>
+            →
+          </span>
+        </Link>
       </div>
-    </div>
+    </article>
   );
 }

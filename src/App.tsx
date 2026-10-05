@@ -29,6 +29,7 @@ import Events from "./pages/public/Events";
 import EventDetails from "./pages/public/EventDetails";
 import Careers from "./pages/public/Careers";
 import About from "./pages/public/About";
+import BlogDetails from "./pages/public/BlogDetails";
 // ==============================
 // PRODUCT PAGES
 // ==============================
@@ -208,6 +209,16 @@ export default function App() {
           element={
             <PublicLayout>
               <EventDetails />
+            </PublicLayout>
+          }
+        />
+
+        {/* BLOG DETAILS */}
+        <Route
+          path="/blog/:slug"
+          element={
+            <PublicLayout>
+              <BlogDetails />
             </PublicLayout>
           }
         />
