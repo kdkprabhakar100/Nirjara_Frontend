@@ -27,11 +27,126 @@ type SiteSettings = {
   email?: string;
 };
 
+/* ============================================================
+   ICONS
+============================================================ */
+
+function LocationIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
+      <circle cx="12" cy="10" r="2.5" />
+    </svg>
+  );
+}
+
+function PhoneIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 3.09 5.18 2 2 0 0 1 5.07 3h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L9 10.7a16 16 0 0 0 4.3 4.3l1.24-1.24a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92Z" />
+    </svg>
+  );
+}
+
+function ClockIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  );
+}
+
+function MailIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3 7 9 6 9-6" />
+    </svg>
+  );
+}
+
+function ExternalLinkIcon({
+  className = "h-3.5 w-3.5",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M15 3h6v6" />
+      <path d="M10 14 21 3" />
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    </svg>
+  );
+}
+
 export default function Contact() {
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const [branches, setBranches] = useState<Branch[]>([]);
+
   const [settings, setSettings] = useState<SiteSettings>({
     phone: "",
     email: "",
@@ -89,6 +204,11 @@ export default function Contact() {
       });
     } catch (error) {
       console.error("SITE SETTINGS FETCH ERROR:", error);
+
+      setSettings({
+        phone: "",
+        email: "",
+      });
     }
   };
 
@@ -153,190 +273,551 @@ export default function Contact() {
         type="website"
       />
 
-      <main className="min-h-screen bg-[#FFF5F8] px-6 pb-24 pt-36 text-[#3A2A2F] md:px-12">
-        <section className="mx-auto max-w-6xl">
+      <main
+        className="
+          min-h-screen
+          bg-[#FFF5F8]
+          px-4
+          pb-10
+          pt-[104px]
+          text-[#3A2A2F]
 
-          {/* =====================================================
-              PAGE HEADING
-          ===================================================== */}
+          sm:px-6
+          lg:px-8
+          xl:px-10
+        "
+      >
+        <section className="mx-auto max-w-[1400px]">
+          <div
+            className="
+              grid
+              gap-5
 
-          <div className="mb-12 text-center">
-            <p className="text-xs uppercase tracking-[4px] text-[#E75480]">
-              Get In Touch
-            </p>
+              lg:grid-cols-[1.05fr_0.95fr]
+              xl:gap-6
+            "
+          >
+            {/* ==================================================
+                LEFT SIDE
+            ================================================== */}
 
-            <h1 className="mt-4 font-serif text-5xl font-light sm:text-6xl">
-              Contact{" "}
-              <span className="italic text-[#E75480]">
-                Us
-              </span>
-            </h1>
+            <section
+              className="
+                rounded-[28px]
+                border
+                border-[#E75480]/10
+                bg-white
+                p-6
+                shadow-[0_8px_30px_rgba(58,42,47,0.05)]
 
-            <p className="mx-auto mt-5 max-w-2xl leading-8 text-[#8A6F78]">
-              Have questions about services, bookings, or academy courses?
-              Send us a message and our team will get back to you soon.
-            </p>
+                sm:p-7
+                xl:p-8
+              "
+            >
+              {/* HEADING */}
 
-            <div className="mx-auto mt-8 h-[1px] w-20 bg-[#E75480]/50" />
-          </div>
+              <div>
+                <h1
+                  className="
+                    font-serif
+                    text-[40px]
+                    leading-[0.95]
+                    tracking-[-1px]
+                    text-[#3A2A2F]
 
-          {/* =====================================================
-              CONTACT GRID
-          ===================================================== */}
+                    sm:text-[46px]
+                    xl:text-[50px]
+                  "
+                >
+                  Visit{" "}
+                  <span className="italic text-[#E75480]">
+                    Nirjara
+                  </span>
+                </h1>
 
-          <div className="grid gap-10 md:grid-cols-2">
+                <p
+                  className="
+                    mt-4
+                    max-w-xl
+                    text-[14px]
+                    leading-6
+                    text-[#8A6F78]
 
-            {/* ===================================================
-                CONTACT INFORMATION
-            =================================================== */}
+                    sm:text-[15px]
+                  "
+                >
+                  Visit one of our locations or contact our team for
+                  appointments and enquiries.
+                </p>
+              </div>
 
-            <div className="rounded-3xl bg-white p-8 shadow-sm sm:p-10">
-              <h2 className="font-serif text-4xl text-[#E75480]">
-                Visit Nirjara
-              </h2>
+              {/* BRANCH TITLE */}
 
-              <p className="mt-3 text-sm leading-6 text-[#8A6F78]">
-                Visit one of our locations or contact our team for
-                appointments and enquiries.
-              </p>
+              <div className="mt-7 flex items-center gap-4">
+                <p
+                  className="
+                    text-[10px]
+                    font-bold
+                    uppercase
+                    tracking-[4px]
+                    text-[#3A2A2F]
+                  "
+                >
+                  Branches
+                </p>
 
-              <div className="mt-8 space-y-8 text-[#8A6F78]">
+                <span className="h-px w-14 bg-[#E75480]/45" />
+              </div>
 
-                {/* ===============================================
-                    BRANCHES
-                =============================================== */}
+              {/* ==================================================
+                  BRANCH GRID
+              ================================================== */}
 
-                <div>
-                  <p className="mb-3 text-sm font-semibold uppercase tracking-[1.5px] text-[#3A2A2F]">
-                    Branches
-                  </p>
+              {branches.length > 0 ? (
+                <div
+                  className="
+                    mt-4
+                    grid
+                    grid-cols-1
+                    gap-3
 
-                  {branches.length > 0 ? (
-                    <div className="space-y-5">
-                      {branches.map((branch, index) => (
-                        <div
-                          key={branch._id || `${branch.name}-${index}`}
+                    sm:grid-cols-2
+                  "
+                >
+                  {branches.map((branch, index) => (
+                    <article
+                      key={branch._id || `${branch.name}-${index}`}
+                      className="
+                        group
+                        rounded-[20px]
+                        border
+                        border-[#E75480]/15
+                        bg-[#FFF9FB]
+                        p-4
+                        transition-all
+                        duration-300
+
+                        hover:-translate-y-[2px]
+                        hover:border-[#E75480]/35
+                        hover:bg-white
+                        hover:shadow-[0_10px_25px_rgba(231,84,128,0.10)]
+                      "
+                    >
+                      {/* LOCATION */}
+
+                      <div className="flex items-start gap-3">
+                        {branch.mapUrl ? (
+                          <a
+                            href={branch.mapUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`Open ${branch.name} location`}
+                            title="Open location in maps"
+                            className="
+                              flex
+                              h-10
+                              w-10
+                              shrink-0
+                              items-center
+                              justify-center
+                              rounded-full
+                              bg-[#FCE7EF]
+                              text-[#E75480]
+                              transition-all
+                              duration-300
+
+                              hover:scale-105
+                              hover:bg-[#E75480]
+                              hover:text-white
+                            "
+                          >
+                            <LocationIcon className="h-[18px] w-[18px]" />
+                          </a>
+                        ) : (
+                          <div
+                            className="
+                              flex
+                              h-10
+                              w-10
+                              shrink-0
+                              items-center
+                              justify-center
+                              rounded-full
+                              bg-[#FCE7EF]
+                              text-[#E75480]
+                            "
+                          >
+                            <LocationIcon className="h-[18px] w-[18px]" />
+                          </div>
+                        )}
+
+                        <div className="min-w-0 flex-1">
+                          <h2
+                            className="
+                              font-serif
+                              text-[17px]
+                              font-semibold
+                              leading-[1.25]
+                              text-[#3A2A2F]
+                            "
+                          >
+                            {branch.name}
+                          </h2>
+
+                          {branch.address &&
+                            (branch.mapUrl ? (
+                              <a
+                                href={branch.mapUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="
+                                  mt-1
+                                  inline-flex
+                                  items-start
+                                  gap-1
+                                  text-[12px]
+                                  leading-5
+                                  text-[#8A6F78]
+                                  transition-colors
+                                  duration-200
+
+                                  hover:text-[#E75480]
+                                "
+                                title="Open in maps"
+                              >
+                                <span>{branch.address}</span>
+
+                                <ExternalLinkIcon className="mt-[3px] h-3 w-3 shrink-0" />
+                              </a>
+                            ) : (
+                              <p className="mt-1 text-[12px] leading-5 text-[#8A6F78]">
+                                {branch.address}
+                              </p>
+                            ))}
+                        </div>
+                      </div>
+
+                      {/* DIVIDER */}
+
+                      <div className="my-3 h-px bg-[#E75480]/10" />
+
+                      {/* PHONE */}
+
+                      {branch.phone && (
+                        <a
+                          href={`tel:${branch.phone}`}
+                          title={`Call ${branch.phone}`}
                           className="
-                            border-b
-                            border-[#E75480]/10
-                            pb-5
-                            last:border-b-0
-                            last:pb-0
+                            group/phone
+                            flex
+                            w-fit
+                            items-center
+                            gap-2
+                            rounded-lg
+                            py-0.5
+                            text-[12px]
+                            text-[#6D5860]
+                            transition-all
+                            duration-200
+
+                            hover:text-[#E75480]
                           "
                         >
-                          <p className="font-medium text-[#3A2A2F]">
-                            {branch.name}
-                          </p>
+                          <PhoneIcon
+                            className="
+                              h-[14px]
+                              w-[14px]
+                              shrink-0
+                              text-[#E75480]
+                              transition-transform
+                              duration-200
 
-                          {branch.address && (
-                            <p className="mt-1 text-sm leading-6">
-                              {branch.address}
-                            </p>
-                          )}
+                              group-hover/phone:scale-110
+                            "
+                          />
 
-                          {branch.phone && (
-                            <a
-                              href={`tel:${branch.phone}`}
-                              className="
-                                mt-2
-                                block
-                                text-sm
-                                transition-colors
-                                hover:text-[#E75480]
-                              "
-                            >
-                              {branch.phone}
-                            </a>
-                          )}
+                          <span>{branch.phone}</span>
+                        </a>
+                      )}
 
-                          {branch.openingHours && (
-                            <p className="mt-2 text-sm">
-                              {branch.openingHours}
-                            </p>
-                          )}
+                      {/* OPENING HOURS */}
+
+                      {branch.openingHours && (
+                        <div
+                          className="
+                            mt-1.5
+                            flex
+                            items-center
+                            gap-2
+                            text-[12px]
+                            text-[#6D5860]
+                          "
+                        >
+                          <ClockIcon className="h-[14px] w-[14px] shrink-0 text-[#E75480]" />
+
+                          <span>{branch.openingHours}</span>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm">
-                      Branch information is currently being updated.
-                    </p>
-                  )}
+                      )}
+                    </article>
+                  ))}
                 </div>
+              ) : (
+                <div
+                  className="
+                    mt-4
+                    rounded-[18px]
+                    border
+                    border-[#E75480]/10
+                    bg-[#FFF9FB]
+                    p-4
+                    text-sm
+                    text-[#8A6F78]
+                  "
+                >
+                  Branch information is currently being updated.
+                </div>
+              )}
 
-                {/* ===============================================
-                    MAIN PHONE
-                =============================================== */}
+              {/* ==================================================
+                  PHONE + EMAIL
+              ================================================== */}
+
+              <div className="mt-5 h-px bg-[#E75480]/10" />
+
+              <div
+                className="
+                  mt-4
+                  grid
+                  grid-cols-1
+                  gap-3
+
+                  sm:grid-cols-2
+                "
+              >
+                {/* MAIN PHONE */}
 
                 {settings.phone && (
-                  <div>
-                    <p className="mb-2 text-sm font-semibold uppercase tracking-[1.5px] text-[#3A2A2F]">
-                      Phone
-                    </p>
+                  <a
+                    href={`tel:${settings.phone}`}
+                    title={`Call ${settings.phone}`}
+                    className="
+                      group
+                      flex
+                      items-center
+                      gap-3
+                      rounded-[18px]
+                      border
+                      border-[#E75480]/15
+                      bg-[#FFF9FB]
+                      p-4
+                      transition-all
+                      duration-300
 
-                    <a
-                      href={`tel:${settings.phone}`}
+                      hover:-translate-y-[2px]
+                      hover:border-[#E75480]/35
+                      hover:bg-white
+                      hover:shadow-[0_8px_22px_rgba(231,84,128,0.10)]
+                    "
+                  >
+                    <div
                       className="
-                        transition-colors
-                        hover:text-[#E75480]
+                        flex
+                        h-10
+                        w-10
+                        shrink-0
+                        items-center
+                        justify-center
+                        rounded-full
+                        bg-[#FCE7EF]
+                        text-[#E75480]
+                        transition-all
+                        duration-300
+
+                        group-hover:bg-[#E75480]
+                        group-hover:text-white
                       "
                     >
-                      {settings.phone}
-                    </a>
-                  </div>
+                      <PhoneIcon className="h-[17px] w-[17px]" />
+                    </div>
+
+                    <div className="min-w-0">
+                      <p
+                        className="
+                          text-[9px]
+                          font-bold
+                          uppercase
+                          tracking-[3px]
+                          text-[#3A2A2F]
+                        "
+                      >
+                        Phone
+                      </p>
+
+                      <p
+                        className="
+                          mt-1
+                          truncate
+                          text-[14px]
+                          text-[#765F68]
+                          transition-colors
+
+                          group-hover:text-[#E75480]
+                        "
+                      >
+                        {settings.phone}
+                      </p>
+                    </div>
+                  </a>
                 )}
 
-                {/* ===============================================
-                    EMAIL
-                =============================================== */}
+                {/* EMAIL */}
 
                 {settings.email && (
-                  <div>
-                    <p className="mb-2 text-sm font-semibold uppercase tracking-[1.5px] text-[#3A2A2F]">
-                      Email
-                    </p>
+                  <a
+                    href={`mailto:${settings.email}`}
+                    title={`Email ${settings.email}`}
+                    className="
+                      group
+                      flex
+                      items-center
+                      gap-3
+                      rounded-[18px]
+                      border
+                      border-[#E75480]/15
+                      bg-[#FFF9FB]
+                      p-4
+                      transition-all
+                      duration-300
 
-                    <a
-                      href={`mailto:${settings.email}`}
+                      hover:-translate-y-[2px]
+                      hover:border-[#E75480]/35
+                      hover:bg-white
+                      hover:shadow-[0_8px_22px_rgba(231,84,128,0.10)]
+                    "
+                  >
+                    <div
                       className="
-                        break-all
-                        transition-colors
-                        hover:text-[#E75480]
+                        flex
+                        h-10
+                        w-10
+                        shrink-0
+                        items-center
+                        justify-center
+                        rounded-full
+                        bg-[#FCE7EF]
+                        text-[#E75480]
+                        transition-all
+                        duration-300
+
+                        group-hover:bg-[#E75480]
+                        group-hover:text-white
                       "
                     >
-                      {settings.email}
-                    </a>
-                  </div>
+                      <MailIcon className="h-[17px] w-[17px]" />
+                    </div>
+
+                    <div className="min-w-0">
+                      <p
+                        className="
+                          text-[9px]
+                          font-bold
+                          uppercase
+                          tracking-[3px]
+                          text-[#3A2A2F]
+                        "
+                      >
+                        Email
+                      </p>
+
+                      <p
+                        className="
+                          mt-1
+                          truncate
+                          text-[14px]
+                          text-[#765F68]
+                          transition-colors
+
+                          group-hover:text-[#E75480]
+                        "
+                      >
+                        {settings.email}
+                      </p>
+                    </div>
+                  </a>
                 )}
               </div>
-            </div>
+            </section>
 
-            {/* ===================================================
-                CONTACT FORM
-            =================================================== */}
+            {/* ==================================================
+                RIGHT SIDE / CONTACT FORM
+            ================================================== */}
 
-            <form
-              onSubmit={handleSubmit}
-              className="rounded-3xl bg-white p-8 shadow-sm sm:p-10"
+            <section
+              className="
+                rounded-[28px]
+                border
+                border-[#E75480]/10
+                bg-white
+                p-6
+                shadow-[0_8px_30px_rgba(58,42,47,0.05)]
+
+                sm:p-7
+                xl:p-8
+              "
             >
-              <h2 className="font-serif text-4xl text-[#3A2A2F]">
+              <h2
+                className="
+                  font-serif
+                  text-[40px]
+                  leading-[0.95]
+                  tracking-[-1px]
+                  text-[#3A2A2F]
+
+                  sm:text-[46px]
+                  xl:text-[50px]
+                "
+              >
                 Send a{" "}
                 <span className="italic text-[#E75480]">
                   Message
                 </span>
               </h2>
 
-              <p className="mt-3 text-sm leading-6 text-[#8A6F78]">
+              <p
+                className="
+                  mt-4
+                  text-[14px]
+                  leading-6
+                  text-[#8A6F78]
+
+                  sm:text-[15px]
+                "
+              >
                 Fill out the form below and our team will get back to you.
               </p>
 
               {sent && (
-                <div className="mt-6 rounded-xl bg-[#FCE7EF] px-4 py-3 text-sm text-[#E75480]">
+                <div
+                  className="
+                    mt-5
+                    rounded-xl
+                    border
+                    border-[#E75480]/10
+                    bg-[#FCE7EF]
+                    px-4
+                    py-3
+                    text-sm
+                    text-[#E75480]
+                  "
+                >
                   Message sent successfully!
                 </div>
               )}
 
-              <div className="mt-8 grid gap-5">
+              <form
+                onSubmit={handleSubmit}
+                className="mt-7 grid gap-4"
+              >
                 <input
                   required
                   type="text"
@@ -349,20 +830,26 @@ export default function Contact() {
                     })
                   }
                   className="
-                    rounded-xl
+                    h-[52px]
+                    rounded-[16px]
                     border
                     border-[#E75480]/20
-                    bg-[#FFF5F8]
-                    px-4
-                    py-3.5
-                    text-sm
+                    bg-[#FFF9FB]
+                    px-5
+                    text-[13px]
                     text-[#3A2A2F]
                     outline-none
-                    transition
-                    placeholder:text-[#8A6F78]/60
+                    transition-all
+                    duration-200
+
+                    placeholder:text-[#B69AA4]
+
+                    hover:border-[#E75480]/35
+
                     focus:border-[#E75480]/50
-                    focus:ring-2
-                    focus:ring-[#E75480]/10
+                    focus:bg-white
+                    focus:ring-4
+                    focus:ring-[#E75480]/5
                   "
                 />
 
@@ -378,20 +865,26 @@ export default function Contact() {
                     })
                   }
                   className="
-                    rounded-xl
+                    h-[52px]
+                    rounded-[16px]
                     border
                     border-[#E75480]/20
-                    bg-[#FFF5F8]
-                    px-4
-                    py-3.5
-                    text-sm
+                    bg-[#FFF9FB]
+                    px-5
+                    text-[13px]
                     text-[#3A2A2F]
                     outline-none
-                    transition
-                    placeholder:text-[#8A6F78]/60
+                    transition-all
+                    duration-200
+
+                    placeholder:text-[#B69AA4]
+
+                    hover:border-[#E75480]/35
+
                     focus:border-[#E75480]/50
-                    focus:ring-2
-                    focus:ring-[#E75480]/10
+                    focus:bg-white
+                    focus:ring-4
+                    focus:ring-[#E75480]/5
                   "
                 />
 
@@ -407,26 +900,32 @@ export default function Contact() {
                     })
                   }
                   className="
-                    rounded-xl
+                    h-[52px]
+                    rounded-[16px]
                     border
                     border-[#E75480]/20
-                    bg-[#FFF5F8]
-                    px-4
-                    py-3.5
-                    text-sm
+                    bg-[#FFF9FB]
+                    px-5
+                    text-[13px]
                     text-[#3A2A2F]
                     outline-none
-                    transition
-                    placeholder:text-[#8A6F78]/60
+                    transition-all
+                    duration-200
+
+                    placeholder:text-[#B69AA4]
+
+                    hover:border-[#E75480]/35
+
                     focus:border-[#E75480]/50
-                    focus:ring-2
-                    focus:ring-[#E75480]/10
+                    focus:bg-white
+                    focus:ring-4
+                    focus:ring-[#E75480]/5
                   "
                 />
 
                 <textarea
                   required
-                  rows={6}
+                  rows={5}
                   placeholder="Write your message..."
                   value={form.message}
                   onChange={(e) =>
@@ -436,21 +935,28 @@ export default function Contact() {
                     })
                   }
                   className="
+                    min-h-[140px]
                     resize-none
-                    rounded-xl
+                    rounded-[16px]
                     border
                     border-[#E75480]/20
-                    bg-[#FFF5F8]
-                    px-4
-                    py-3.5
-                    text-sm
+                    bg-[#FFF9FB]
+                    px-5
+                    py-4
+                    text-[13px]
                     text-[#3A2A2F]
                     outline-none
-                    transition
-                    placeholder:text-[#8A6F78]/60
+                    transition-all
+                    duration-200
+
+                    placeholder:text-[#B69AA4]
+
+                    hover:border-[#E75480]/35
+
                     focus:border-[#E75480]/50
-                    focus:ring-2
-                    focus:ring-[#E75480]/10
+                    focus:bg-white
+                    focus:ring-4
+                    focus:ring-[#E75480]/5
                   "
                 />
 
@@ -458,29 +964,32 @@ export default function Contact() {
                   type="submit"
                   disabled={loading}
                   className="
-                    mt-2
+                    mt-1
+                    h-[52px]
                     rounded-full
                     bg-[#E75480]
                     px-8
-                    py-4
-                    text-xs
-                    font-medium
+                    text-[10px]
+                    font-semibold
                     uppercase
-                    tracking-[2px]
+                    tracking-[3px]
                     text-white
-                    shadow-lg
-                    transition
+                    shadow-[0_10px_25px_rgba(231,84,128,0.22)]
+                    transition-all
                     duration-300
-                    hover:-translate-y-0.5
-                    hover:bg-[#C93D68]
+
+                    hover:-translate-y-[2px]
+                    hover:bg-[#D94773]
+                    hover:shadow-[0_14px_30px_rgba(231,84,128,0.30)]
+
                     disabled:cursor-not-allowed
                     disabled:opacity-60
                   "
                 >
                   {loading ? "Sending..." : "Send Message"}
                 </button>
-              </div>
-            </form>
+              </form>
+            </section>
           </div>
         </section>
       </main>
