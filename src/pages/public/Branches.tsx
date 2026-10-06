@@ -12,7 +12,6 @@ import {
 import { useNavigate } from "react-router-dom";
 
 import BranchCard from "../../components/BranchCard";
-import { useNavigate } from "react-router-dom";
 import SEO from "../../components/SEO";
 
 /* ============================================================
@@ -54,17 +53,6 @@ const BRANCHES_SEO = {
 /* ============================================================
    PAGE
 ============================================================ */
-
-// Managed in the admin panel (Branches).
-type Branch = {
-  _id: string;
-  name: string;
-  label?: string;
-  address?: string;
-  phone?: string;
-  openingHours?: string;
-  mapUrl?: string;
-};
 
 export default function Branches() {
   const navigate = useNavigate();
