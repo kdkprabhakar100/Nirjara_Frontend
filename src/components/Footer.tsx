@@ -16,6 +16,12 @@ import {
   MessageCircle,
 } from "lucide-react";
 
+import {
+  FaFacebookF,
+  FaInstagram,
+  FaYoutube,
+  FaTiktok,
+} from "react-icons/fa";
 /* =========================================================
    TYPES
 ========================================================= */
@@ -420,92 +426,72 @@ export default function Footer() {
                 SOCIAL MEDIA
             =============================================== */}
 
-            {footer.showSocialLinks &&
-              hasSocialLinks && (
-                <div className="mt-5">
-                  <p
-                    className="
-                      text-[8px]
-                      font-semibold
-                      uppercase
-                      tracking-[3px]
-                      text-[#E75480]
-                    "
-                  >
-                    Follow our journey
-                  </p>
+{/* ===============================================
+    SOCIAL MEDIA
+=============================================== */}
 
-                  <div className="mt-3 flex gap-2.5">
-                    {settings
-                      .socialLinks
-                      .facebook && (
-                      <SocialButton
-                        href={
-                          settings
-                            .socialLinks
-                            .facebook
-                        }
-                        label="Facebook"
-                      >
-                        <span className="font-serif text-[16px] font-bold">
-                          f
-                        </span>
-                      </SocialButton>
-                    )}
+{footer.showSocialLinks && hasSocialLinks && (
+  <div className="mt-5">
+    <p
+      className="
+        text-[8px]
+        font-semibold
+        uppercase
+        tracking-[3px]
+        text-[#E75480]
+      "
+    >
+      Follow our journey
+    </p>
 
-                    {settings
-                      .socialLinks
-                      .instagram && (
-                      <SocialButton
-                        href={
-                          settings
-                            .socialLinks
-                            .instagram
-                        }
-                        label="Instagram"
-                      >
-                        <span className="text-[10px] font-bold">
-                          IG
-                        </span>
-                      </SocialButton>
-                    )}
+    <div className="mt-3 flex flex-wrap gap-2.5">
 
-                    {settings
-                      .socialLinks
-                      .tiktok && (
-                      <SocialButton
-                        href={
-                          settings
-                            .socialLinks
-                            .tiktok
-                        }
-                        label="TikTok"
-                      >
-                        <span className="text-[10px] font-bold">
-                          TT
-                        </span>
-                      </SocialButton>
-                    )}
+      {/* FACEBOOK */}
 
-                    {settings
-                      .socialLinks
-                      .youtube && (
-                      <SocialButton
-                        href={
-                          settings
-                            .socialLinks
-                            .youtube
-                        }
-                        label="YouTube"
-                      >
-                        <span className="text-[9px] font-bold">
-                          YT
-                        </span>
-                      </SocialButton>
-                    )}
-                  </div>
-                </div>
-              )}
+      {settings.socialLinks.facebook && (
+        <SocialButton
+          href={settings.socialLinks.facebook}
+          label="Facebook"
+        >
+          <FaFacebookF size={15} />
+        </SocialButton>
+      )}
+
+      {/* INSTAGRAM */}
+
+      {settings.socialLinks.instagram && (
+        <SocialButton
+          href={settings.socialLinks.instagram}
+          label="Instagram"
+        >
+          <FaInstagram size={16} />
+        </SocialButton>
+      )}
+
+      {/* TIKTOK */}
+
+      {settings.socialLinks.tiktok && (
+        <SocialButton
+          href={settings.socialLinks.tiktok}
+          label="TikTok"
+        >
+          <FaTiktok size={15} />
+        </SocialButton>
+      )}
+
+      {/* YOUTUBE */}
+
+      {settings.socialLinks.youtube && (
+        <SocialButton
+          href={settings.socialLinks.youtube}
+          label="YouTube"
+        >
+          <FaYoutube size={17} />
+        </SocialButton>
+      )}
+    </div>
+  </div>
+)}
           </div>
 
           {/* =================================================
@@ -900,23 +886,18 @@ function SocialButton({
       aria-label={label}
       title={label}
       className="
+        group
         flex
         h-9
         w-9
         items-center
         justify-center
-
         rounded-full
-
         border
         border-[#E75480]/15
-
         bg-white
-
         text-[#E75480]
-
         shadow-sm
-
         transition-all
         duration-300
 
@@ -924,9 +905,26 @@ function SocialButton({
         hover:border-[#E75480]
         hover:bg-[#E75480]
         hover:text-white
+        hover:shadow-[0_8px_20px_rgba(231,84,128,0.18)]
+
+        focus:outline-none
+        focus:ring-2
+        focus:ring-[#E75480]/25
       "
     >
-      {children}
+      <span
+        className="
+          flex
+          items-center
+          justify-center
+          transition-transform
+          duration-300
+
+          group-hover:scale-110
+        "
+      >
+        {children}
+      </span>
     </a>
   );
 }

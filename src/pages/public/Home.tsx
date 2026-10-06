@@ -21,14 +21,15 @@ type Service = {
 };
 
 type Branch = {
+  _id?: string;
   name: string;
-  label: string;
+  label?: string;
   address: string;
-  phone: string;
-  openingHours: string;
-  mapUrl: string;
+  phone?: string;
+  openingHours?: string;
+  mapUrl?: string;
+  active?: boolean;
 };
-
 /* ============================================================
    STATS
 ============================================================ */
@@ -799,12 +800,7 @@ export default function Home() {
           GALLERY
       ======================================================== */}
 
-      <Gallery />
-
-
-      {/* ========================================================
-          BRANCHES
-      ======================================================== */}
+      <Gallery /> 
 
 {/* ========================================================
     BRANCHES
@@ -959,10 +955,11 @@ export default function Home() {
                   number={String(index + 1).padStart(2, "0")}
                   name={branch.name}
                   address={branch.address}
-                  hours={branch.openingHours}
+                  openingHours={branch.openingHours}
                   phone={branch.phone}
-                  tag={branch.label}
+                  label={branch.label}
                   mapUrl={branch.mapUrl}
+                  active={branch.active}
                 />
               </div>
             </div>
@@ -1157,15 +1154,16 @@ export default function Home() {
             min-w-0
           "
         >
-          <BranchCard
-            number={String(index + 1).padStart(2, "0")}
-            name={branch.name}
-            address={branch.address}
-            hours={branch.openingHours}
-            phone={branch.phone}
-            tag={branch.label}
-            mapUrl={branch.mapUrl}
-          />
+        <BranchCard
+          number={String(index + 1).padStart(2, "0")}
+          name={branch.name}
+          address={branch.address}
+          openingHours={branch.openingHours}
+          phone={branch.phone}
+          label={branch.label}
+          mapUrl={branch.mapUrl}
+          active={branch.active}
+        />
         </div>
       ))}
     </div>
