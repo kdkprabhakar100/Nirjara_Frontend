@@ -2,6 +2,7 @@ import {
   FormEvent,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -23,7 +24,24 @@ type Service = {
   // False when switched off in the admin
   // panel; listed but cannot be picked.
   available?: boolean;
+  // Ids of the branches where it is
+  // switched off; bookable everywhere
+  // else.
+  unavailableBranches?: string[];
 };
+
+// Off at that one branch, though it may
+// be on elsewhere.
+const isOffAtBranch = (
+  service: Service | undefined,
+  branchId: string
+) =>
+  Boolean(
+    branchId &&
+      service?.unavailableBranches?.includes(
+        branchId
+      )
+  );
 
 type Course = {
   _id: string;
@@ -138,7 +156,8 @@ export default function Booking() {
      after a refresh).
   ========================================================== */
 
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] =
+    useSearchParams();
 
   const serviceFromUrl =
     searchParams.get("service") ?? "";
@@ -159,6 +178,20 @@ export default function Booking() {
 
   const [branches, setBranches] =
     useState<Branch[]>([]);
+
+  // Services/courses and branches load
+  // separately, so each list shows its
+  // own loader.
+  const [loadingItems, setLoadingItems] =
+    useState(true);
+
+  const [
+    loadingBranches,
+    setLoadingBranches,
+  ] = useState(true);
+
+  const [loadError, setLoadError] =
+    useState("");
 
   /* ==========================================================
      FORM STATE
@@ -233,6 +266,22 @@ export default function Booking() {
   const [submitError, setSubmitError] =
     useState("");
 
+  // What was just booked, for the
+  // confirmation card shown in place of
+  // the form. Null while filling it in.
+  const [confirmed, setConfirmed] =
+    useState<{
+      type: "service" | "course";
+      title: string;
+      branch: string;
+      date: string;
+      time: string;
+      name: string;
+    } | null>(null);
+
+  const formRef =
+    useRef<HTMLFormElement>(null);
+
   /* ==========================================================
      FETCH SERVICES + COURSES
   ========================================================== */
@@ -262,6 +311,12 @@ export default function Booking() {
           "BRANCHES ERROR:",
           error
         );
+
+        setLoadError(
+          "We couldn't load the booking options. Please refresh the page."
+        );
+      } finally {
+        setLoadingBranches(false);
       }
     };
 
@@ -355,6 +410,12 @@ export default function Booking() {
           "BOOKING DATA ERROR:",
           error
         );
+
+        setLoadError(
+          "We couldn't load the booking options. Please refresh the page."
+        );
+      } finally {
+        setLoadingItems(false);
       }
     };
 
@@ -405,6 +466,11 @@ export default function Booking() {
     setSlots([]);
     setAvailability(null);
     setAvailabilityError("");
+    // A request cancelled by this change no
+    // longer turns its loader off itself;
+    // the next request (if any) turns it
+    // back on.
+    setLoadingAvailability(false);
   }, [
     branch,
     date,
@@ -432,6 +498,21 @@ export default function Booking() {
       !branch ||
       !date
     ) {
+      return;
+    }
+
+    // Known to be off at this branch: say
+    // so without asking the server.
+    if (
+      isOffAtBranch(
+        selectedService,
+        branch
+      )
+    ) {
+      setAvailabilityError(
+        "Sorry, this service is not available in this branch at the moment."
+      );
+
       return;
     }
 
@@ -465,8 +546,9 @@ export default function Booking() {
               }
             );
 
-          const data =
-            await response.json();
+          const data = await response
+            .json()
+            .catch(() => ({}));
 
           if (!response.ok) {
             throw new Error(
@@ -502,9 +584,16 @@ export default function Booking() {
               : "Unable to load available times."
           );
         } finally {
-          setLoadingAvailability(
-            false
-          );
+          // A cancelled request leaves the
+          // loader to the one that replaced
+          // it.
+          if (
+            !controller.signal.aborted
+          ) {
+            setLoadingAvailability(
+              false
+            );
+          }
         }
       };
 
@@ -516,6 +605,7 @@ export default function Booking() {
   }, [
     type,
     selectedItem,
+    selectedService,
     branch,
     date,
   ]);
@@ -567,6 +657,45 @@ export default function Booking() {
   /* ==========================================================
      SUBMIT
   ========================================================== */
+
+  /* ==========================================================
+     RESET
+
+     Back to an empty form. The ?service= or
+     ?course= link is dropped too, so a
+     refresh does not pick the same item
+     again.
+  ========================================================== */
+
+  const resetForm = () => {
+    setName("");
+    setPhone("");
+    setEmail("");
+
+    setType("service");
+    setSelectedItem("");
+    setBranch("");
+    setDate("");
+    setSelectedTime("");
+
+    setSlots([]);
+    setAvailability(null);
+    setAvailabilityError("");
+    setSubmitError("");
+
+    if (
+      searchParams.has("service") ||
+      searchParams.has("course")
+    ) {
+      setSearchParams({}, { replace: true });
+    }
+  };
+
+  // "Book another" on the confirmation.
+  const startNewBooking = () => {
+    setConfirmed(null);
+    setSuccessMessage("");
+  };
 
   const handleSubmit = async (
     e: FormEvent<HTMLFormElement>
@@ -683,8 +812,12 @@ export default function Booking() {
           }
         );
 
-      const data =
-        await response.json();
+      // An error page from a proxy is not
+      // JSON; fall back to the generic
+      // message instead of crashing.
+      const data = await response
+        .json()
+        .catch(() => ({}));
 
       if (!response.ok) {
         /* ================================================
@@ -760,23 +893,31 @@ export default function Booking() {
           : "Your course enrollment has been submitted successfully."
       );
 
-      /* ================================================
-         RESET
-      ================================================ */
+      // Kept for the confirmation card,
+      // read before the form is cleared.
+      setConfirmed({
+        type,
+        title:
+          type === "service"
+            ? selectedService?.title ?? ""
+            : courses.find(
+                (course) =>
+                  course._id === selectedItem
+              )?.title ?? "",
+        branch: branchName,
+        date,
+        time: selectedTime,
+        name,
+      });
 
-      setName("");
-      setPhone("");
-      setEmail("");
+      resetForm();
 
-      setSelectedItem("");
-      setBranch("");
-      setDate("");
-      setSelectedTime("");
-
-      setSlots([]);
-      setAvailability(null);
-
-      setType("service");
+      // The confirmation replaces the form,
+      // whose top may be off screen.
+      formRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     } catch (error) {
       console.error(
         "BOOKING SUBMIT ERROR:",
@@ -1065,8 +1206,10 @@ export default function Booking() {
         ==================================================== */}
 
         <form
+          ref={formRef}
           onSubmit={handleSubmit}
           className="
+            scroll-mt-28
             mx-auto
             max-w-3xl
             overflow-hidden
@@ -1079,9 +1222,24 @@ export default function Booking() {
             sm:rounded-[30px]
           "
         >
-          <div
+          {confirmed ? (
+            <BookingConfirmation
+              booking={confirmed}
+              message={successMessage}
+              onBookAnother={
+                startNewBooking
+              }
+            />
+          ) : (
+          // Locked while submitting, so the
+          // details cannot change mid-request.
+          <fieldset
+            disabled={loading}
             className="
+              m-0
+              min-w-0
               space-y-9
+              border-0
               p-5
 
               sm:p-8
@@ -1089,6 +1247,23 @@ export default function Booking() {
               md:p-10
             "
           >
+            {loadError && (
+              <div
+                className="
+                  rounded-xl
+                  border
+                  border-red-200
+                  bg-red-50
+                  px-4
+                  py-3
+                  text-sm
+                  text-red-600
+                "
+              >
+                {loadError}
+              </div>
+            )}
+
             {/* ==================================================
                 1. BOOKING TYPE
             ================================================== */}
@@ -1205,8 +1380,10 @@ export default function Booking() {
                 "
               >
                 <option value="">
-                  {type ===
-                  "service"
+                  {loadingItems
+                    ? "Loading..."
+                    : type ===
+                      "service"
                     ? "Select Salon Service"
                     : "Select Academy Course"}
                 </option>
@@ -1224,6 +1401,17 @@ export default function Booking() {
                     const unavailable =
                       !isBookable(item);
 
+                    // Only once a branch is
+                    // picked: off there, maybe
+                    // on elsewhere.
+                    const offHere =
+                      !unavailable &&
+                      type === "service" &&
+                      isOffAtBranch(
+                        item as Service,
+                        branch
+                      );
+
                     return (
                       <option
                         key={
@@ -1233,7 +1421,8 @@ export default function Booking() {
                           item._id
                         }
                         disabled={
-                          unavailable
+                          unavailable ||
+                          offHere
                         }
                       >
                         {
@@ -1248,6 +1437,8 @@ export default function Booking() {
 
                         {unavailable
                           ? " — Currently not available"
+                          : offHere
+                          ? " — Not available at this branch"
                           : ""}
                       </option>
                     );
@@ -1294,11 +1485,81 @@ export default function Booking() {
                   sm:grid-cols-3
                 "
               >
+                {loadingBranches && (
+                  <div
+                    className="
+                      col-span-full
+                      flex
+                      items-center
+                      justify-center
+                      gap-3
+                      rounded-xl
+                      bg-[#FFF9FB]
+                      px-5
+                      py-6
+                    "
+                  >
+                    <div
+                      className="
+                        h-5
+                        w-5
+                        animate-spin
+                        rounded-full
+                        border-2
+                        border-[#E75480]/20
+                        border-t-[#E75480]
+                      "
+                    />
+
+                    <span
+                      className="
+                        text-xs
+                        text-[#8A6F78]
+                      "
+                    >
+                      Loading
+                      branches...
+                    </span>
+                  </div>
+                )}
+
+                {!loadingBranches &&
+                  branches.length ===
+                    0 && (
+                    <p
+                      className="
+                        col-span-full
+                        rounded-xl
+                        bg-[#FFF9FB]
+                        px-5
+                        py-6
+                        text-center
+                        text-xs
+                        text-[#A98D96]
+                      "
+                    >
+                      No branches are
+                      taking bookings
+                      right now.
+                    </p>
+                  )}
+
                 {branches.map(
                   (item) => {
                     const selected =
                       branch ===
                       item._id;
+
+                    // The chosen service is
+                    // switched off at this
+                    // branch.
+                    const offHere =
+                      type ===
+                        "service" &&
+                      isOffAtBranch(
+                        selectedService,
+                        item._id
+                      );
 
                     return (
                       <button
@@ -1306,6 +1567,9 @@ export default function Booking() {
                           item._id
                         }
                         type="button"
+                        disabled={
+                          offHere
+                        }
                         onClick={() =>
                           setBranch(
                             item._id
@@ -1321,6 +1585,9 @@ export default function Booking() {
                           font-medium
                           transition-all
                           duration-200
+
+                          disabled:cursor-not-allowed
+                          disabled:opacity-50
 
                           ${
                             selected
@@ -1367,6 +1634,21 @@ export default function Booking() {
                             "
                           >
                             {item.address}
+                          </span>
+                        )}
+
+                        {offHere && (
+                          <span
+                            className="
+                              mt-1
+                              block
+                              text-[10px]
+                              font-semibold
+                              text-[#E75480]
+                            "
+                          >
+                            Service not
+                            offered here
                           </span>
                         )}
                       </button>
@@ -1977,36 +2259,6 @@ export default function Booking() {
             )}
 
             {/* ==================================================
-                SUCCESS
-            ================================================== */}
-
-            {successMessage && (
-              <div
-                className="
-                  rounded-xl
-                  border
-                  border-[#E75480]/20
-                  bg-[#FFF5F8]
-                  px-4
-                  py-4
-                  text-sm
-                  leading-6
-                  text-[#654E56]
-                "
-              >
-                <span
-                  className="
-                    font-semibold
-                    text-[#E75480]
-                  "
-                >
-                  ✓
-                </span>{" "}
-                {successMessage}
-              </div>
-            )}
-
-            {/* ==================================================
                 SUBMIT
             ================================================== */}
 
@@ -2047,6 +2299,20 @@ export default function Booking() {
                 disabled:hover:translate-y-0
               "
             >
+              {loading && (
+                <span
+                  className="
+                    h-4
+                    w-4
+                    animate-spin
+                    rounded-full
+                    border-2
+                    border-white/40
+                    border-t-white
+                  "
+                />
+              )}
+
               {loading
                 ? "Submitting..."
                 : type ===
@@ -2066,7 +2332,8 @@ export default function Booking() {
                 </span>
               )}
             </button>
-          </div>
+          </fieldset>
+          )}
         </form>
       </section>
     </main>
@@ -2239,5 +2506,169 @@ function TypeCard({
         {description}
       </p>
     </button>
+  );
+}
+
+type BookingConfirmationProps = {
+  booking: {
+    type: "service" | "course";
+    title: string;
+    branch: string;
+    date: string;
+    time: string;
+    name: string;
+  };
+  message: string;
+  onBookAnother: () => void;
+};
+
+/* Shown in place of the form once a
+   booking or enrollment is sent; the form
+   behind it is already cleared. */
+function BookingConfirmation({
+  booking,
+  message,
+  onBookAnother,
+}: BookingConfirmationProps) {
+  const isService =
+    booking.type === "service";
+
+  const rows: [string, string][] = [
+    [
+      isService ? "Service" : "Course",
+      booking.title,
+    ],
+    ["Branch", booking.branch],
+    ["Date", formatDate(booking.date)],
+    ...(isService && booking.time
+      ? [
+          [
+            "Time",
+            formatTime(booking.time),
+          ] as [string, string],
+        ]
+      : []),
+  ];
+
+  return (
+    <div
+      className="
+        p-6
+        text-center
+
+        sm:p-10
+      "
+    >
+      <div
+        className="
+          mx-auto
+          flex
+          h-14
+          w-14
+          items-center
+          justify-center
+          rounded-full
+          bg-[#E75480]
+          text-2xl
+          text-white
+          shadow-[0_10px_25px_rgba(231,84,128,0.25)]
+        "
+      >
+        ✓
+      </div>
+
+      <h2
+        className="
+          mt-5
+          font-serif
+          text-2xl
+          text-[#3A2A2F]
+
+          sm:text-3xl
+        "
+      >
+        Thank you
+        {booking.name
+          ? `, ${booking.name.split(" ")[0]}`
+          : ""}
+        !
+      </h2>
+
+      <p
+        className="
+          mx-auto
+          mt-3
+          max-w-md
+          text-sm
+          leading-6
+          text-[#654E56]
+        "
+      >
+        {message}
+      </p>
+
+      <div
+        className="
+          mx-auto
+          mt-6
+          grid
+          max-w-md
+          gap-3
+          rounded-2xl
+          border
+          border-[#E75480]/15
+          bg-[#FFF5F8]
+          p-5
+          text-left
+          text-[12px]
+          text-[#654E56]
+
+          sm:grid-cols-2
+        "
+      >
+        {rows.map(([label, value]) => (
+          <p key={label}>
+            <strong>{label}:</strong>{" "}
+            {value}
+          </p>
+        ))}
+      </div>
+
+      <p
+        className="
+          mt-4
+          text-[11px]
+          text-[#A98D96]
+        "
+      >
+        {isService
+          ? "Your request is pending until the branch confirms it."
+          : "The academy will contact you with the next steps."}
+      </p>
+
+      <button
+        type="button"
+        onClick={onBookAnother}
+        className="
+          mt-7
+          rounded-full
+          border
+          border-[#E75480]
+          px-8
+          py-3
+          text-[10px]
+          font-semibold
+          uppercase
+          tracking-[2.5px]
+          text-[#E75480]
+          transition
+          hover:bg-[#FFF5F8]
+        "
+      >
+        {isService
+          ? "Book another appointment"
+          : "Make another booking"}
+      </button>
+    </div>
   );
 }
