@@ -20,6 +20,7 @@ import {
   uploadPaymentProof,
 } from "../../services/upload/uploadService";
 
+import OrderSuccess from "../../components/OrderSuccess";
 /* ============================================================
    TYPES
 ============================================================ */
@@ -652,10 +653,10 @@ export default function Checkout() {
            UPLOAD PAYMENT SCREENSHOT
         ================================================ */
 
-const paymentProofUrl =
-  await uploadPaymentProof(
-    paymentProof
-  );
+        const paymentProofUrl =
+          await uploadPaymentProof(
+            paymentProof
+          );
 
         if (
           !paymentProofUrl
@@ -751,22 +752,32 @@ const paymentProofUrl =
 
         /* ================================================
            SUCCESS
+
+           Store the server-created order so the success
+           page can show the real order number, products,
+           subtotal, shipping and final total.
         ================================================ */
+
+        sessionStorage.setItem(
+          "nirjara-last-order",
+          JSON.stringify(
+            data
+          )
+        );
 
         clearCart();
 
-        toast.success(
-          "Order placed! Payment is waiting for verification 💖"
-        );
+        navigate(
+          "/order-success",
+          {
+            replace:
+              true,
 
-        setTimeout(
-          () => {
-            navigate(
-              "/"
-            );
-          },
-
-          1500
+            state: {
+              order:
+                data,
+            },
+          }
         );
       } catch (
         error

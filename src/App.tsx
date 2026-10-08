@@ -30,6 +30,7 @@ import EventDetails from "./pages/public/EventDetails";
 import Careers from "./pages/public/Careers";
 import About from "./pages/public/About";
 import BlogDetails from "./pages/public/BlogDetails";
+import OrderSuccess from "./components/OrderSuccess";
 // ==============================
 // PRODUCT PAGES
 // ==============================
@@ -262,6 +263,14 @@ export default function App() {
           element={
             <PublicLayout>
               <LegalPage slug="terms" />
+            </PublicLayout>
+          }
+        />
+        <Route
+          path="/order-success"
+          element={
+            <PublicLayout>
+              <OrderSuccess />
             </PublicLayout>
           }
         />
