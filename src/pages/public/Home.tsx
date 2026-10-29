@@ -1,10 +1,17 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import SEO from "../../components/SEO";
+import {
+  useEffect,
+  useState,
+} from "react";
 
+import {
+  useNavigate,
+} from "react-router-dom";
+
+import SEO from "../../components/SEO";
 import ServiceCard from "../../components/ServiceCard";
 import BranchCard from "../../components/BranchCard";
 import Gallery from "../../components/Gallery";
+
 /* ============================================================
    TYPES
 ============================================================ */
@@ -16,7 +23,6 @@ type Service = {
   price: string;
   icon?: string;
   image?: string;
-  // False when switched off in the admin panel.
   available?: boolean;
 };
 
@@ -30,1198 +36,1605 @@ type Branch = {
   mapUrl?: string;
   active?: boolean;
 };
+
+type HomepageStats = {
+  establishedYear: number;
+  happyClients: number;
+  certifiedGraduates: number;
+};
+
 /* ============================================================
-   STATS
+   DEFAULT HOMEPAGE STATS
 ============================================================ */
 
-const stats = [
-  { number: "12+", label: "Years of Excellence" },
-  { number: "3", label: "Kathmandu Branches" },
-  { number: "5K+", label: "Happy Clients" },
-  { number: "200+", label: "Certified Graduates" },
-];
-
-//SEO
-const HOME_SEO = {
-  title: "Nirjara Beauty | Beauty Salon & Academy in Kathmandu",
-  description: "Nirjara Beauty is a professional beauty salon and academy in Kathmandu offering hair, makeup, nails, skincare, beauty services and professional beauty training.",
-  keywords: "Nirjara Beauty, beauty salon Kathmandu, beauty parlour Kathmandu, beauty academy Kathmandu, hair salon Kathmandu, makeup artist Kathmandu, beauty training Nepal",
-  canonical: "/",
-  image: "/images/nirjara-og.jpg",
-  type: "website"
+const DEFAULT_HOMEPAGE_STATS:
+  HomepageStats = {
+  establishedYear: 2014,
+  happyClients: 5000,
+  certifiedGraduates: 200,
 };
+
+/* ============================================================
+   SEO
+============================================================ */
+
+const HOME_SEO = {
+  title:
+    "Nirjara Beauty | Beauty Salon & Academy in Kathmandu",
+
+  description:
+    "Nirjara Beauty is a professional beauty salon and academy in Kathmandu offering hair, makeup, nails, skincare, beauty services and professional beauty training.",
+
+  keywords:
+    "Nirjara Beauty, beauty salon Kathmandu, beauty parlour Kathmandu, beauty academy Kathmandu, hair salon Kathmandu, makeup artist Kathmandu, beauty training Nepal",
+
+  canonical:
+    "/",
+
+  image:
+    "/images/nirjara-og.jpg",
+
+  type:
+    "website",
+};
+
+/* ============================================================
+   COUNTER FORMATTER
+============================================================ */
+
+function formatCounter(
+  value: number
+) {
+  if (
+    value >= 1000
+  ) {
+    const thousands =
+      value / 1000;
+
+    return `${
+      Number.isInteger(
+        thousands
+      )
+        ? thousands
+        : thousands.toFixed(
+            1
+          )
+    }K+`;
+  }
+
+  return `${value}+`;
+}
+
 /* ============================================================
    HOME
 ============================================================ */
 
 export default function Home() {
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
+
+  const API_URL =
+    import.meta.env
+      .VITE_API_URL;
 
   /* ==========================================================
-     SERVICES + BRANCHES
+     DATA
   ========================================================== */
 
-  const [services, setServices] = useState<Service[]>([]);
-  const [branches, setBranches] = useState<Branch[]>([]);
+  const [
+    services,
+    setServices,
+  ] =
+    useState<Service[]>(
+      []
+    );
+
+  const [
+    branches,
+    setBranches,
+  ] =
+    useState<Branch[]>(
+      []
+    );
+
+  const [
+    homepageStats,
+    setHomepageStats,
+  ] =
+    useState<HomepageStats>(
+      DEFAULT_HOMEPAGE_STATS
+    );
+
+  /* ==========================================================
+     BRANCH SLIDER
+  ========================================================== */
+
+  const [
+    currentBranch,
+    setCurrentBranch,
+  ] =
+    useState(
+      0
+    );
+
+  const [
+    isBranchHovered,
+    setIsBranchHovered,
+  ] =
+    useState(
+      false
+    );
+
+  /* ==========================================================
+     ACTIVE / VISIBLE BRANCHES
+
+     Only active branches are:
+     - counted
+     - displayed
+     - included in slider
+  ========================================================== */
+
+  const visibleBranches =
+    branches.filter(
+      (
+        branch
+      ) =>
+        branch.active !==
+        false
+    );
+
+  const activeBranches =
+    visibleBranches.length;
+
+  /* ==========================================================
+     HOMEPAGE STATS
+  ========================================================== */
+
+  const currentYear =
+    new Date().getFullYear();
+
+  const yearsOfExcellence =
+    homepageStats.establishedYear >
+    0
+      ? Math.max(
+          0,
+          currentYear -
+            homepageStats.establishedYear
+        )
+      : 0;
+
+  const stats = [
+    {
+      number:
+        `${yearsOfExcellence}+`,
+
+      label:
+        "Years of Excellence",
+    },
+
+    {
+      number:
+        String(
+          activeBranches
+        ),
+
+      label:
+        activeBranches ===
+        1
+          ? "Branch"
+          : "Branches",
+    },
+
+    {
+      number:
+        formatCounter(
+          homepageStats.happyClients
+        ),
+
+      label:
+        "Happy Clients",
+    },
+
+    {
+      number:
+        formatCounter(
+          homepageStats
+            .certifiedGraduates
+        ),
+
+      label:
+        "Certified Graduates",
+    },
+  ];
 
   /* ==========================================================
      FETCH SERVICES
   ========================================================== */
 
-  const fetchServices = async () => {
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/services`
-      );
+  const fetchServices =
+    async () => {
+      try {
+        const response =
+          await fetch(
+            `${API_URL}/api/services`
+          );
 
-      if (!res.ok) {
-        throw new Error("Failed to load services");
-      }
+        if (
+          !response.ok
+        ) {
+          throw new Error(
+            "Failed to load services"
+          );
+        }
 
-      const data = await res.json();
+        const data =
+          await response.json();
 
-      setServices(Array.isArray(data) ? data.slice(0, 6) : []);
-    } catch (error) {
-      console.error("SERVICE ERROR:", error);
-    }
-  };
+        setServices(
+          Array.isArray(
+            data
+          )
+            ? data.slice(
+                0,
+                6
+              )
+            : []
+        );
+      } catch (
+        error
+      ) {
+        console.error(
+          "SERVICE ERROR:",
+          error
+        );
 
-  /* ==========================================================
-     FETCH BRANCHES FROM ADMIN / SITE SETTINGS
-  ========================================================== */
-
-  const fetchBranches = async () => {
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/branches`
-      );
-
-      if (!res.ok) {
-        throw new Error(
-          `Failed to fetch branches: ${res.status}`
+        setServices(
+          []
         );
       }
+    };
 
-      const data = await res.json();
+  /* ==========================================================
+     FETCH BRANCHES
+  ========================================================== */
 
-      setBranches(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("BRANCH FETCH ERROR:", error);
-      setBranches([]);
-    }
-  };
+  const fetchBranches =
+    async () => {
+      try {
+        const response =
+          await fetch(
+            `${API_URL}/api/branches`
+          );
+
+        if (
+          !response.ok
+        ) {
+          throw new Error(
+            `Failed to fetch branches: ${response.status}`
+          );
+        }
+
+        const data =
+          await response.json();
+
+        setBranches(
+          Array.isArray(
+            data
+          )
+            ? data
+            : []
+        );
+      } catch (
+        error
+      ) {
+        console.error(
+          "BRANCH FETCH ERROR:",
+          error
+        );
+
+        setBranches(
+          []
+        );
+      }
+    };
+
+  /* ==========================================================
+     FETCH HOMEPAGE STATS
+  ========================================================== */
+
+  const fetchHomepageStats =
+    async () => {
+      try {
+        const response =
+          await fetch(
+            `${API_URL}/api/site-settings`
+          );
+
+        if (
+          !response.ok
+        ) {
+          throw new Error(
+            "Failed to load homepage statistics"
+          );
+        }
+
+        const data =
+          await response.json();
+
+        setHomepageStats({
+          establishedYear:
+            Number(
+              data
+                .homepageStats
+                ?.establishedYear ??
+                DEFAULT_HOMEPAGE_STATS
+                  .establishedYear
+            ),
+
+          happyClients:
+            Number(
+              data
+                .homepageStats
+                ?.happyClients ??
+                DEFAULT_HOMEPAGE_STATS
+                  .happyClients
+            ),
+
+          certifiedGraduates:
+            Number(
+              data
+                .homepageStats
+                ?.certifiedGraduates ??
+                DEFAULT_HOMEPAGE_STATS
+                  .certifiedGraduates
+            ),
+        });
+      } catch (
+        error
+      ) {
+        console.error(
+          "HOMEPAGE STATS ERROR:",
+          error
+        );
+
+        setHomepageStats(
+          DEFAULT_HOMEPAGE_STATS
+        );
+      }
+    };
 
   /* ==========================================================
      INITIAL FETCH
   ========================================================== */
 
-  useEffect(() => {
-    fetchServices();
-    fetchBranches();
-  }, []);
+  useEffect(
+    () => {
+      fetchServices();
+
+      fetchBranches();
+
+      fetchHomepageStats();
+    },
+
+    []
+  );
 
   /* ==========================================================
-     MOBILE / TABLET BRANCH SLIDER
+     AUTO SLIDE
   ========================================================== */
 
-  const [currentBranch, setCurrentBranch] = useState(0);
+  useEffect(
+    () => {
+      if (
+        visibleBranches.length <=
+          1 ||
+        isBranchHovered
+      ) {
+        return;
+      }
 
-  const [isBranchHovered, setIsBranchHovered] =
-    useState(false);
+      const interval =
+        window.setInterval(
+          () => {
+            setCurrentBranch(
+              (
+                previous
+              ) =>
+                previous >=
+                visibleBranches.length -
+                  1
+                  ? 0
+                  : previous +
+                    1
+            );
+          },
+
+          2000
+        );
+
+      return () => {
+        window.clearInterval(
+          interval
+        );
+      };
+    },
+
+    [
+      visibleBranches.length,
+      isBranchHovered,
+    ]
+  );
 
   /* ==========================================================
-     AUTO SLIDE EVERY 2 SECONDS
+     RESET SLIDER
   ========================================================== */
 
-  useEffect(() => {
-    if (branches.length <= 1 || isBranchHovered) {
-      return;
-    }
+  useEffect(
+    () => {
+      if (
+        visibleBranches.length ===
+        0
+      ) {
+        setCurrentBranch(
+          0
+        );
 
-    const interval = window.setInterval(() => {
-      setCurrentBranch((previous) =>
-        previous >= branches.length - 1
-          ? 0
-          : previous + 1
-      );
-    }, 2000);
+        return;
+      }
 
-    return () => {
-      window.clearInterval(interval);
-    };
-  }, [branches.length, isBranchHovered]);
+      if (
+        currentBranch >=
+        visibleBranches.length
+      ) {
+        setCurrentBranch(
+          0
+        );
+      }
+    },
 
-  /* ==========================================================
-     RESET SLIDER IF ADMIN CHANGES BRANCHES
-  ========================================================== */
-
-  useEffect(() => {
-    if (branches.length === 0) {
-      setCurrentBranch(0);
-      return;
-    }
-
-    if (currentBranch >= branches.length) {
-      setCurrentBranch(0);
-    }
-  }, [branches.length, currentBranch]);
+    [
+      visibleBranches.length,
+      currentBranch,
+    ]
+  );
 
   /* ==========================================================
      NEXT BRANCH
   ========================================================== */
 
-  const nextBranch = () => {
-    if (branches.length === 0) return;
+  const nextBranch =
+    () => {
+      if (
+        visibleBranches.length ===
+        0
+      ) {
+        return;
+      }
 
-    setCurrentBranch((previous) =>
-      previous >= branches.length - 1
-        ? 0
-        : previous + 1
-    );
-  };
+      setCurrentBranch(
+        (
+          previous
+        ) =>
+          previous >=
+          visibleBranches.length -
+            1
+            ? 0
+            : previous +
+              1
+      );
+    };
 
   /* ==========================================================
      PREVIOUS BRANCH
   ========================================================== */
 
-  const previousBranch = () => {
-    if (branches.length === 0) return;
+  const previousBranch =
+    () => {
+      if (
+        visibleBranches.length ===
+        0
+      ) {
+        return;
+      }
 
-    setCurrentBranch((previous) =>
-      previous <= 0
-        ? branches.length - 1
-        : previous - 1
-    );
-  };
-
+      setCurrentBranch(
+        (
+          previous
+        ) =>
+          previous <=
+          0
+            ? visibleBranches.length -
+              1
+            : previous -
+              1
+      );
+    };
 
   return (
     <>
-          <SEO
-      title={HOME_SEO.title}
-      description={HOME_SEO.description}
-      keywords={HOME_SEO.keywords}
-      canonical={HOME_SEO.canonical}
-      image={HOME_SEO.image}
-      type="website"
-    />        
-    <main className="overflow-x-hidden bg-[#FFF5F8] text-[#3A2A2F]">
+      <SEO
+        title={
+          HOME_SEO.title
+        }
+        description={
+          HOME_SEO.description
+        }
+        keywords={
+          HOME_SEO.keywords
+        }
+        canonical={
+          HOME_SEO.canonical
+        }
+        image={
+          HOME_SEO.image
+        }
+        type="website"
+      />
 
-      {/* ========================================================
-          HERO
-      ======================================================== */}
+      <main className="overflow-x-hidden bg-[#FFF5F8] text-[#3A2A2F]">
 
-      <section
-        className="
-          relative
-          mt-[72px]
-          min-h-[calc(100vh-72px)]
-          overflow-hidden
-          bg-[#3A2A2F]
-        "
-      >
-        {/* BACKGROUND VIDEO */}
+        {/* ====================================================
+            HERO
+        ==================================================== */}
 
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          className="
-            absolute
-            inset-0
-            z-0
-            h-full
-            w-full
-            object-cover
-            object-center
-          "
-        >
-          <source
-            src="/videos/hero.mp4"
-            type="video/mp4"
-          />
-        </video>
-
-        {/* ======================================================
-            NIRJARA VIDEO OVERLAY
-
-            /5 = very light
-            /10 = light
-            /20 = medium
-            /30 = stronger
-        ====================================================== */}
-
-        <div
-          className="
-            pointer-events-none
-            absolute
-            inset-0
-            z-[1]
-            bg-[#3A2A2F]/5
-          "
-        />
-
-        {/* ======================================================
-            SOFT LIGHT BEHIND HERO TEXT
-        ====================================================== */}
-
-        <div
-          className="
-            pointer-events-none
-            absolute
-            inset-0
-            z-[2]
-            bg-[radial-gradient(ellipse_at_center,rgba(255,245,248,0.62)_0%,rgba(255,245,248,0.38)_30%,rgba(255,245,248,0.10)_58%,transparent_76%)]
-          "
-        />
-
-        {/* ======================================================
-            CINEMATIC GRADIENT
-        ====================================================== */}
-
-        <div
-          className="
-            pointer-events-none
-            absolute
-            inset-0
-            z-[3]
-            bg-gradient-to-b
-            from-black/[0.02]
-            via-transparent
-            to-[#3A2A2F]/5
-          "
-        />
-
-        {/* ======================================================
-            HERO CONTENT
-        ====================================================== */}
-
-        <div
+        <section
           className="
             relative
-            z-10
-            mx-auto
-            flex
+            mt-[72px]
             min-h-[calc(100vh-72px)]
-            max-w-7xl
-            items-center
-            justify-center
-            px-6
-            pb-24
-            pt-16
-            text-center
-            sm:px-8
-            sm:pt-20
-            md:px-12
-            lg:px-16
-            lg:pt-20
+            overflow-hidden
+            bg-[#3A2A2F]
           "
         >
-          <div className="mx-auto w-full max-w-4xl">
+          {/* VIDEO */}
 
-            {/* HERO TOP LABEL */}
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            className="
+              absolute
+              inset-0
+              z-0
+              h-full
+              w-full
+              object-cover
+              object-center
+            "
+          >
+            <source
+              src="/videos/hero.mp4"
+              type="video/mp4"
+            />
+          </video>
 
-            <div className="flex items-center justify-center gap-4">
-              <span
+          {/* VIDEO OVERLAY */}
+
+          <div
+            className="
+              pointer-events-none
+              absolute
+              inset-0
+              z-[1]
+              bg-[#3A2A2F]/5
+            "
+          />
+
+          {/* LIGHT BEHIND TEXT */}
+
+          <div
+            className="
+              pointer-events-none
+              absolute
+              inset-0
+              z-[2]
+              bg-[radial-gradient(ellipse_at_center,rgba(255,245,248,0.62)_0%,rgba(255,245,248,0.38)_30%,rgba(255,245,248,0.10)_58%,transparent_76%)]
+            "
+          />
+
+          {/* GRADIENT */}
+
+          <div
+            className="
+              pointer-events-none
+              absolute
+              inset-0
+              z-[3]
+              bg-gradient-to-b
+              from-black/[0.02]
+              via-transparent
+              to-[#3A2A2F]/5
+            "
+          />
+
+          {/* HERO CONTENT */}
+
+          <div
+            className="
+              relative
+              z-10
+              mx-auto
+              flex
+              min-h-[calc(100vh-72px)]
+              max-w-7xl
+              items-center
+              justify-center
+              px-6
+              pb-24
+              pt-16
+              text-center
+
+              sm:px-8
+              sm:pt-20
+
+              md:px-12
+
+              lg:px-16
+              lg:pt-20
+            "
+          >
+            <div className="mx-auto w-full max-w-4xl">
+
+              {/* TOP LABEL */}
+
+              <div className="flex items-center justify-center gap-4">
+                <span className="hidden h-px w-10 bg-[#E75480]/60 sm:block" />
+
+                <p
+                  className="
+                    text-[10px]
+                    font-bold
+                    uppercase
+                    tracking-[3px]
+                    text-[#E75480]
+
+                    sm:tracking-[5px]
+
+                    md:text-[11px]
+                    md:tracking-[6px]
+                  "
+                >
+                  Kathmandu&apos;s
+                  Premier Beauty
+                  Destination
+                </p>
+
+                <span className="hidden h-px w-10 bg-[#E75480]/60 sm:block" />
+              </div>
+
+              {/* TITLE */}
+
+              <h1
                 className="
-                  hidden
-                  h-px
-                  w-10
-                  bg-[#E75480]/60
-                  sm:block
+                  mt-8
+                  font-serif
+                  text-[64px]
+                  leading-[0.84]
+                  tracking-[-2px]
+                  text-[#3A2A2F]
+                  drop-shadow-[0_2px_12px_rgba(255,255,255,0.30)]
+
+                  sm:text-[78px]
+
+                  md:text-[96px]
+
+                  lg:text-[112px]
                 "
-              />
+              >
+                Nirjara
+
+                <span
+                  className="
+                    mt-4
+                    block
+                    font-serif
+                    italic
+                    text-[#E75480]
+                  "
+                >
+                  Beauty
+                </span>
+              </h1>
+
+              {/* TAGLINE */}
 
               <p
                 className="
-                  text-[10px]
-                  font-bold
-                  uppercase
-                  tracking-[3px]
-                  text-[#E75480]
-                  sm:tracking-[5px]
-                  md:text-[11px]
-                  md:tracking-[6px]
+                  mx-auto
+                  mt-10
+                  max-w-3xl
+                  font-serif
+                  text-lg
+                  italic
+                  leading-relaxed
+                  text-black
+
+                  sm:text-xl
+
+                  md:text-2xl
                 "
               >
-                Kathmandu&apos;s Premier Beauty Destination
+                Salon &amp;
+                Academy — Where
+                Beauty Meets
+                Confidence
               </p>
 
-              <span
+              {/* BUTTON */}
+
+              <button
+                type="button"
+                onClick={() =>
+                  navigate(
+                    "/booking"
+                  )
+                }
                 className="
-                  hidden
-                  h-px
-                  w-10
-                  bg-[#E75480]/60
-                  sm:block
-                "
-              />
-            </div>
-
-            {/* HERO TITLE */}
-
-            <h1
-              className="
-                mt-8
-                font-serif
-                text-[64px]
-                leading-[0.84]
-                tracking-[-2px]
-                text-[#3A2A2F]
-                drop-shadow-[0_2px_12px_rgba(255,255,255,0.30)]
-                sm:text-[78px]
-                md:text-[96px]
-                lg:text-[112px]
-              "
-            >
-              Nirjara
-
-              <span
-                className="
-                  mt-4
-                  block
-                  font-serif
-                  italic
-                  text-[#E75480]
-                "
-              >
-                Beauty
-              </span>
-            </h1>
-
-            {/* HERO TAGLINE */}
-
-            <p
-              className="
-                mx-auto
-                mt-10
-                max-w-3xl
-                font-serif
-                text-lg
-                italic
-                leading-relaxed
-                text-black
-                sm:text-xl
-                md:text-2xl
-              "
-            >
-              Salon &amp; Academy — Where Beauty Meets
-              Confidence
-            </p>
-
-            {/* HERO BUTTON */}
-
-            <button
-              type="button"
-              onClick={() => navigate("/booking")}
-              className="
-                group
-                mt-11
-                inline-flex
-                items-center
-                justify-center
-                gap-5
-                rounded-full
-                border
-                border-[#E75480]
-                bg-[#E75480]
-                px-9
-                py-[17px]
-                text-[13px]
-                font-medium
-                uppercase
-                tracking-[3px]
-                text-white
-                shadow-[0_15px_40px_rgba(231,84,128,0.30)]
-                transition-all
-                duration-300
-                hover:-translate-y-1
-                hover:bg-[#D94773]
-                hover:shadow-[0_20px_50px_rgba(231,84,128,0.40)]
-                sm:px-11
-                sm:py-[18px]
-              "
-            >
-              Book a Service
-
-              <span
-                className="
-                  text-lg
-                  leading-none
-                  transition-transform
+                  group
+                  mt-11
+                  inline-flex
+                  items-center
+                  justify-center
+                  gap-5
+                  rounded-full
+                  border
+                  border-[#E75480]
+                  bg-[#E75480]
+                  px-9
+                  py-[17px]
+                  text-[13px]
+                  font-medium
+                  uppercase
+                  tracking-[3px]
+                  text-white
+                  shadow-[0_15px_40px_rgba(231,84,128,0.30)]
+                  transition-all
                   duration-300
-                  group-hover:translate-x-1
+
+                  hover:-translate-y-1
+                  hover:bg-[#D94773]
+                  hover:shadow-[0_20px_50px_rgba(231,84,128,0.40)]
+
+                  sm:px-11
+                  sm:py-[18px]
                 "
               >
-                →
-              </span>
-            </button>
+                Book a Service
+
+                <span
+                  className="
+                    text-lg
+                    leading-none
+                    transition-transform
+                    duration-300
+                    group-hover:translate-x-1
+                  "
+                >
+                  →
+                </span>
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* HERO BOTTOM LEFT */}
+          {/* BOTTOM LEFT */}
 
-        <div
-          className="
-            absolute
-            bottom-8
-            left-8
-            z-10
-            hidden
-            items-center
-            gap-5
-            lg:flex
-            xl:left-16
-          "
-        >
-          <span className="h-px w-12 bg-[#E75480]/70" />
-
-          <p
+          <div
             className="
-              text-[8px]
-              font-semibold
-              uppercase
-              tracking-[4px]
-              text-white/90
-              drop-shadow-[0_1px_5px_rgba(0,0,0,0.25)]
+              absolute
+              bottom-8
+              left-8
+              z-10
+              hidden
+              items-center
+              gap-5
+
+              lg:flex
+
+              xl:left-16
             "
           >
-            Beauty • Wellness • Confidence
-          </p>
-        </div>
+            <span className="h-px w-12 bg-[#E75480]/70" />
 
-        {/* HERO BOTTOM RIGHT */}
-
-        <div
-          className="
-            absolute
-            bottom-8
-            right-8
-            z-10
-            hidden
-            items-center
-            gap-5
-            lg:flex
-            xl:right-16
-          "
-        >
-          <span className="h-px w-12 bg-[#E75480]/70" />
-
-          <div className="text-right">
             <p
               className="
                 text-[8px]
                 font-semibold
                 uppercase
                 tracking-[4px]
-                text-white
+                text-white/90
+                drop-shadow-[0_1px_5px_rgba(0,0,0,0.25)]
               "
             >
-              Nirjara Beauty
-            </p>
-
-            <p
-              className="
-                mt-2
-                text-[7px]
-                uppercase
-                tracking-[3px]
-                text-white/80
-              "
-            >
-              Beauty Lives Here
+              Beauty • Wellness •
+              Confidence
             </p>
           </div>
-        </div>
-      </section>
 
-      {/* ========================================================
-          STATS
-      ======================================================== */}
+          {/* BOTTOM RIGHT */}
 
-      <section className="border-y border-[#E75480]/10 bg-white">
-        <div className="mx-auto grid max-w-6xl grid-cols-2 md:grid-cols-4">
-          {stats.map((stat) => (
-            <div
-              key={stat.label}
-              className="
-                border-r
-                border-[#E75480]/10
-                px-6
-                py-10
-                text-center
-                last:border-r-0
-              "
-            >
-              <h2 className="font-serif text-4xl text-[#E75480]">
-                {stat.number}
-              </h2>
+          <div
+            className="
+              absolute
+              bottom-8
+              right-8
+              z-10
+              hidden
+              items-center
+              gap-5
 
-              <p
-                className="
-                  mt-2
-                  text-xs
-                  uppercase
-                  tracking-[2px]
-                  text-[#8A6F78]
-                "
-              >
-                {stat.label}
+              lg:flex
+
+              xl:right-16
+            "
+          >
+            <span className="h-px w-12 bg-[#E75480]/70" />
+
+            <div className="text-right">
+              <p className="text-[8px] font-semibold uppercase tracking-[4px] text-white">
+                Nirjara Beauty
+              </p>
+
+              <p className="mt-2 text-[7px] uppercase tracking-[3px] text-white/80">
+                Beauty Lives Here
               </p>
             </div>
-          ))}
-        </div>
-      </section>
+          </div>
+        </section>
 
-      {/* ========================================================
-          SERVICES
-      ======================================================== */}
+        {/* ====================================================
+            DYNAMIC STATS
+        ==================================================== */}
 
-      <section className="overflow-hidden bg-[#FFF5F8] py-16 md:px-12 md:py-24">
+        <section className="border-y border-[#E75480]/10 bg-white">
+          <div className="mx-auto grid max-w-6xl grid-cols-2 md:grid-cols-4">
+            {stats.map(
+              (
+                stat
+              ) => (
+                <div
+                  key={
+                    stat.label
+                  }
+                  className="
+                    border-r
+                    border-[#E75480]/10
+                    px-6
+                    py-10
+                    text-center
+                    last:border-r-0
+                  "
+                >
+                  <h2 className="font-serif text-4xl text-[#E75480]">
+                    {
+                      stat.number
+                    }
+                  </h2>
 
-        {/* ======================================================
-            HEADING
-        ====================================================== */}
+                  <p
+                    className="
+                      mt-2
+                      text-xs
+                      uppercase
+                      tracking-[2px]
+                      text-[#8A6F78]
+                    "
+                  >
+                    {
+                      stat.label
+                    }
+                  </p>
+                </div>
+              )
+            )}
+          </div>
+        </section>
 
-        <div className="px-6 text-center">
+        {/* ====================================================
+            SERVICES
+        ==================================================== */}
 
-          <p
-            className="
-              text-[10px]
-              uppercase
-              tracking-[4px]
-              text-[#E75480]
-              sm:text-xs
-            "
-          >
-            Our Services
-          </p>
+        <section className="overflow-hidden bg-[#FFF5F8] py-16 md:px-12 md:py-24">
 
-          <h2
-            className="
-              mt-4
-              font-serif
-              text-[40px]
-              leading-tight
-              text-[#3A2A2F]
-              sm:text-5xl
-            "
-          >
-            The Art of{" "}
-            <span className="italic text-[#E75480]">
-              Beauty
-            </span>
-          </h2>
+          {/* HEADING */}
+
+          <div className="px-6 text-center">
+            <p
+              className="
+                text-[10px]
+                uppercase
+                tracking-[4px]
+                text-[#E75480]
+
+                sm:text-xs
+              "
+            >
+              Our Services
+            </p>
+
+            <h2
+              className="
+                mt-4
+                font-serif
+                text-[40px]
+                leading-tight
+                text-[#3A2A2F]
+
+                sm:text-5xl
+              "
+            >
+              The Art of{" "}
+
+              <span className="italic text-[#E75480]">
+                Beauty
+              </span>
+            </h2>
+
+            <div className="mx-auto mt-6 h-px w-20 bg-[#E75480]/40" />
+          </div>
+
+          {/* MOBILE SERVICES */}
+
+          <div className="mt-10 md:hidden">
+            <div
+              className="
+                flex
+                snap-x
+                snap-mandatory
+                gap-4
+                overflow-x-auto
+                scroll-smooth
+                px-5
+                pb-5
+                [scrollbar-width:none]
+                [&::-webkit-scrollbar]:hidden
+              "
+            >
+              {services.map(
+                (
+                  service,
+                  index
+                ) => (
+                  <div
+                    key={
+                      service._id ||
+                      index
+                    }
+                    className="
+                      w-[84vw]
+                      max-w-[340px]
+                      shrink-0
+                      snap-center
+                      first:ml-0
+                    "
+                  >
+                    <ServiceCard
+                      serviceId={
+                        service._id
+                      }
+                      available={
+                        service.available !==
+                        false
+                      }
+                      title={
+                        service.title
+                      }
+                      description={
+                        service.description
+                      }
+                      price={
+                        service.price
+                      }
+                      image={
+                        service.image ||
+                        ""
+                      }
+                    />
+                  </div>
+                )
+              )}
+            </div>
+
+            {services.length >
+              1 && (
+              <div className="mt-2 flex items-center justify-center gap-3">
+                <span className="h-px w-8 bg-[#E75480]/25" />
+
+                <p className="text-[9px] font-medium uppercase tracking-[3px] text-[#8A6F78]/60">
+                  Swipe to explore
+                </p>
+
+                <span className="h-px w-8 bg-[#E75480]/25" />
+              </div>
+            )}
+          </div>
+
+          {/* TABLET / DESKTOP */}
 
           <div
             className="
               mx-auto
-              mt-6
-              h-px
-              w-20
-              bg-[#E75480]/40
-            "
-          />
-        </div>
+              mt-16
+              hidden
+              max-w-6xl
+              gap-8
 
-        {/* ======================================================
-            MOBILE SERVICES SLIDER
-            0px - 767px
+              md:grid
+              md:grid-cols-2
 
-            Manual swipe
-            One main card
-            Part of next card visible
-        ====================================================== */}
-
-        <div className="mt-10 md:hidden">
-
-          <div
-            className="
-              flex
-              snap-x
-              snap-mandatory
-              gap-4
-              overflow-x-auto
-              scroll-smooth
-              px-5
-              pb-5
-              [scrollbar-width:none]
-              [&::-webkit-scrollbar]:hidden
+              lg:grid-cols-3
             "
           >
-            {services.map((service, index) => (
-
-              <div
-                key={service._id || index}
-                className="
-                  w-[84vw]
-                  max-w-[340px]
-                  shrink-0
-                  snap-center
-                  first:ml-0
-                "
-              >
+            {services.map(
+              (
+                service,
+                index
+              ) => (
                 <ServiceCard
-                  serviceId={service._id}
-                  available={service.available !== false}
-                  title={service.title}
-                  description={service.description}
-                  price={service.price}
-                  image={service.image || ""}
+                  key={
+                    service._id ||
+                    index
+                  }
+                  serviceId={
+                    service._id
+                  }
+                  available={
+                    service.available !==
+                    false
+                  }
+                  title={
+                    service.title
+                  }
+                  description={
+                    service.description
+                  }
+                  price={
+                    service.price
+                  }
+                  image={
+                    service.image ||
+                    ""
+                  }
                 />
-              </div>
-
-            ))}
+              )
+            )}
           </div>
 
-          {/* SWIPE HINT */}
+          {/* VIEW ALL */}
 
-          {services.length > 1 && (
-            <div className="mt-2 flex items-center justify-center gap-3">
+          <div className="mt-10 flex justify-center px-6 md:mt-14">
+            <button
+              type="button"
+              onClick={() =>
+                navigate(
+                  "/services"
+                )
+              }
+              className="
+                group
+                inline-flex
+                items-center
+                justify-center
+                gap-4
+                rounded-full
+                border
+                border-[#E75480]/30
+                bg-white
+                px-7
+                py-4
+                text-[10px]
+                font-semibold
+                uppercase
+                tracking-[2.5px]
+                text-[#E75480]
+                shadow-sm
+                transition-all
+                duration-300
 
-              <span className="h-px w-8 bg-[#E75480]/25" />
+                hover:-translate-y-0.5
+                hover:border-[#E75480]
+                hover:bg-[#E75480]
+                hover:text-white
+                hover:shadow-lg
+
+                sm:px-9
+                sm:text-[11px]
+              "
+            >
+              View All Services
+
+              <span className="text-base leading-none transition-transform duration-300 group-hover:translate-x-1">
+                →
+              </span>
+            </button>
+          </div>
+        </section>
+
+        {/* ====================================================
+            GALLERY
+        ==================================================== */}
+
+        <Gallery />
+
+        {/* ====================================================
+            BRANCHES
+        ==================================================== */}
+
+        <section
+          className="
+            bg-white
+            px-4
+            py-14
+
+            sm:px-6
+            sm:py-16
+
+            md:px-8
+            md:py-20
+
+            lg:px-12
+            lg:py-24
+          "
+        >
+          {/* HEADING */}
+
+          <div className="text-center">
+            <p
+              className="
+                text-[10px]
+                uppercase
+                tracking-[4px]
+                text-[#E75480]
+
+                sm:text-xs
+              "
+            >
+              Our Branches
+            </p>
+
+            <h2
+              className="
+                mt-3
+                font-serif
+                text-[38px]
+                leading-tight
+                text-[#3A2A2F]
+
+                sm:mt-4
+                sm:text-5xl
+              "
+            >
+              Visit{" "}
+
+              <span className="italic text-[#E75480]">
+                Nirjara
+              </span>
+            </h2>
+
+            <div className="mx-auto mt-5 h-px w-16 bg-[#E75480]/40 sm:mt-6 sm:w-20" />
+          </div>
+
+          {/* ==================================================
+              MOBILE + TABLET
+          ================================================== */}
+
+          {visibleBranches.length >
+            0 && (
+            <div
+              className="
+                relative
+                mx-auto
+                mt-10
+                w-full
+                max-w-[680px]
+
+                sm:mt-12
+
+                md:mt-14
+
+                lg:hidden
+              "
+              onMouseEnter={() =>
+                setIsBranchHovered(
+                  true
+                )
+              }
+              onMouseLeave={() =>
+                setIsBranchHovered(
+                  false
+                )
+              }
+            >
+              {/* VIEWPORT */}
+
+              <div className="w-full overflow-hidden rounded-[24px]">
+
+                {/* TRACK */}
+
+                <div
+                  className="
+                    flex
+                    w-full
+                    transition-transform
+                    duration-700
+                    ease-in-out
+                  "
+                  style={{
+                    transform:
+                      `translateX(-${
+                        currentBranch *
+                        100
+                      }%)`,
+                  }}
+                >
+                  {visibleBranches.map(
+                    (
+                      branch,
+                      index
+                    ) => (
+                      <div
+                        key={`${branch.name}-mobile-${index}`}
+                        className="
+                          w-full
+                          min-w-full
+                          shrink-0
+                          basis-full
+                        "
+                      >
+                        <div
+                          className="
+                            mx-auto
+                            w-[90%]
+                            max-w-[340px]
+
+                            min-[400px]:max-w-[360px]
+
+                            sm:w-[82%]
+                            sm:max-w-[420px]
+
+                            md:w-[62%]
+                            md:max-w-[460px]
+                          "
+                        >
+                          <BranchCard
+                            number={String(
+                              index +
+                                1
+                            ).padStart(
+                              2,
+                              "0"
+                            )}
+                            name={
+                              branch.name
+                            }
+                            address={
+                              branch.address
+                            }
+                            openingHours={
+                              branch.openingHours
+                            }
+                            phone={
+                              branch.phone
+                            }
+                            label={
+                              branch.label
+                            }
+                            mapUrl={
+                              branch.mapUrl
+                            }
+                            active={
+                              branch.active
+                            }
+                          />
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+
+              {/* PREVIOUS */}
+
+              {visibleBranches.length >
+                1 && (
+                <button
+                  type="button"
+                  aria-label="Previous branch"
+                  onClick={
+                    previousBranch
+                  }
+                  className="
+                    absolute
+                    left-2
+                    top-1/2
+                    z-20
+                    flex
+                    h-10
+                    w-10
+                    -translate-y-1/2
+                    items-center
+                    justify-center
+                    rounded-full
+                    border
+                    border-[#E75480]/25
+                    bg-white/95
+                    font-serif
+                    text-2xl
+                    text-[#E75480]
+                    shadow-[0_8px_25px_rgba(58,42,47,0.12)]
+                    backdrop-blur-md
+                    transition-all
+                    duration-300
+
+                    hover:border-[#E75480]
+                    hover:bg-[#E75480]
+                    hover:text-white
+
+                    sm:left-4
+                    sm:h-11
+                    sm:w-11
+
+                    md:left-5
+                    md:h-12
+                    md:w-12
+                    md:text-3xl
+                  "
+                >
+                  ‹
+                </button>
+              )}
+
+              {/* NEXT */}
+
+              {visibleBranches.length >
+                1 && (
+                <button
+                  type="button"
+                  aria-label="Next branch"
+                  onClick={
+                    nextBranch
+                  }
+                  className="
+                    absolute
+                    right-2
+                    top-1/2
+                    z-20
+                    flex
+                    h-10
+                    w-10
+                    -translate-y-1/2
+                    items-center
+                    justify-center
+                    rounded-full
+                    border
+                    border-[#E75480]/25
+                    bg-white/95
+                    font-serif
+                    text-2xl
+                    text-[#E75480]
+                    shadow-[0_8px_25px_rgba(58,42,47,0.12)]
+                    backdrop-blur-md
+                    transition-all
+                    duration-300
+
+                    hover:border-[#E75480]
+                    hover:bg-[#E75480]
+                    hover:text-white
+
+                    sm:right-4
+                    sm:h-11
+                    sm:w-11
+
+                    md:right-5
+                    md:h-12
+                    md:w-12
+                    md:text-3xl
+                  "
+                >
+                  ›
+                </button>
+              )}
+
+              {/* DOTS */}
+
+              {visibleBranches.length >
+                1 && (
+                <div className="mt-6 flex items-center justify-center gap-2">
+                  {visibleBranches.map(
+                    (
+                      branch,
+                      index
+                    ) => (
+                      <button
+                        key={`${branch.name}-dot-${index}`}
+                        type="button"
+                        aria-label={`Show ${branch.name}`}
+                        onClick={() =>
+                          setCurrentBranch(
+                            index
+                          )
+                        }
+                        className={`
+                          h-2
+                          rounded-full
+                          transition-all
+                          duration-500
+
+                          ${
+                            currentBranch ===
+                            index
+                              ? "w-8 bg-[#E75480]"
+                              : "w-2 bg-[#E75480]/20 hover:bg-[#E75480]/50"
+                          }
+                        `}
+                      />
+                    )
+                  )}
+                </div>
+              )}
+
+              {/* LOCATION COUNTER */}
 
               <p
                 className="
-                  text-[9px]
+                  mt-4
+                  text-center
+                  text-[8px]
                   font-medium
                   uppercase
                   tracking-[3px]
                   text-[#8A6F78]/60
+
+                  sm:text-[9px]
                 "
               >
-                Swipe to explore
+                {currentBranch +
+                  1}{" "}
+                of{" "}
+                {
+                  visibleBranches.length
+                }{" "}
+                {visibleBranches.length ===
+                1
+                  ? "location"
+                  : "locations"}
               </p>
-
-              <span className="h-px w-8 bg-[#E75480]/25" />
-
             </div>
           )}
 
-        </div>
+          {/* ==================================================
+              DESKTOP
+          ================================================== */}
 
-        {/* ======================================================
-            TABLET + DESKTOP GRID
-            768px+
-
-            Tablet = 2 columns
-            Desktop = 3 columns
-        ====================================================== */}
-
-        <div
-          className="
-            mx-auto
-            mt-16
-            hidden
-            max-w-6xl
-            gap-8
-            md:grid
-            md:grid-cols-2
-            lg:grid-cols-3
-          "
-        >
-          {services.map((service, index) => (
-
-            <ServiceCard
-              key={service._id || index}
-              serviceId={service._id}
-              available={service.available !== false}
-              title={service.title}
-              description={service.description}
-              price={service.price}
-              image={service.image || ""}
-            />
-
-          ))}
-        </div>
-
-        {/* ======================================================
-            VIEW ALL SERVICES
-        ====================================================== */}
-
-        <div className="mt-10 flex justify-center px-6 md:mt-14">
-
-          <button
-            type="button"
-            onClick={() => navigate("/services")}
-            className="
-              group
-              inline-flex
-              items-center
-              justify-center
-              gap-4
-              rounded-full
-              border
-              border-[#E75480]/30
-              bg-white
-              px-7
-              py-4
-              text-[10px]
-              font-semibold
-              uppercase
-              tracking-[2.5px]
-              text-[#E75480]
-              shadow-sm
-              transition-all
-              duration-300
-
-              hover:-translate-y-0.5
-              hover:border-[#E75480]
-              hover:bg-[#E75480]
-              hover:text-white
-              hover:shadow-lg
-
-              sm:px-9
-              sm:text-[11px]
-            "
-          >
-            View All Services
-
-            <span
-              className="
-                text-base
-                leading-none
-                transition-transform
-                duration-300
-                group-hover:translate-x-1
-              "
-            >
-              →
-            </span>
-          </button>
-
-        </div>
-
-      </section>
-
-      {/* ========================================================
-          GALLERY
-      ======================================================== */}
-
-      <Gallery /> 
-
-{/* ========================================================
-    BRANCHES
-======================================================== */}
-
-<section
-  className="
-    bg-white
-    px-4
-    py-14
-    sm:px-6
-    sm:py-16
-    md:px-8
-    md:py-20
-    lg:px-12
-    lg:py-24
-  "
->
-  {/* ======================================================
-      BRANCH HEADING
-  ====================================================== */}
-
-  <div className="text-center">
-    <p
-      className="
-        text-[10px]
-        uppercase
-        tracking-[4px]
-        text-[#E75480]
-        sm:text-xs
-      "
-    >
-      Our Branches
-    </p>
-
-    <h2
-      className="
-        mt-3
-        font-serif
-        text-[38px]
-        leading-tight
-        text-[#3A2A2F]
-        sm:mt-4
-        sm:text-5xl
-      "
-    >
-      Visit{" "}
-      <span className="italic text-[#E75480]">
-        Nirjara
-      </span>
-    </h2>
-
-    <div
-      className="
-        mx-auto
-        mt-5
-        h-px
-        w-16
-        bg-[#E75480]/40
-        sm:mt-6
-        sm:w-20
-      "
-    />
-  </div>
-
-  {/* ======================================================
-      MOBILE + TABLET
-      0px - 1023px
-      ONE CARD AT A TIME
-  ====================================================== */}
-
-  {branches.length > 0 && (
-    <div
-      className="
-        relative
-        mx-auto
-        mt-10
-        w-full
-        max-w-[680px]
-        sm:mt-12
-        md:mt-14
-        lg:hidden
-      "
-      onMouseEnter={() => setIsBranchHovered(true)}
-      onMouseLeave={() => setIsBranchHovered(false)}
-    >
-      {/* ================================================
-          SLIDER VIEWPORT
-      ================================================ */}
-
-      <div
-        className="
-          w-full
-          overflow-hidden
-          rounded-[24px]
-        "
-      >
-        {/* ==============================================
-            SLIDER TRACK
-        ============================================== */}
-
-        <div
-          className="
-            flex
-            w-full
-            transition-transform
-            duration-700
-            ease-in-out
-          "
-          style={{
-            transform: `translateX(-${currentBranch * 100}%)`,
-          }}
-        >
-          {branches.map((branch, index) => (
+          {visibleBranches.length >
+            0 && (
             <div
-              key={`${branch.name}-mobile-${index}`}
               className="
+                mx-auto
+                mt-16
+                hidden
                 w-full
-                min-w-full
-                shrink-0
-                basis-full
+                max-w-7xl
+                grid-cols-3
+                items-stretch
+                gap-5
+
+                lg:grid
+
+                xl:gap-8
               "
             >
-              {/* ========================================
-                  RESPONSIVE CARD WRAPPER
-
-                  Mobile:
-                  almost full screen width
-
-                  Tablet:
-                  controlled width so it does not
-                  become huge/stretched
-              ======================================== */}
-
-                <div
-                  className="
-                    mx-auto
-
-                    w-[90%]
-                    max-w-[340px]
-
-                    min-[400px]:max-w-[360px]
-
-                    sm:w-[82%]
-                    sm:max-w-[420px]
-
-                    md:w-[62%]
-                    md:max-w-[460px]
-                  "
-                >
-                <BranchCard
-                  number={String(index + 1).padStart(2, "0")}
-                  name={branch.name}
-                  address={branch.address}
-                  openingHours={branch.openingHours}
-                  phone={branch.phone}
-                  label={branch.label}
-                  mapUrl={branch.mapUrl}
-                  active={branch.active}
-                />
-              </div>
+              {visibleBranches.map(
+                (
+                  branch,
+                  index
+                ) => (
+                  <div
+                    key={`${branch.name}-desktop-${index}`}
+                    className="h-full min-w-0"
+                  >
+                    <BranchCard
+                      number={String(
+                        index +
+                          1
+                      ).padStart(
+                        2,
+                        "0"
+                      )}
+                      name={
+                        branch.name
+                      }
+                      address={
+                        branch.address
+                      }
+                      openingHours={
+                        branch.openingHours
+                      }
+                      phone={
+                        branch.phone
+                      }
+                      label={
+                        branch.label
+                      }
+                      mapUrl={
+                        branch.mapUrl
+                      }
+                      active={
+                        branch.active
+                      }
+                    />
+                  </div>
+                )
+              )}
             </div>
-          ))}
-        </div>
-      </div>
+          )}
 
-      {/* ==================================================
-          PREVIOUS BUTTON
-      ================================================== */}
+          {/* ==================================================
+              DYNAMIC BOTTOM LABEL
+          ================================================== */}
 
-      {branches.length > 1 && (
-        <button
-          type="button"
-          aria-label="Previous branch"
-          onClick={previousBranch}
-          className="
-            absolute
-            left-2
-            top-1/2
-            z-20
-            flex
-            h-10
-            w-10
-            -translate-y-1/2
-            items-center
-            justify-center
-            rounded-full
-            border
-            border-[#E75480]/25
-            bg-white/95
-            font-serif
-            text-2xl
-            text-[#E75480]
-            shadow-[0_8px_25px_rgba(58,42,47,0.12)]
-            backdrop-blur-md
-            transition-all
-            duration-300
+          {visibleBranches.length >
+            0 && (
+            <div
+              className="
+                mx-auto
+                mt-12
+                hidden
+                items-center
+                justify-center
+                gap-4
 
-            hover:border-[#E75480]
-            hover:bg-[#E75480]
-            hover:text-white
+                lg:flex
+              "
+            >
+              <span className="h-px w-8 bg-[#E75480]/30" />
 
-            sm:left-4
-            sm:h-11
-            sm:w-11
+              <p
+                className="
+                  text-[9px]
+                  uppercase
+                  tracking-[4px]
+                  text-[#8A6F78]/70
+                "
+              >
+                {
+                  activeBranches
+                }{" "}
+                {activeBranches ===
+                1
+                  ? "Location"
+                  : "Locations"}{" "}
+                • One Nirjara
+                Experience
+              </p>
 
-            md:left-5
-            md:h-12
-            md:w-12
-            md:text-3xl
-          "
-        >
-          ‹
-        </button>
-      )}
+              <span className="h-px w-8 bg-[#E75480]/30" />
+            </div>
+          )}
 
-      {/* ==================================================
-          NEXT BUTTON
-      ================================================== */}
+          {/* EMPTY STATE */}
 
-      {branches.length > 1 && (
-        <button
-          type="button"
-          aria-label="Next branch"
-          onClick={nextBranch}
-          className="
-            absolute
-            right-2
-            top-1/2
-            z-20
-            flex
-            h-10
-            w-10
-            -translate-y-1/2
-            items-center
-            justify-center
-            rounded-full
-            border
-            border-[#E75480]/25
-            bg-white/95
-            font-serif
-            text-2xl
-            text-[#E75480]
-            shadow-[0_8px_25px_rgba(58,42,47,0.12)]
-            backdrop-blur-md
-            transition-all
-            duration-300
-
-            hover:border-[#E75480]
-            hover:bg-[#E75480]
-            hover:text-white
-
-            sm:right-4
-            sm:h-11
-            sm:w-11
-
-            md:right-5
-            md:h-12
-            md:w-12
-            md:text-3xl
-          "
-        >
-          ›
-        </button>
-      )}
-
-      {/* ==================================================
-          DOT INDICATORS
-      ================================================== */}
-
-      {branches.length > 1 && (
-        <div
-          className="
-            mt-6
-            flex
-            items-center
-            justify-center
-            gap-2
-          "
-        >
-          {branches.map((branch, index) => (
-            <button
-              key={`${branch.name}-dot-${index}`}
-              type="button"
-              aria-label={`Show ${branch.name}`}
-              onClick={() => setCurrentBranch(index)}
-              className={`
-                h-2
-                rounded-full
-                transition-all
-                duration-500
-
-                ${
-                  currentBranch === index
-                    ? "w-8 bg-[#E75480]"
-                    : "w-2 bg-[#E75480]/20 hover:bg-[#E75480]/50"
-                }
-              `}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* ==================================================
-          LOCATION COUNTER
-      ================================================== */}
-
-      <p
-        className="
-          mt-4
-          text-center
-          text-[8px]
-          font-medium
-          uppercase
-          tracking-[3px]
-          text-[#8A6F78]/60
-          sm:text-[9px]
-        "
-      >
-        {currentBranch + 1} of {branches.length} locations
-      </p>
-    </div>
-  )}
-
-  {/* ======================================================
-      LAPTOP + DESKTOP
-      1024PX+
-      THREE CARDS SIDE BY SIDE
-  ====================================================== */}
-
-  {branches.length > 0 && (
-    <div
-      className="
-        mx-auto
-        mt-16
-        hidden
-        w-full
-        max-w-7xl
-        grid-cols-3
-        items-stretch
-        gap-5
-        lg:grid
-        xl:gap-8
-      "
-    >
-      {branches.map((branch, index) => (
-        <div
-          key={`${branch.name}-desktop-${index}`}
-          className="
-            h-full
-            min-w-0
-          "
-        >
-        <BranchCard
-          number={String(index + 1).padStart(2, "0")}
-          name={branch.name}
-          address={branch.address}
-          openingHours={branch.openingHours}
-          phone={branch.phone}
-          label={branch.label}
-          mapUrl={branch.mapUrl}
-          active={branch.active}
-        />
-        </div>
-      ))}
-    </div>
-  )}
-
-  {/* ======================================================
-      DESKTOP BOTTOM LABEL
-  ====================================================== */}
-
-  {branches.length > 0 && (
-    <div
-      className="
-        mx-auto
-        mt-12
-        hidden
-        items-center
-        justify-center
-        gap-4
-        lg:flex
-      "
-    >
-      <span className="h-px w-8 bg-[#E75480]/30" />
-
-      <p
-        className="
-          text-[9px]
-          uppercase
-          tracking-[4px]
-          text-[#8A6F78]/70
-        "
-      >
-        Three Locations • One Nirjara Experience
-      </p>
-
-      <span className="h-px w-8 bg-[#E75480]/30" />
-    </div>
-  )}
-
-  {/* ======================================================
-      EMPTY STATE
-  ====================================================== */}
-
-  {branches.length === 0 && (
-    <div className="mx-auto mt-14 max-w-xl text-center">
-      <p
-        className="
-          font-serif
-          text-xl
-          italic
-          text-[#8A6F78]
-        "
-      >
-        Our branch information is currently being updated.
-      </p>
-    </div>
-  )}
-</section>
-    </main>
-  </>
+          {visibleBranches.length ===
+            0 && (
+            <div className="mx-auto mt-14 max-w-xl text-center">
+              <p
+                className="
+                  font-serif
+                  text-xl
+                  italic
+                  text-[#8A6F78]
+                "
+              >
+                Our branch
+                information is
+                currently being
+                updated.
+              </p>
+            </div>
+          )}
+        </section>
+      </main>
+    </>
   );
 }

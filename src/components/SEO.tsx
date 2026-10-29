@@ -11,7 +11,7 @@ type SEOProps = {
 };
 
 const SITE_NAME = "Nirjara Beauty";
-const SITE_URL = import.meta.env.VITE_SITE_URL || "https://nirjarabeauty.com";
+const SITE_URL = import.meta.env.VITE_SITE_URL || "http://localhost:5173";
 
 export default function SEO({
   title,

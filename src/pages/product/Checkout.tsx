@@ -20,7 +20,6 @@ import {
   uploadPaymentProof,
 } from "../../services/upload/uploadService";
 
-import OrderSuccess from "../../components/OrderSuccess";
 /* ============================================================
    TYPES
 ============================================================ */
