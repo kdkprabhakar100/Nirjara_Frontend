@@ -7,6 +7,12 @@ import {
   useNavigate,
 } from "react-router-dom";
 
+import {
+  ShoppingBag,
+  Menu,
+  X,
+} from "lucide-react";
+
 import SEO from "../../components/SEO";
 import ServiceCard from "../../components/ServiceCard";
 import BranchCard from "../../components/BranchCard";

@@ -22,6 +22,7 @@ import {
   FaYoutube,
   FaTiktok,
 } from "react-icons/fa";
+
 /* =========================================================
    TYPES
 ========================================================= */
@@ -37,91 +38,153 @@ type FooterSettings = {
   showSocialLinks: boolean;
   showAdminLogin: boolean;
   showBookAppointment: boolean;
+  showBranches?: boolean;
+
   copyrightText: string;
+
   developerName: string;
   developerUrl: string;
+
+  privacyPolicyUrl?: string;
+  termsUrl?: string;
 };
 
 type SiteSettings = {
   salonName: string;
+
   description: string;
+
   email: string;
+
   phone: string;
+
   whatsapp: string;
-  socialLinks: SocialLinks;
-  footer: FooterSettings;
+
+  socialLinks:
+    SocialLinks;
+
+  footer:
+    FooterSettings;
 };
 
 /* =========================================================
    DEFAULT SETTINGS
 ========================================================= */
 
-const defaultSettings: SiteSettings = {
-  salonName: "Nirjara Beauty",
+const defaultSettings:
+  SiteSettings = {
+  salonName:
+    "Nirjara Beauty",
 
   description:
     "A professional beauty salon and academy offering salon services, beauty training, and customer-focused care in Kathmandu.",
 
-  email: "",
-  phone: "",
-  whatsapp: "",
+  email:
+    "",
+
+  phone:
+    "",
+
+  whatsapp:
+    "",
 
   socialLinks: {
-    facebook: "",
-    instagram: "",
-    tiktok: "",
-    youtube: "",
+    facebook:
+      "",
+
+    instagram:
+      "",
+
+    tiktok:
+      "",
+
+    youtube:
+      "",
   },
 
   footer: {
-    showSocialLinks: true,
-    showAdminLogin: false,
-    showBookAppointment: true,
+    showSocialLinks:
+      true,
+
+    showAdminLogin:
+      false,
+
+    showBookAppointment:
+      true,
+
+    showBranches:
+      true,
 
     copyrightText:
       "© 2026 Nirjara Beauty. All rights reserved.",
 
-    developerName: "Prabhakar Khadka",
-    developerUrl: "",
+    developerName:
+      "Prabhakar Khadka",
+
+    developerUrl:
+      "",
+
+    privacyPolicyUrl:
+      "/privacy-policy",
+
+    termsUrl:
+      "/terms",
   },
 };
 
 /* =========================================================
-   PAGES
+   FOOTER LINKS
 ========================================================= */
 
-const pages = [
+const explorePages = [
   {
-    label: "Home",
-    path: "/",
+    label:
+      "Gallery",
+
+    path:
+      "/gallery",
   },
+
   {
-    label: "Services",
-    path: "/services",
+    label:
+      "Blog",
+
+    path:
+      "/blog",
   },
+
   {
-    label: "Branches",
-    path: "/branches",
+    label:
+      "Events",
+
+    path:
+      "/events",
   },
+];
+
+const visitPages = [
   {
-    label: "Academy",
-    path: "/academy",
+    label:
+      "Branches",
+
+    path:
+      "/branches",
   },
+
   {
-    label: "Blog",
-    path: "/blog",
+    label:
+      "Contact",
+
+    path:
+      "/contact",
   },
+
   {
-    label: "Products",
-    path: "/products",
-  },
-  {
-    label: "Contact",
-    path: "/contact",
-  },
-  {
-    label: "Careers",
-    path: "/careers",
+    label:
+      "Book Appointment",
+
+    path:
+      "/booking",
   },
 ];
 
@@ -130,82 +193,113 @@ const pages = [
 ========================================================= */
 
 export default function Footer() {
-  const location = useLocation();
+  const location =
+    useLocation();
 
-  const [settings, setSettings] =
+  const [
+    settings,
+    setSettings,
+  ] =
     useState<SiteSettings>(
       defaultSettings
     );
 
   const API_URL =
-    import.meta.env.VITE_API_URL ||
+    import.meta.env
+      .VITE_API_URL ||
     "http://localhost:5000";
 
   /* =======================================================
      LOAD SETTINGS
   ======================================================= */
 
-  useEffect(() => {
-    const loadSettings =
-      async () => {
-        try {
-          const response =
-            await fetch(
-              `${API_URL}/api/site-settings`
-            );
+  useEffect(
+    () => {
+      const loadSettings =
+        async () => {
+          try {
+            const response =
+              await fetch(
+                `${API_URL}/api/site-settings`
+              );
 
-          if (!response.ok) {
-            throw new Error(
-              "Could not load site settings."
+            if (
+              !response.ok
+            ) {
+              throw new Error(
+                "Could not load site settings."
+              );
+            }
+
+            const data =
+              await response.json();
+
+            setSettings({
+              ...defaultSettings,
+
+              ...data,
+
+              socialLinks: {
+                ...defaultSettings.socialLinks,
+
+                ...(data.socialLinks ??
+                  {}),
+              },
+
+              footer: {
+                ...defaultSettings.footer,
+
+                ...(data.footer ??
+                  {}),
+              },
+            });
+          } catch (
+            error
+          ) {
+            console.error(
+              "Footer settings error:",
+              error
             );
           }
+        };
 
-          const data =
-            await response.json();
+      loadSettings();
+    },
 
-          setSettings({
-            ...defaultSettings,
-            ...data,
-
-            socialLinks: {
-              ...defaultSettings.socialLinks,
-              ...(data.socialLinks ??
-                {}),
-            },
-
-            footer: {
-              ...defaultSettings.footer,
-              ...(data.footer ?? {}),
-            },
-          });
-        } catch (error) {
-          console.error(
-            "Footer settings error:",
-            error
-          );
-        }
-      };
-
-    loadSettings();
-  }, [API_URL]);
+    [
+      API_URL,
+    ]
+  );
 
   /* =======================================================
-     SCROLL TO TOP ON PAGE CHANGE
+     SCROLL TO TOP
   ======================================================= */
 
-  useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: "auto",
-    });
-  }, [location.pathname]);
+  useEffect(
+    () => {
+      window.scrollTo({
+        top:
+          0,
+
+        left:
+          0,
+
+        behavior:
+          "auto",
+      });
+    },
+
+    [
+      location.pathname,
+    ]
+  );
 
   /* =======================================================
      VALUES
   ======================================================= */
 
-  const footer = settings.footer;
+  const footer =
+    settings.footer;
 
   const whatsappNumber =
     settings.whatsapp.replace(
@@ -216,7 +310,9 @@ export default function Footer() {
   const hasSocialLinks =
     Object.values(
       settings.socialLinks
-    ).some(Boolean);
+    ).some(
+      Boolean
+    );
 
   const currentYear =
     new Date().getFullYear();
@@ -224,6 +320,14 @@ export default function Footer() {
   const copyrightText =
     footer.copyrightText ||
     `© ${currentYear} ${settings.salonName}. All rights reserved.`;
+
+  const privacyPolicyUrl =
+    footer.privacyPolicyUrl ||
+    "/privacy-policy";
+
+  const termsUrl =
+    footer.termsUrl ||
+    "/terms";
 
   /* =======================================================
      RENDER
@@ -234,7 +338,9 @@ export default function Footer() {
       className="
         border-t
         border-[#E75480]/10
+
         bg-[#FFF9FB]
+
         text-[#3A2A2F]
       "
     >
@@ -242,11 +348,15 @@ export default function Footer() {
         className="
           mx-auto
           max-w-7xl
+
           px-5
-          py-8
+          py-7
 
           sm:px-6
-          sm:py-9
+          sm:py-8
+
+          md:px-8
+          md:py-9
 
           lg:px-10
           lg:py-10
@@ -259,58 +369,78 @@ export default function Footer() {
         {footer.showBookAppointment && (
           <div
             className="
-              rounded-[22px]
+              rounded-[24px]
+
               border
               border-[#E75480]/10
+
               bg-white
+
               px-5
               py-5
 
               shadow-[0_10px_35px_rgba(231,84,128,0.06)]
 
-              sm:px-7
+              sm:px-6
+              sm:py-6
+
+              md:px-7
 
               lg:px-8
-              lg:py-5
+              lg:py-6
             "
           >
             <div
               className="
                 flex
                 flex-col
-                gap-4
 
-                sm:flex-row
-                sm:items-center
-                sm:justify-between
+                items-start
+
+                gap-5
+
+                lg:flex-row
+                lg:items-center
+                lg:justify-between
               "
             >
-              <div>
+              <div className="max-w-2xl">
                 <p
                   className="
                     text-[8px]
                     font-semibold
                     uppercase
                     tracking-[4px]
+
                     text-[#E75480]
                   "
                 >
-                  {settings.salonName}
+                  {
+                    settings.salonName
+                  }
                 </p>
 
                 <h2
                   className="
                     mt-2
+
                     font-serif
-                    text-[22px]
-                    leading-tight
+
+                    text-[24px]
+                    leading-[1.15]
+
                     text-[#3A2A2F]
 
-                    sm:text-2xl
-                    lg:text-[27px]
+                    sm:text-[28px]
+
+                    md:text-[30px]
+
+                    lg:text-[32px]
                   "
                 >
-                  Ready for your next{" "}
+                  Ready for your
+                  next{" "}
+
                   <span className="italic text-[#E75480]">
                     beauty moment?
                   </span>
@@ -321,22 +451,25 @@ export default function Footer() {
                 to="/booking"
                 className="
                   inline-flex
-                  w-fit
-                  shrink-0
+                  w-full
+
                   items-center
                   justify-center
+
                   gap-2
 
                   rounded-full
+
                   bg-[#E75480]
 
-                  px-5
-                  py-2.5
+                  px-6
+                  py-3.5
 
                   text-[9px]
                   font-semibold
                   uppercase
                   tracking-[2px]
+
                   text-white
 
                   shadow-[0_7px_20px_rgba(231,84,128,0.18)]
@@ -347,14 +480,17 @@ export default function Footer() {
                   hover:-translate-y-0.5
                   hover:bg-[#D94873]
 
-                  sm:px-6
-                  sm:py-3
+                  sm:w-auto
+
+                  lg:shrink-0
                 "
               >
                 Book Appointment
 
                 <ArrowUpRight
-                  size={13}
+                  size={
+                    14
+                  }
                 />
               </Link>
             </div>
@@ -368,44 +504,71 @@ export default function Footer() {
         <div
           className={`
             grid
-            gap-9
 
-            md:grid-cols-2
-
-            lg:grid-cols-[1.25fr_0.85fr_1fr]
-            lg:gap-14
+            gap-x-8
+            gap-y-9
 
             ${
               footer.showBookAppointment
-                ? "mt-9 lg:mt-10"
+                ? "mt-9"
                 : ""
             }
+
+            md:grid-cols-2
+            md:gap-x-12
+            md:gap-y-10
+
+            lg:grid-cols-[1.35fr_0.65fr_0.7fr_1fr]
+            lg:gap-x-10
+            lg:gap-y-0
+
+            xl:gap-x-14
           `}
         >
           {/* =================================================
               BRAND
+
+              Tablet:
+              full-width so text does not get cramped.
           ================================================= */}
 
-          <div>
+          <div
+            className="
+              md:col-span-2
+
+              lg:col-span-1
+            "
+          >
             <Link
               to="/"
               className="
+                inline-block
+
                 font-serif
+
                 text-[30px]
+
                 text-[#E75480]
+
+                sm:text-[32px]
 
                 lg:text-[34px]
               "
             >
-              {settings.salonName}
+              {
+                settings.salonName
+              }
             </Link>
 
             <div
               className="
                 mt-3
+
                 h-[2px]
                 w-9
+
                 rounded-full
+
                 bg-[#E75480]
               "
             />
@@ -413,85 +576,125 @@ export default function Footer() {
             <p
               className="
                 mt-4
-                max-w-md
+
+                max-w-xl
+
                 text-sm
                 leading-7
+
                 text-[#8A6F78]
+
+                md:max-w-2xl
+
+                lg:max-w-md
               "
             >
-              {settings.description}
+              {
+                settings.description
+              }
             </p>
 
             {/* ===============================================
                 SOCIAL MEDIA
             =============================================== */}
 
-{/* ===============================================
-    SOCIAL MEDIA
-=============================================== */}
+            {footer.showSocialLinks &&
+              hasSocialLinks && (
+                <div className="mt-5">
+                  <p
+                    className="
+                      text-[8px]
+                      font-semibold
+                      uppercase
+                      tracking-[3px]
 
-{footer.showSocialLinks && hasSocialLinks && (
-  <div className="mt-5">
-    <p
-      className="
-        text-[8px]
-        font-semibold
-        uppercase
-        tracking-[3px]
-        text-[#E75480]
-      "
-    >
-      Follow our journey
-    </p>
+                      text-[#E75480]
+                    "
+                  >
+                    Follow Our
+                    Journey
+                  </p>
 
-    <div className="mt-3 flex flex-wrap gap-2.5">
+                  <div className="mt-3 flex flex-wrap gap-2.5">
 
-      {/* FACEBOOK */}
+                    {settings
+                      .socialLinks
+                      .facebook && (
+                      <SocialButton
+                        href={
+                          settings
+                            .socialLinks
+                            .facebook
+                        }
+                        label="Facebook"
+                      >
+                        <FaFacebookF
+                          size={
+                            15
+                          }
+                        />
+                      </SocialButton>
+                    )}
 
-      {settings.socialLinks.facebook && (
-        <SocialButton
-          href={settings.socialLinks.facebook}
-          label="Facebook"
-        >
-          <FaFacebookF size={15} />
-        </SocialButton>
-      )}
+                    {settings
+                      .socialLinks
+                      .instagram && (
+                      <SocialButton
+                        href={
+                          settings
+                            .socialLinks
+                            .instagram
+                        }
+                        label="Instagram"
+                      >
+                        <FaInstagram
+                          size={
+                            16
+                          }
+                        />
+                      </SocialButton>
+                    )}
 
-      {/* INSTAGRAM */}
+                    {settings
+                      .socialLinks
+                      .tiktok && (
+                      <SocialButton
+                        href={
+                          settings
+                            .socialLinks
+                            .tiktok
+                        }
+                        label="TikTok"
+                      >
+                        <FaTiktok
+                          size={
+                            15
+                          }
+                        />
+                      </SocialButton>
+                    )}
 
-      {settings.socialLinks.instagram && (
-        <SocialButton
-          href={settings.socialLinks.instagram}
-          label="Instagram"
-        >
-          <FaInstagram size={16} />
-        </SocialButton>
-      )}
-
-      {/* TIKTOK */}
-
-      {settings.socialLinks.tiktok && (
-        <SocialButton
-          href={settings.socialLinks.tiktok}
-          label="TikTok"
-        >
-          <FaTiktok size={15} />
-        </SocialButton>
-      )}
-
-      {/* YOUTUBE */}
-
-      {settings.socialLinks.youtube && (
-        <SocialButton
-          href={settings.socialLinks.youtube}
-          label="YouTube"
-        >
-          <FaYoutube size={17} />
-        </SocialButton>
-      )}
-    </div>
-  </div>
-)}
+                    {settings
+                      .socialLinks
+                      .youtube && (
+                      <SocialButton
+                        href={
+                          settings
+                            .socialLinks
+                            .youtube
+                        }
+                        label="YouTube"
+                      >
+                        <FaYoutube
+                          size={
+                            17
+                          }
+                        />
+                      </SocialButton>
+                    )}
+                  </div>
+                </div>
+              )}
           </div>
 
           {/* =================================================
@@ -503,73 +706,96 @@ export default function Footer() {
               Explore
             </FooterHeading>
 
-            <div
-              className="
-                mt-5
-                grid
-                grid-cols-2
-                gap-x-8
-                gap-y-3
-              "
-            >
-              {pages.map(
-                (page) => (
-                  <Link
+            <div className="mt-5 space-y-3">
+              {explorePages.map(
+                (
+                  page
+                ) => (
+                  <FooterLink
                     key={
                       page.path
                     }
-                    to={page.path}
-                    className="
-                      group
-                      flex
-                      w-fit
-                      items-center
-                      gap-1
-
-                      text-sm
-                      text-[#8A6F78]
-
-                      transition-all
-                      duration-200
-
-                      hover:translate-x-1
-                      hover:text-[#E75480]
-                    "
-                  >
-                    {page.label}
-
-                    <span
-                      className="
-                        opacity-0
-                        transition-opacity
-                        group-hover:opacity-100
-                      "
-                    >
-                      →
-                    </span>
-                  </Link>
+                    path={
+                      page.path
+                    }
+                    label={
+                      page.label
+                    }
+                  />
                 )
               )}
             </div>
           </div>
 
           {/* =================================================
-              CONTACT
+              VISIT
           ================================================= */}
 
-          <div className="md:col-span-2 lg:col-span-1">
+          <div>
+            <FooterHeading>
+              Visit
+            </FooterHeading>
+
+            <div className="mt-5 space-y-3">
+              {visitPages.map(
+                (
+                  page
+                ) => (
+                  <FooterLink
+                    key={
+                      page.path
+                    }
+                    path={
+                      page.path
+                    }
+                    label={
+                      page.label
+                    }
+                  />
+                )
+              )}
+            </div>
+          </div>
+
+          {/* =================================================
+              GET IN TOUCH
+
+              Tablet:
+              full-width underneath Explore + Visit.
+          ================================================= */}
+
+          <div
+            className="
+              md:col-span-2
+
+              lg:col-span-1
+            "
+          >
             <FooterHeading>
               Get In Touch
             </FooterHeading>
 
-            <div className="mt-5 space-y-2.5">
+            <div
+              className="
+                mt-5
+
+                grid
+                gap-3
+
+                sm:grid-cols-2
+
+                lg:grid-cols-1
+              "
+            >
               {/* PHONE */}
 
               {settings.phone && (
                 <ContactCard
                   icon={
                     <Phone
-                      size={14}
+                      size={
+                        14
+                      }
                     />
                   }
                   label="Call Us"
@@ -586,7 +812,9 @@ export default function Footer() {
                 <ContactCard
                   icon={
                     <Mail
-                      size={14}
+                      size={
+                        14
+                      }
                     />
                   }
                   label="Email"
@@ -604,7 +832,9 @@ export default function Footer() {
                   <ContactCard
                     icon={
                       <MessageCircle
-                        size={14}
+                        size={
+                          14
+                        }
                       />
                     }
                     label="WhatsApp"
@@ -616,91 +846,117 @@ export default function Footer() {
                   />
                 )}
 
-              {/* BRANCHES */}
+              {/* BRANCH */}
 
-              <Link
-                to="/branches"
-                className="
-                  group
-                  flex
-                  items-center
-                  gap-3
-
-                  rounded-[16px]
-
-                  border
-                  border-[#E75480]/10
-
-                  bg-white/70
-
-                  px-4
-                  py-3
-
-                  transition-all
-                  duration-300
-
-                  hover:-translate-y-0.5
-                  hover:border-[#E75480]/30
-                  hover:bg-white
-                  hover:shadow-sm
-                "
-              >
-                <div
+              {footer.showBranches !==
+                false && (
+                <Link
+                  to="/branches"
                   className="
+                    group
+
                     flex
-                    h-8
-                    w-8
-                    shrink-0
+                    min-w-0
+
                     items-center
-                    justify-center
+                    gap-3
 
-                    rounded-full
+                    rounded-[16px]
 
-                    bg-[#FCE7EF]
+                    border
+                    border-[#E75480]/10
 
-                    text-[#E75480]
+                    bg-white/70
+
+                    px-4
+                    py-3
+
+                    transition-all
+                    duration-300
+
+                    hover:-translate-y-0.5
+                    hover:border-[#E75480]/30
+                    hover:bg-white
+                    hover:shadow-sm
                   "
                 >
-                  <MapPin
-                    size={14}
-                  />
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <p
+                  <div
                     className="
-                      text-[7px]
-                      font-semibold
-                      uppercase
-                      tracking-[2px]
+                      flex
+                      h-8
+                      w-8
+                      shrink-0
+
+                      items-center
+                      justify-center
+
+                      rounded-full
+
+                      bg-[#FCE7EF]
+
                       text-[#E75480]
+
+                      transition-colors
+                      duration-300
+
+                      group-hover:bg-[#E75480]
+                      group-hover:text-white
                     "
                   >
-                    Our Locations
-                  </p>
+                    <MapPin
+                      size={
+                        14
+                      }
+                    />
+                  </div>
 
-                  <p
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="
+                        text-[7px]
+                        font-semibold
+                        uppercase
+                        tracking-[2px]
+
+                        text-[#E75480]
+                      "
+                    >
+                      Our Locations
+                    </p>
+
+                    <p
+                      className="
+                        mt-0.5
+
+                        truncate
+
+                        text-sm
+
+                        text-[#8A6F78]
+                      "
+                    >
+                      Find a Nirjara
+                      branch
+                    </p>
+                  </div>
+
+                  <ArrowUpRight
+                    size={
+                      13
+                    }
                     className="
-                      mt-0.5
-                      text-sm
-                      text-[#8A6F78]
-                    "
-                  >
-                    Find a Nirjara
-                    branch
-                  </p>
-                </div>
+                      shrink-0
 
-                <ArrowUpRight
-                  size={13}
-                  className="
-                    text-[#C77A95]
-                    transition-transform
-                    group-hover:translate-x-0.5
-                    group-hover:-translate-y-0.5
-                  "
-                />
-              </Link>
+                      text-[#C77A95]
+
+                      transition-transform
+
+                      group-hover:translate-x-0.5
+                      group-hover:-translate-y-0.5
+                    "
+                  />
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -711,9 +967,11 @@ export default function Footer() {
 
         <div
           className="
-            mt-8
+            mt-9
+
             border-t
             border-[#E75480]/10
+
             pt-5
           "
         >
@@ -721,11 +979,16 @@ export default function Footer() {
             className="
               flex
               flex-col
+
               items-center
+
               gap-3
 
               text-center
+
               text-[10px]
+              leading-5
+
               text-[#9B7C85]
 
               lg:flex-row
@@ -736,16 +999,18 @@ export default function Footer() {
           >
             {/* COPYRIGHT */}
 
-            <p className="shrink-0">
-              {copyrightText}
+            <p>
+              {
+                copyrightText
+              }
             </p>
 
             {/* DEVELOPER */}
 
             {footer.developerName && (
-              <p className="shrink-0">
-                Designed & Developed
-                by{" "}
+              <p>
+                Designed &
+                Developed by{" "}
 
                 {footer.developerUrl ? (
                   <a
@@ -756,8 +1021,11 @@ export default function Footer() {
                     rel="noopener noreferrer"
                     className="
                       font-medium
+
                       text-[#E75480]
+
                       transition
+
                       hover:text-[#D94873]
                     "
                   >
@@ -781,8 +1049,10 @@ export default function Footer() {
               className="
                 flex
                 flex-wrap
+
                 items-center
                 justify-center
+
                 gap-x-5
                 gap-y-2
 
@@ -790,9 +1060,12 @@ export default function Footer() {
               "
             >
               <Link
-                to="/privacy-policy"
+                to={
+                  privacyPolicyUrl
+                }
                 className="
                   transition
+
                   hover:text-[#E75480]
                 "
               >
@@ -800,13 +1073,17 @@ export default function Footer() {
               </Link>
 
               <Link
-                to="/terms"
+                to={
+                  termsUrl
+                }
                 className="
                   transition
+
                   hover:text-[#E75480]
                 "
               >
-                Terms & Conditions
+                Terms &
+                Conditions
               </Link>
 
               {footer.showAdminLogin && (
@@ -816,6 +1093,7 @@ export default function Footer() {
                   rel="noopener noreferrer"
                   className="
                     transition
+
                     hover:text-[#E75480]
                   "
                 >
@@ -831,13 +1109,69 @@ export default function Footer() {
 }
 
 /* =========================================================
+   FOOTER LINK
+========================================================= */
+
+function FooterLink({
+  path,
+  label,
+}: {
+  path: string;
+  label: string;
+}) {
+  return (
+    <Link
+      to={
+        path
+      }
+      className="
+        group
+
+        flex
+        w-fit
+
+        items-center
+        gap-1.5
+
+        text-sm
+
+        text-[#8A6F78]
+
+        transition-all
+        duration-200
+
+        hover:translate-x-1
+        hover:text-[#E75480]
+      "
+    >
+      {
+        label
+      }
+
+      <span
+        className="
+          opacity-0
+
+          transition-opacity
+
+          group-hover:opacity-100
+        "
+      >
+        →
+      </span>
+    </Link>
+  );
+}
+
+/* =========================================================
    FOOTER HEADING
 ========================================================= */
 
 function FooterHeading({
   children,
 }: {
-  children: React.ReactNode;
+  children:
+    React.ReactNode;
 }) {
   return (
     <div>
@@ -847,17 +1181,22 @@ function FooterHeading({
           font-semibold
           uppercase
           tracking-[4px]
+
           text-[#E75480]
         "
       >
-        {children}
+        {
+          children
+        }
       </h3>
 
       <div
         className="
           mt-3
+
           h-px
           w-7
+
           bg-[#E75480]
         "
       />
@@ -876,28 +1215,44 @@ function SocialButton({
 }: {
   href: string;
   label: string;
-  children: React.ReactNode;
+
+  children:
+    React.ReactNode;
 }) {
   return (
     <a
-      href={href}
+      href={
+        href
+      }
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={label}
-      title={label}
+      aria-label={
+        label
+      }
+      title={
+        label
+      }
       className="
         group
+
         flex
         h-9
         w-9
+
         items-center
         justify-center
+
         rounded-full
+
         border
         border-[#E75480]/15
+
         bg-white
+
         text-[#E75480]
+
         shadow-sm
+
         transition-all
         duration-300
 
@@ -915,15 +1270,19 @@ function SocialButton({
       <span
         className="
           flex
+
           items-center
           justify-center
+
           transition-transform
           duration-300
 
           group-hover:scale-110
         "
       >
-        {children}
+        {
+          children
+        }
       </span>
     </a>
   );
@@ -940,15 +1299,22 @@ function ContactCard({
   href,
   external = false,
 }: {
-  icon: React.ReactNode;
+  icon:
+    React.ReactNode;
+
   label: string;
+
   value: string;
+
   href: string;
+
   external?: boolean;
 }) {
   return (
     <a
-      href={href}
+      href={
+        href
+      }
       target={
         external
           ? "_blank"
@@ -961,7 +1327,10 @@ function ContactCard({
       }
       className="
         group
+
         flex
+        min-w-0
+
         items-center
         gap-3
 
@@ -990,6 +1359,7 @@ function ContactCard({
           h-8
           w-8
           shrink-0
+
           items-center
           justify-center
 
@@ -1006,31 +1376,41 @@ function ContactCard({
           group-hover:text-white
         "
       >
-        {icon}
+        {
+          icon
+        }
       </div>
 
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p
           className="
             text-[7px]
             font-semibold
             uppercase
             tracking-[2px]
+
             text-[#E75480]
           "
         >
-          {label}
+          {
+            label
+          }
         </p>
 
         <p
           className="
             mt-0.5
+
             truncate
+
             text-sm
+
             text-[#8A6F78]
           "
         >
-          {value}
+          {
+            value
+          }
         </p>
       </div>
     </a>
