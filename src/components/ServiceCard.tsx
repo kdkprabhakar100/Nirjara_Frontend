@@ -1,60 +1,141 @@
-import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import {
+  motion,
+} from "framer-motion";
+
+import {
+  useNavigate,
+} from "react-router-dom";
+
+/* ============================================================
+   PROPS
+============================================================ */
 
 type ServiceCardProps = {
   title: string;
+
   description: string;
-  price: string;
+
+  startingPrice:
+    number;
+
+  maxPrice?:
+    number | null;
+
   image?: string;
-  // Opens the booking page with this
-  // service already selected.
+
   serviceId?: string;
-  // Switched off in the admin panel: the
-  // card stays visible but cannot be booked.
+
   available?: boolean;
 };
+
+/* ============================================================
+   PRICE FORMATTER
+============================================================ */
+
+function formatPrice(
+  value: number
+) {
+  return new Intl.NumberFormat(
+    "en-NP",
+    {
+      maximumFractionDigits:
+        0,
+    }
+  ).format(
+    value
+  );
+}
+
+/* ============================================================
+   SERVICE CARD
+============================================================ */
 
 export default function ServiceCard({
   title,
   description,
-  price,
+  startingPrice,
+  maxPrice,
   image,
   serviceId,
   available = true,
 }: ServiceCardProps) {
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
-  const book = () => {
-    navigate(
-      serviceId
-        ? `/booking?service=${encodeURIComponent(serviceId)}`
-        : "/booking"
-    );
-  };
+  /* ==========================================================
+     BOOK
+  ========================================================== */
+
+  const book =
+    () => {
+      navigate(
+        serviceId
+          ? `/booking?service=${encodeURIComponent(
+              serviceId
+            )}`
+          : "/booking"
+      );
+    };
+
+  /* ==========================================================
+     PRICE
+  ========================================================== */
+
+  const validStartingPrice =
+    Number.isFinite(
+      startingPrice
+    ) &&
+    startingPrice >=
+      0;
+
+  const validMaxPrice =
+    typeof maxPrice ===
+      "number" &&
+    Number.isFinite(
+      maxPrice
+    ) &&
+    maxPrice >
+      startingPrice;
+
+  /* ==========================================================
+     RENDER
+  ========================================================== */
 
   return (
     <motion.article
       initial={{
-        opacity: 0,
-        y: 24,
+        opacity:
+          0,
+
+        y:
+          24,
       }}
       whileInView={{
-        opacity: 1,
-        y: 0,
+        opacity:
+          1,
+
+        y:
+          0,
       }}
       viewport={{
-        once: true,
-        amount: 0.1,
+        once:
+          true,
+
+        amount:
+          0.1,
       }}
       transition={{
-        duration: 0.45,
+        duration:
+          0.45,
       }}
       className="
         group
+
         flex
         h-full
         min-w-0
         flex-col
+
         overflow-hidden
 
         rounded-[18px]
@@ -83,7 +164,9 @@ export default function ServiceCard({
       <div
         className="
           relative
+
           h-[150px]
+
           overflow-hidden
 
           sm:h-[210px]
@@ -100,11 +183,14 @@ export default function ServiceCard({
             image ||
             "/images/salon.png"
           }
-          alt={title}
+          alt={
+            title
+          }
           loading="lazy"
           className="
             h-full
             w-full
+
             object-cover
 
             transition-transform
@@ -114,54 +200,129 @@ export default function ServiceCard({
           "
         />
 
+        {/* =================================================
+            NOT AVAILABLE
+        ================================================= */}
+
         {!available && (
-          <div className="absolute left-4 top-4 rounded-full bg-[#3A2A2F]/80 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[2px] text-white">
-            Not available
+          <div
+            className="
+              absolute
+              left-3
+              top-3
+
+              rounded-full
+
+              bg-[#3A2A2F]/85
+
+              px-3
+              py-1.5
+
+              text-[8px]
+              font-semibold
+              uppercase
+              tracking-[1.5px]
+
+              text-white
+
+              backdrop-blur-sm
+
+              sm:left-4
+              sm:top-4
+              sm:px-4
+              sm:text-[10px]
+              sm:tracking-[2px]
+            "
+          >
+            Not Available
           </div>
         )}
 
-        {/* ===============================================
-            PRICE
-        =============================================== */}
+{/* =================================================
+    PRICE
+================================================= */}
 
-        <div
-          className="
-            absolute
-            bottom-2
-            right-2
+{validStartingPrice && (
+  <div
+    className="
+      absolute
 
-            max-w-[calc(100%-16px)]
+      bottom-3
+      right-3
 
-            truncate
+      rounded-[14px]
 
-            rounded-full
+      border
+      border-white/70
 
-            bg-white/95
+      bg-white/95
 
-            px-2.5
-            py-1.5
+      px-3.5
+      py-2
 
-            text-[9px]
-            font-medium
-            text-[#E75480]
+      shadow-[0_5px_18px_rgba(58,42,47,0.10)]
 
-            shadow-sm
-            backdrop-blur-sm
+      backdrop-blur-md
 
-            sm:bottom-3
-            sm:right-3
-            sm:px-4
-            sm:py-2
-            sm:text-[11px]
+      sm:bottom-4
+      sm:right-4
+      sm:px-4
+      sm:py-2.5
+    "
+  >
+    <div
+      className="
+        flex
+        flex-col
+        items-start
 
-            lg:bottom-4
-            lg:right-4
-            lg:px-5
-            lg:text-xs
-          "
-        >
-          {price}
-        </div>
+        gap-[1px]
+      "
+    >
+      <p
+        className="
+          whitespace-nowrap
+
+          text-[6px]
+          font-semibold
+          uppercase
+          tracking-[1.4px]
+
+          leading-none
+
+          text-[#A98994]
+
+          sm:text-[7px]
+        "
+      >
+        Starting From
+      </p>
+
+      <p
+        className="
+          whitespace-nowrap
+
+          font-serif
+
+          text-[13px]
+          font-semibold
+          leading-none
+
+          text-[#E75480]
+
+          sm:text-[15px]
+
+          lg:text-[16px]
+        "
+      >
+        Rs.{" "}
+        {formatPrice(
+          startingPrice
+        )}
+      </p>
+    </div>
+  </div>
+)}
       </div>
 
       {/* ===================================================
@@ -181,15 +342,19 @@ export default function ServiceCard({
           lg:p-6
         "
       >
-        {/* TITLE */}
+        {/* =================================================
+            TITLE
+        ================================================= */}
 
         <h3
           className="
             line-clamp-2
 
             font-serif
+
             text-[17px]
             leading-[1.2]
+
             text-[#3A2A2F]
 
             sm:text-xl
@@ -197,18 +362,24 @@ export default function ServiceCard({
             lg:text-2xl
           "
         >
-          {title}
+          {
+            title
+          }
         </h3>
 
-        {/* DESCRIPTION */}
+        {/* =================================================
+            DESCRIPTION
+        ================================================= */}
 
         <p
           className="
             mt-2
+
             line-clamp-2
 
             text-[10px]
             leading-[1.6]
+
             text-[#8A6F78]
 
             sm:mt-3
@@ -220,8 +391,62 @@ export default function ServiceCard({
             lg:leading-7
           "
         >
-          {description}
+          {
+            description
+          }
         </p>
+
+        {/* =================================================
+            PRICE RANGE
+        ================================================= */}
+
+        {validStartingPrice && (
+          <div
+            className="
+              mt-3
+
+              flex
+              flex-wrap
+              items-center
+
+              gap-x-2
+              gap-y-1
+
+              text-[9px]
+
+              sm:mt-4
+              sm:text-[10px]
+            "
+          >
+            <span
+              className="
+                font-medium
+
+                text-[#E75480]
+              "
+            >
+              From Rs.{" "}
+              {formatPrice(
+                startingPrice
+              )}
+            </span>
+
+            {validMaxPrice && (
+              <>
+                <span className="text-[#D7C4CA]">
+                  •
+                </span>
+
+                <span className="text-[#8A6F78]">
+                  Up to Rs.{" "}
+                  {formatPrice(
+                    maxPrice
+                  )}
+                </span>
+              </>
+            )}
+          </div>
+        )}
 
         {/* =================================================
             BUTTON
@@ -230,6 +455,7 @@ export default function ServiceCard({
         <div
           className="
             mt-auto
+
             pt-4
 
             sm:pt-5
@@ -240,7 +466,9 @@ export default function ServiceCard({
           {available ? (
             <button
               type="button"
-              onClick={book}
+              onClick={
+                book
+              }
               className="
                 w-full
 
@@ -255,6 +483,7 @@ export default function ServiceCard({
                 font-semibold
                 uppercase
                 tracking-[1px]
+
                 text-white
 
                 transition-all
@@ -285,6 +514,7 @@ export default function ServiceCard({
                 w-full
 
                 cursor-not-allowed
+
                 rounded-full
 
                 bg-[#F4F1F2]
@@ -296,6 +526,7 @@ export default function ServiceCard({
                 font-semibold
                 uppercase
                 tracking-[1px]
+
                 text-[#A98D96]
 
                 sm:px-4
@@ -309,7 +540,8 @@ export default function ServiceCard({
                 lg:tracking-[2px]
               "
             >
-              Currently Not Available
+              Currently Not
+              Available
             </button>
           )}
         </div>
