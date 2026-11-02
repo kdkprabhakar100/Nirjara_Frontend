@@ -9,18 +9,18 @@ import {
 } from "react-router-dom";
 
 import {
-  Phone,
+  ArrowUpRight,
   Mail,
   MapPin,
-  ArrowUpRight,
   MessageCircle,
+  Phone,
 } from "lucide-react";
 
 import {
   FaFacebookF,
   FaInstagram,
-  FaYoutube,
   FaTiktok,
+  FaYoutube,
 } from "react-icons/fa";
 
 /* =========================================================
@@ -133,7 +133,7 @@ const defaultSettings:
 };
 
 /* =========================================================
-   FOOTER LINKS
+   LINKS
 ========================================================= */
 
 const explorePages = [
@@ -167,7 +167,7 @@ const explorePages = [
 
     path:
       "/social-media",
-  }
+  },
 ];
 
 const visitPages = [
@@ -377,7 +377,7 @@ export default function Footer() {
         {footer.showBookAppointment && (
           <div
             className="
-              rounded-[24px]
+              rounded-[22px]
 
               border
               border-[#E75480]/10
@@ -392,8 +392,6 @@ export default function Footer() {
               sm:px-6
               sm:py-6
 
-              md:px-7
-
               lg:px-8
               lg:py-6
             "
@@ -405,7 +403,7 @@ export default function Footer() {
 
                 items-start
 
-                gap-5
+                gap-4
 
                 lg:flex-row
                 lg:items-center
@@ -434,14 +432,14 @@ export default function Footer() {
 
                     font-serif
 
-                    text-[24px]
+                    text-[23px]
                     leading-[1.15]
 
                     text-[#3A2A2F]
 
-                    sm:text-[28px]
+                    sm:text-[27px]
 
-                    md:text-[30px]
+                    md:text-[29px]
 
                     lg:text-[32px]
                   "
@@ -449,7 +447,12 @@ export default function Footer() {
                   Ready for your
                   next{" "}
 
-                  <span className="italic text-[#E75480]">
+                  <span
+                    className="
+                      italic
+                      text-[#E75480]
+                    "
+                  >
                     beauty moment?
                   </span>
                 </h2>
@@ -459,6 +462,7 @@ export default function Footer() {
                 to="/booking"
                 className="
                   inline-flex
+
                   w-full
 
                   items-center
@@ -471,7 +475,7 @@ export default function Footer() {
                   bg-[#E75480]
 
                   px-6
-                  py-3.5
+                  py-3
 
                   text-[9px]
                   font-semibold
@@ -489,16 +493,12 @@ export default function Footer() {
                   hover:bg-[#D94873]
 
                   sm:w-auto
-
-                  lg:shrink-0
                 "
               >
                 Book Appointment
 
                 <ArrowUpRight
-                  size={
-                    14
-                  }
+                  size={14}
                 />
               </Link>
             </div>
@@ -507,24 +507,38 @@ export default function Footer() {
 
         {/* =================================================
             MAIN FOOTER
+
+            MOBILE:
+            Brand = full width
+            Explore + Visit = side by side
+            Contact = full width
+
+            TABLET:
+            Same arrangement
+
+            DESKTOP:
+            Brand | Explore | Visit | Contact
         ================================================= */}
 
         <div
           className={`
             grid
 
-            gap-x-8
-            gap-y-9
+            grid-cols-2
+
+            gap-x-6
+            gap-y-8
 
             ${
               footer.showBookAppointment
-                ? "mt-9"
+                ? "mt-8"
                 : ""
             }
 
-            md:grid-cols-2
+            sm:gap-x-10
+
             md:gap-x-12
-            md:gap-y-10
+            md:gap-y-9
 
             lg:grid-cols-[1.35fr_0.65fr_0.7fr_1fr]
             lg:gap-x-10
@@ -535,14 +549,11 @@ export default function Footer() {
         >
           {/* =================================================
               BRAND
-
-              Tablet:
-              full-width so text does not get cramped.
           ================================================= */}
 
           <div
             className="
-              md:col-span-2
+              col-span-2
 
               lg:col-span-1
             "
@@ -554,7 +565,7 @@ export default function Footer() {
 
                 font-serif
 
-                text-[30px]
+                text-[29px]
 
                 text-[#E75480]
 
@@ -583,16 +594,17 @@ export default function Footer() {
 
             <p
               className="
-                mt-4
+                mt-3
 
                 max-w-xl
 
-                text-sm
-                leading-7
+                text-[13px]
+                leading-6
 
                 text-[#8A6F78]
 
-                md:max-w-2xl
+                sm:text-sm
+                sm:leading-7
 
                 lg:max-w-md
               "
@@ -608,7 +620,11 @@ export default function Footer() {
 
             {footer.showSocialLinks &&
               hasSocialLinks && (
-                <div className="mt-5">
+                <div
+                  className="
+                    mt-4
+                  "
+                >
                   <p
                     className="
                       text-[8px]
@@ -619,12 +635,19 @@ export default function Footer() {
                       text-[#E75480]
                     "
                   >
-                    Follow Our
-                    Journey
+                    Follow Our Journey
                   </p>
 
-                  <div className="mt-3 flex flex-wrap gap-2.5">
+                  <div
+                    className="
+                      mt-3
 
+                      flex
+                      flex-wrap
+
+                      gap-2.5
+                    "
+                  >
                     {settings
                       .socialLinks
                       .facebook && (
@@ -637,9 +660,7 @@ export default function Footer() {
                         label="Facebook"
                       >
                         <FaFacebookF
-                          size={
-                            15
-                          }
+                          size={15}
                         />
                       </SocialButton>
                     )}
@@ -656,9 +677,7 @@ export default function Footer() {
                         label="Instagram"
                       >
                         <FaInstagram
-                          size={
-                            16
-                          }
+                          size={16}
                         />
                       </SocialButton>
                     )}
@@ -675,9 +694,7 @@ export default function Footer() {
                         label="TikTok"
                       >
                         <FaTiktok
-                          size={
-                            15
-                          }
+                          size={15}
                         />
                       </SocialButton>
                     )}
@@ -694,9 +711,7 @@ export default function Footer() {
                         label="YouTube"
                       >
                         <FaYoutube
-                          size={
-                            17
-                          }
+                          size={17}
                         />
                       </SocialButton>
                     )}
@@ -707,14 +722,28 @@ export default function Footer() {
 
           {/* =================================================
               EXPLORE
+
+              Mobile: left column
           ================================================= */}
 
-          <div>
+          <div
+            className="
+              col-span-1
+            "
+          >
             <FooterHeading>
               Explore
             </FooterHeading>
 
-            <div className="mt-5 space-y-3">
+            <div
+              className="
+                mt-4
+                space-y-2.5
+
+                sm:mt-5
+                sm:space-y-3
+              "
+            >
               {explorePages.map(
                 (
                   page
@@ -737,14 +766,28 @@ export default function Footer() {
 
           {/* =================================================
               VISIT
+
+              Mobile: right column
           ================================================= */}
 
-          <div>
+          <div
+            className="
+              col-span-1
+            "
+          >
             <FooterHeading>
               Visit
             </FooterHeading>
 
-            <div className="mt-5 space-y-3">
+            <div
+              className="
+                mt-4
+                space-y-2.5
+
+                sm:mt-5
+                sm:space-y-3
+              "
+            >
               {visitPages.map(
                 (
                   page
@@ -768,13 +811,13 @@ export default function Footer() {
           {/* =================================================
               GET IN TOUCH
 
-              Tablet:
-              full-width underneath Explore + Visit.
+              Mobile/tablet: full width
+              Desktop: one column
           ================================================= */}
 
           <div
             className="
-              md:col-span-2
+              col-span-2
 
               lg:col-span-1
             "
@@ -785,12 +828,15 @@ export default function Footer() {
 
             <div
               className="
-                mt-5
+                mt-4
 
                 grid
-                gap-3
 
+                gap-2.5
+
+                sm:mt-5
                 sm:grid-cols-2
+                sm:gap-3
 
                 lg:grid-cols-1
               "
@@ -801,9 +847,7 @@ export default function Footer() {
                 <ContactCard
                   icon={
                     <Phone
-                      size={
-                        14
-                      }
+                      size={14}
                     />
                   }
                   label="Call Us"
@@ -820,9 +864,7 @@ export default function Footer() {
                 <ContactCard
                   icon={
                     <Mail
-                      size={
-                        14
-                      }
+                      size={14}
                     />
                   }
                   label="Email"
@@ -840,9 +882,7 @@ export default function Footer() {
                   <ContactCard
                     icon={
                       <MessageCircle
-                        size={
-                          14
-                        }
+                        size={14}
                       />
                     }
                     label="WhatsApp"
@@ -867,6 +907,7 @@ export default function Footer() {
                     min-w-0
 
                     items-center
+
                     gap-3
 
                     rounded-[16px]
@@ -891,8 +932,10 @@ export default function Footer() {
                   <div
                     className="
                       flex
+
                       h-8
                       w-8
+
                       shrink-0
 
                       items-center
@@ -912,13 +955,16 @@ export default function Footer() {
                     "
                   >
                     <MapPin
-                      size={
-                        14
-                      }
+                      size={14}
                     />
                   </div>
 
-                  <div className="min-w-0 flex-1">
+                  <div
+                    className="
+                      min-w-0
+                      flex-1
+                    "
+                  >
                     <p
                       className="
                         text-[7px]
@@ -943,15 +989,12 @@ export default function Footer() {
                         text-[#8A6F78]
                       "
                     >
-                      Find a Nirjara
-                      branch
+                      Find a Nirjara branch
                     </p>
                   </div>
 
                   <ArrowUpRight
-                    size={
-                      13
-                    }
+                    size={13}
                     className="
                       shrink-0
 
@@ -975,7 +1018,7 @@ export default function Footer() {
 
         <div
           className="
-            mt-9
+            mt-8
 
             border-t
             border-[#E75480]/10
@@ -1017,8 +1060,7 @@ export default function Footer() {
 
             {footer.developerName && (
               <p>
-                Designed &
-                Developed by{" "}
+                Designed & Developed by{" "}
 
                 {footer.developerUrl ? (
                   <a
@@ -1042,7 +1084,12 @@ export default function Footer() {
                     }
                   </a>
                 ) : (
-                  <span className="font-medium text-[#E75480]">
+                  <span
+                    className="
+                      font-medium
+                      text-[#E75480]
+                    "
+                  >
                     {
                       footer.developerName
                     }
@@ -1090,8 +1137,7 @@ export default function Footer() {
                   hover:text-[#E75480]
                 "
               >
-                Terms &
-                Conditions
+                Terms & Conditions
               </Link>
 
               {footer.showAdminLogin && (
@@ -1141,7 +1187,7 @@ function FooterLink({
         items-center
         gap-1.5
 
-        text-sm
+        text-[13px]
 
         text-[#8A6F78]
 
@@ -1150,6 +1196,8 @@ function FooterLink({
 
         hover:translate-x-1
         hover:text-[#E75480]
+
+        sm:text-sm
       "
     >
       {
@@ -1185,12 +1233,15 @@ function FooterHeading({
     <div>
       <h3
         className="
-          text-[9px]
+          text-[8px]
           font-semibold
           uppercase
-          tracking-[4px]
+          tracking-[3px]
 
           text-[#E75480]
+
+          sm:text-[9px]
+          sm:tracking-[4px]
         "
       >
         {
@@ -1200,12 +1251,14 @@ function FooterHeading({
 
       <div
         className="
-          mt-3
+          mt-2.5
 
           h-px
           w-7
 
           bg-[#E75480]
+
+          sm:mt-3
         "
       />
     </div>
@@ -1244,6 +1297,7 @@ function SocialButton({
         group
 
         flex
+
         h-9
         w-9
 
@@ -1340,6 +1394,7 @@ function ContactCard({
         min-w-0
 
         items-center
+
         gap-3
 
         rounded-[16px]
@@ -1364,8 +1419,10 @@ function ContactCard({
       <div
         className="
           flex
+
           h-8
           w-8
+
           shrink-0
 
           items-center
@@ -1389,7 +1446,12 @@ function ContactCard({
         }
       </div>
 
-      <div className="min-w-0 flex-1">
+      <div
+        className="
+          min-w-0
+          flex-1
+        "
+      >
         <p
           className="
             text-[7px]
