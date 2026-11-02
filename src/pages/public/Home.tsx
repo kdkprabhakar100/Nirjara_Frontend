@@ -611,7 +611,7 @@ export default function Home() {
             "
           >
             <source
-              src="/videos/hero.mp4"
+              src="/videos/hero.MOV"
               type="video/mp4"
             />
           </video>
@@ -1016,27 +1016,13 @@ export default function Home() {
                     "
                   >
                     <ServiceCard
-                      serviceId={
-                        service._id
-                      }
-                      available={
-                        service.available !==
-                        false
-                      }
-                      title={
-                        service.title
-                      }
-                      description={
-                        service.description
-                      }
-                      price={
-                        service.price
-                      }
-                      image={
-                        service.image ||
-                        ""
-                      }
-                    />
+                      serviceId={service._id}
+                      available={service.available !==
+                        false}
+                      title={service.title}
+                      description={service.description}
+                      image={service.image ||
+                        ""} startingPrice={0}                    />
                   </div>
                 )
               )}
@@ -1094,9 +1080,6 @@ export default function Home() {
                   }
                   description={
                     service.description
-                  }
-                  price={
-                    service.price
                   }
                   image={
                     service.image ||

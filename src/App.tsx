@@ -42,6 +42,9 @@ import Checkout from "./pages/product/Checkout";
 //legal pages
 import LegalPage from "./pages/legal/LegalPage";
 
+//social media page
+import SocialMedia from "./pages/public/SocialMedia";
+
 // ==============================
 // PUBLIC LAYOUT
 // ==============================
@@ -271,6 +274,15 @@ export default function App() {
           element={
             <PublicLayout>
               <OrderSuccess />
+            </PublicLayout>
+          }
+        />
+        {/* SOCIAL MEDIA PAGE */}
+        <Route
+          path="/social-media"
+          element={
+            <PublicLayout>
+              <SocialMedia />
             </PublicLayout>
           }
         />

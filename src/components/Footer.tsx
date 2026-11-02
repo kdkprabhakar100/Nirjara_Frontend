@@ -160,6 +160,14 @@ const explorePages = [
     path:
       "/events",
   },
+
+  {
+    label:
+      "Social Media",
+
+    path:
+      "/social-media",
+  }
 ];
 
 const visitPages = [
