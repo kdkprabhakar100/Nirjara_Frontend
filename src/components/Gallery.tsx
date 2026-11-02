@@ -1,16 +1,13 @@
 import {
-  useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 
 import {
   AnimatePresence,
   motion,
-  useAnimationFrame,
-  useMotionValue,
+  useReducedMotion,
 } from "framer-motion";
 
 import SEO from "./SEO";
@@ -26,153 +23,174 @@ type GalleryItem = {
   image: string;
 };
 
+type VisibleGalleryItem = {
+  item: GalleryItem;
+  index: number;
+  offset: number;
+};
+
 /* =========================================================
    CONFIG
 ========================================================= */
 
-const MOBILE_AUTOPLAY_TIME = 2800;
-const DESKTOP_SPEED = 32;
+const AUTOPLAY_TIME = 1800;
 
-const DESKTOP_HEIGHTS = [
-  430,
-  370,
-  310,
-  255,
-  310,
-  370,
-  430,
-];
+/*
+  Fast enough to feel lively,
+  but smooth enough to stay premium.
+*/
 
-const TABLET_HEIGHTS = [
-  350,
-  305,
-  265,
-  225,
-  265,
-  305,
-  350,
-];
+const SLIDE_DURATION = 0.32;
 
 /* =========================================================
    SEO
 ========================================================= */
 
 const GALLERY_SEO = {
-  title: "Gallery | Nirjara Beauty Kathmandu",
+  title:
+    "Gallery | Nirjara Beauty Kathmandu",
 
   description:
-    "Explore beauty transformations, professional artistry, hair, makeup and memorable moments created at Nirjara Beauty in Kathmandu, Nepal.",
+    "Explore beauty transformations, professional artistry and memorable moments created at Nirjara Beauty in Kathmandu, Nepal.",
 
   keywords:
     "Nirjara Beauty gallery, beauty salon Kathmandu, beauty parlour Kathmandu, makeup Kathmandu, hair salon Kathmandu, beauty transformations Nepal",
 
-  canonical: "/gallery",
+  canonical:
+    "/gallery",
 
-  image: "/images/nirjara-og.jpg",
+  image:
+    "/images/nirjara-og.jpg",
 };
 
 /* =========================================================
-   MAIN PAGE
+   PAGE
 ========================================================= */
 
 export default function Gallery() {
-  const [gallery, setGallery] = useState<GalleryItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [
+    gallery,
+    setGallery,
+  ] = useState<GalleryItem[]>([]);
 
-  const [viewportWidth, setViewportWidth] = useState(
-    typeof window !== "undefined" ? window.innerWidth : 1440
-  );
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
 
   /* =======================================================
      FETCH GALLERY
   ======================================================= */
 
   useEffect(() => {
-    const fetchGallery = async () => {
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/gallery`
-        );
+    const fetchGallery =
+      async () => {
+        try {
+          const response =
+            await fetch(
+              `${
+                import.meta.env
+                  .VITE_API_URL
+              }/api/gallery`
+            );
 
-        if (!response.ok) {
-          throw new Error(
-            `Gallery request failed: ${response.status}`
+          if (
+            !response.ok
+          ) {
+            throw new Error(
+              `Gallery request failed: ${response.status}`
+            );
+          }
+
+          const data =
+            await response.json();
+
+          const items:
+            GalleryItem[] =
+            Array.isArray(data)
+              ? data
+              : Array.isArray(
+                    data?.data
+                  )
+                ? data.data
+                : Array.isArray(
+                      data?.gallery
+                    )
+                  ? data.gallery
+                  : [];
+
+          setGallery(
+            items
+          );
+        } catch (
+          error
+        ) {
+          console.error(
+            "Failed to fetch gallery:",
+            error
+          );
+        } finally {
+          setLoading(
+            false
           );
         }
-
-        const data = await response.json();
-
-        const items: GalleryItem[] = Array.isArray(data)
-          ? data
-          : Array.isArray(data?.data)
-          ? data.data
-          : Array.isArray(data?.gallery)
-          ? data.gallery
-          : [];
-
-        setGallery(items);
-      } catch (error) {
-        console.error("Failed to fetch gallery:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+      };
 
     fetchGallery();
   }, []);
 
   /* =======================================================
-     SCREEN WIDTH
-  ======================================================= */
-
-  useEffect(() => {
-    const updateWidth = () => {
-      setViewportWidth(window.innerWidth);
-    };
-
-    updateWidth();
-
-    window.addEventListener("resize", updateWidth);
-
-    return () => {
-      window.removeEventListener("resize", updateWidth);
-    };
-  }, []);
-
-  const isMobile = viewportWidth < 768;
-
-  /* =======================================================
-     SEO
-  ======================================================= */
-
-  const seo = (
-    <SEO
-      title={GALLERY_SEO.title}
-      description={GALLERY_SEO.description}
-      keywords={GALLERY_SEO.keywords}
-      canonical={GALLERY_SEO.canonical}
-      image={GALLERY_SEO.image}
-      type="website"
-    />
-  );
-
-  /* =======================================================
      LOADING
   ======================================================= */
 
-  if (loading) {
+  if (
+    loading
+  ) {
     return (
       <>
-        {seo}
+        <SEO
+          title={
+            GALLERY_SEO.title
+          }
+          description={
+            GALLERY_SEO.description
+          }
+          keywords={
+            GALLERY_SEO.keywords
+          }
+          canonical={
+            GALLERY_SEO.canonical
+          }
+          image={
+            GALLERY_SEO.image
+          }
+          type="website"
+        />
 
-        <main className="min-h-screen bg-[#FFF5F8] pt-24">
-          <div className="flex h-[500px] items-center justify-center">
+        <main
+          className="
+            min-h-screen
+            bg-[#FFF5F8]
+            pt-16
+          "
+        >
+          <div
+            className="
+              flex
+              min-h-[500px]
+              items-center
+              justify-center
+            "
+          >
             <div
               className="
-                h-8
-                w-8
+                h-10
+                w-10
+
                 animate-spin
+
                 rounded-full
+
                 border-2
                 border-[#E75480]/20
                 border-t-[#E75480]
@@ -188,14 +206,61 @@ export default function Gallery() {
      EMPTY
   ======================================================= */
 
-  if (!gallery.length) {
+  if (
+    !gallery.length
+  ) {
     return (
       <>
-        {seo}
+        <SEO
+          title={
+            GALLERY_SEO.title
+          }
+          description={
+            GALLERY_SEO.description
+          }
+          keywords={
+            GALLERY_SEO.keywords
+          }
+          canonical={
+            GALLERY_SEO.canonical
+          }
+          image={
+            GALLERY_SEO.image
+          }
+          type="website"
+        />
 
-        <main className="min-h-screen bg-[#FFF5F8] pt-24">
-          <div className="flex h-[500px] items-center justify-center">
-            <p className="text-sm text-[#8A6F78]">
+        <main
+          className="
+            min-h-screen
+            bg-[#FFF5F8]
+            pt-16
+          "
+        >
+          <GalleryHeader />
+
+          <div
+            className="
+              mx-auto
+
+              flex
+              min-h-[300px]
+              max-w-4xl
+
+              items-center
+              justify-center
+
+              px-5
+            "
+          >
+            <p
+              className="
+                font-serif
+                text-xl
+                italic
+                text-[#8A6F78]
+              "
+            >
               Gallery coming soon.
             </p>
           </div>
@@ -210,1100 +275,1149 @@ export default function Gallery() {
 
   return (
     <>
-      {seo}
+      <SEO
+        title={
+          GALLERY_SEO.title
+        }
+        description={
+          GALLERY_SEO.description
+        }
+        keywords={
+          GALLERY_SEO.keywords
+        }
+        canonical={
+          GALLERY_SEO.canonical
+        }
+        image={
+          GALLERY_SEO.image
+        }
+        type="website"
+      />
 
-      <main className="min-h-screen overflow-hidden bg-[#FFF5F8] pt-24 md:pt-32">
+      <main
+        className="
+          min-h-screen
+          overflow-hidden
+          bg-[#FFF5F8]
+          pt-16
+        "
+      >
+        <GalleryHeader />
 
-        {/* ===================================================
-            PAGE INTRO
-        =================================================== */}
-
-        <section className="relative z-10 mx-auto max-w-4xl px-5 text-center">
-
-          <p
-            className="
-              text-[8px]
-              font-medium
-              uppercase
-              tracking-[4px]
-              text-[#E75480]
-
-              md:text-[10px]
-              md:tracking-[5px]
-            "
-          >
-            Our Gallery
-          </p>
-
-          <h1
-            className="
-              mt-3
-              font-serif
-              text-[32px]
-              leading-[1.08]
-              text-[#3A2A2F]
-
-              sm:text-[38px]
-
-              md:mt-4
-              md:text-[48px]
-
-              lg:text-[54px]
-            "
-          >
-            Beauty{" "}
-            <span className="italic text-[#E75480]">
-              In Motion
-            </span>
-          </h1>
-
-          <p
-            className="
-              mx-auto
-              mt-3
-              max-w-[310px]
-              text-[13px]
-              leading-6
-              text-[#8A6F78]
-
-              md:mt-5
-              md:max-w-2xl
-              md:text-[15px]
-              md:leading-7
-            "
-          >
-            Explore beautiful transformations, artistry and
-            unforgettable moments created at Nirjara Beauty.
-          </p>
-
-        </section>
-
-        {/* ===================================================
-            GALLERY
-        =================================================== */}
-
-        {isMobile ? (
-          <MobileGallery items={gallery} />
-        ) : (
-          <DesktopGallery
-            items={gallery}
-            viewportWidth={viewportWidth}
-          />
-        )}
-
+        <GalleryCarousel
+          items={gallery}
+        />
       </main>
     </>
   );
 }
 
 /* =========================================================
-   MOBILE GALLERY
+   PAGE HEADER
 ========================================================= */
 
-function MobileGallery({
+function GalleryHeader() {
+  return (
+    <section
+      className="
+        mx-auto
+        max-w-4xl
+
+        px-5
+        pt-5
+
+        text-center
+
+        sm:pt-6
+
+        md:pt-7
+      "
+    >
+      {/* LABEL */}
+
+      <div
+        className="
+          flex
+          items-center
+          justify-center
+          gap-4
+        "
+      >
+        <span
+          className="
+            hidden
+            h-px
+            w-10
+            bg-[#E75480]/35
+            sm:block
+          "
+        />
+
+        <p
+          className="
+            text-[8px]
+            font-semibold
+            uppercase
+            tracking-[4px]
+
+            text-[#E75480]
+
+            sm:text-[9px]
+            sm:tracking-[5px]
+          "
+        >
+          Our Gallery
+        </p>
+
+        <span
+          className="
+            hidden
+            h-px
+            w-10
+            bg-[#E75480]/35
+            sm:block
+          "
+        />
+      </div>
+
+      {/* TITLE */}
+
+      <h1
+        className="
+          mt-3
+
+          font-serif
+
+          text-[34px]
+          leading-[1.05]
+
+          text-[#3A2A2F]
+
+          sm:text-[42px]
+
+          md:text-[48px]
+
+          lg:text-[52px]
+        "
+      >
+        Beauty{" "}
+
+        <span
+          className="
+            italic
+            text-[#E75480]
+          "
+        >
+          In Motion
+        </span>
+      </h1>
+
+      {/* DESCRIPTION */}
+
+      <p
+        className="
+          mx-auto
+          mt-3
+
+          max-w-[340px]
+
+          text-[12px]
+          leading-6
+
+          text-[#8A6F78]
+
+          sm:max-w-xl
+          sm:text-[13px]
+
+          md:max-w-2xl
+          md:text-[14px]
+        "
+      >
+        Explore beautiful
+        transformations,
+        professional artistry
+        and memorable moments
+        created at Nirjara
+        Beauty.
+      </p>
+
+      <div
+        className="
+          mx-auto
+          mt-4
+
+          h-px
+          w-14
+
+          bg-[#E75480]/30
+        "
+      />
+    </section>
+  );
+}
+
+/* =========================================================
+   GALLERY CAROUSEL
+========================================================= */
+
+function GalleryCarousel({
   items,
 }: {
   items: GalleryItem[];
 }) {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const reduceMotion =
+    useReducedMotion();
 
-  const [direction, setDirection] = useState(1);
+  const galleryItems =
+    useMemo(
+      () =>
+        items.filter(
+          (
+            item
+          ) =>
+            Boolean(
+              item.image
+            )
+        ),
+      [
+        items,
+      ]
+    );
 
-  const [paused, setPaused] = useState(false);
+  const total =
+    galleryItems.length;
 
-  const total = items.length;
+  const [
+    activeIndex,
+    setActiveIndex,
+  ] =
+    useState(0);
+
+  const [
+    paused,
+    setPaused,
+  ] =
+    useState(false);
 
   /* =======================================================
      NEXT
   ======================================================= */
 
-  const nextSlide = useCallback(() => {
-    if (total <= 1) return;
+  const next = () => {
+    if (
+      total <=
+      1
+    ) {
+      return;
+    }
 
-    setDirection(1);
-
-    setActiveIndex((current) =>
-      current === total - 1 ? 0 : current + 1
+    setActiveIndex(
+      (
+        current
+      ) =>
+        (
+          current +
+          1
+        ) %
+        total
     );
-  }, [total]);
+  };
 
   /* =======================================================
      PREVIOUS
   ======================================================= */
 
-  const previousSlide = useCallback(() => {
-    if (total <= 1) return;
+  const previous =
+    () => {
+      if (
+        total <=
+        1
+      ) {
+        return;
+      }
 
-    setDirection(-1);
-
-    setActiveIndex((current) =>
-      current === 0 ? total - 1 : current - 1
+    setActiveIndex(
+      (
+        current
+      ) =>
+        (
+          current -
+          1 +
+          total
+        ) %
+        total
     );
-  }, [total]);
+  };
 
   /* =======================================================
      AUTOPLAY
   ======================================================= */
 
-  useEffect(() => {
-    if (paused || total <= 1) return;
+  useEffect(
+    () => {
+      if (
+        total <=
+          1 ||
+        paused
+      ) {
+        return;
+      }
 
-    const timer = window.setInterval(() => {
-      nextSlide();
-    }, MOBILE_AUTOPLAY_TIME);
+      const timer =
+        window.setInterval(
+          () => {
+            setActiveIndex(
+              (
+                current
+              ) =>
+                (
+                  current +
+                  1
+                ) %
+                total
+            );
+          },
 
-    return () => {
-      window.clearInterval(timer);
-    };
-  }, [paused, total, nextSlide]);
+          AUTOPLAY_TIME
+        );
+
+      return () => {
+        window.clearInterval(
+          timer
+        );
+      };
+    },
+
+    [
+      total,
+      paused,
+    ]
+  );
 
   /* =======================================================
-     GET ITEM SAFELY
+     KEEP INDEX VALID
   ======================================================= */
 
-  const getItem = (offset: number) => {
-    const index =
-      (activeIndex + offset + total) % total;
+  useEffect(
+    () => {
+      if (
+        total >
+          0 &&
+        activeIndex >=
+          total
+      ) {
+        setActiveIndex(
+          0
+        );
+      }
+    },
 
-    return items[index];
-  };
-
-  const previousItem = getItem(-1);
-  const activeItem = getItem(0);
-  const nextItem = getItem(1);
+    [
+      activeIndex,
+      total,
+    ]
+  );
 
   /* =======================================================
-     MOBILE UI
+     VISIBLE ITEMS
+
+     We keep five items visible:
+
+     -2  far left
+     -1  left
+      0  active
+      1  right
+      2  far right
+
+     Because each item keeps its own _id key,
+     Framer Motion moves the SAME image from
+     one position to another instead of replacing
+     every card independently.
+  ======================================================= */
+
+  const visibleItems:
+    VisibleGalleryItem[] =
+    useMemo(
+      () => {
+        if (
+          !total
+        ) {
+          return [];
+        }
+
+        const offsets =
+          total >=
+          5
+            ? [
+                -2,
+                -1,
+                0,
+                1,
+                2,
+              ]
+            : total ===
+                4
+              ? [
+                  -1,
+                  0,
+                  1,
+                  2,
+                ]
+              : total ===
+                  3
+                ? [
+                    -1,
+                    0,
+                    1,
+                  ]
+                : total ===
+                    2
+                  ? [
+                      0,
+                      1,
+                    ]
+                  : [
+                      0,
+                    ];
+
+        const used =
+          new Set<
+            number
+          >();
+
+        return offsets
+          .map(
+            (
+              offset
+            ) => {
+              const index =
+                (
+                  activeIndex +
+                  offset +
+                  total
+                ) %
+                total;
+
+              if (
+                used.has(
+                  index
+                )
+              ) {
+                return null;
+              }
+
+              used.add(
+                index
+              );
+
+              return {
+                item:
+                  galleryItems[
+                    index
+                  ],
+
+                index,
+
+                offset,
+              };
+            }
+          )
+          .filter(
+            (
+              value
+            ):
+              value is
+              VisibleGalleryItem =>
+                Boolean(
+                  value
+                )
+          );
+      },
+
+      [
+        activeIndex,
+        galleryItems,
+        total,
+      ]
+    );
+
+  if (
+    !galleryItems.length
+  ) {
+    return null;
+  }
+
+  const activeItem =
+    galleryItems[
+      activeIndex
+    ];
+
+  /* =======================================================
+     CARD POSITION
+  ======================================================= */
+
+  const getCardAnimation =
+    (
+      offset:
+        number
+    ) => {
+      /*
+        Mobile positions are tighter.
+        Desktop positions spread wider.
+      */
+
+      switch (
+        offset
+      ) {
+        case -2:
+          return {
+            x:
+              "-150%",
+
+            scale:
+              0.72,
+
+            rotate:
+              -5,
+
+            opacity:
+              0.32,
+
+            zIndex:
+              10,
+          };
+
+        case -1:
+          return {
+            x:
+              "-82%",
+
+            scale:
+              0.88,
+
+            rotate:
+              -2.5,
+
+            opacity:
+              0.76,
+
+            zIndex:
+              20,
+          };
+
+        case 0:
+          return {
+            x:
+              "0%",
+
+            scale:
+              1,
+
+            rotate:
+              0,
+
+            opacity:
+              1,
+
+            zIndex:
+              30,
+          };
+
+        case 1:
+          return {
+            x:
+              "82%",
+
+            scale:
+              0.88,
+
+            rotate:
+              2.5,
+
+            opacity:
+              0.76,
+
+            zIndex:
+              20,
+          };
+
+        case 2:
+          return {
+            x:
+              "150%",
+
+            scale:
+              0.72,
+
+            rotate:
+              5,
+
+            opacity:
+              0.32,
+
+            zIndex:
+              10,
+          };
+
+        default:
+          return {
+            x:
+              offset <
+              0
+                ? "-180%"
+                : "180%",
+
+            scale:
+              0.65,
+
+            rotate:
+              0,
+
+            opacity:
+              0,
+
+            zIndex:
+              0,
+          };
+      }
+    };
+
+  /* =======================================================
+     RENDER
   ======================================================= */
 
   return (
     <section
       className="
-        relative
-        mt-2
+        mx-auto
+
         w-full
-        overflow-hidden
-        pb-14
+        max-w-[1100px]
+
+        px-4
+        pb-10
+        pt-4
+
+        sm:px-6
+        sm:pb-12
+
+        lg:px-8
       "
-      onTouchStart={() => setPaused(true)}
-      onTouchEnd={() => setPaused(false)}
     >
-
-      {/* =================================================
-          CAROUSEL
-      ================================================= */}
-
       <div
         className="
-          relative
-          mx-auto
-          h-[390px]
-          w-full
-          overflow-hidden
+          rounded-[26px]
 
-          min-[390px]:h-[410px]
+          border
+          border-[#E75480]/10
+
+          bg-white
+
+          px-3
+          py-4
+
+          shadow-[0_8px_28px_rgba(117,71,87,0.05)]
+
+          sm:px-5
+          sm:py-5
+
+          md:px-7
         "
+        onMouseEnter={() =>
+          setPaused(
+            true
+          )
+        }
+        onMouseLeave={() =>
+          setPaused(
+            false
+          )
+        }
+        onTouchStart={() =>
+          setPaused(
+            true
+          )
+        }
+        onTouchEnd={() =>
+          setPaused(
+            false
+          )
+        }
       >
-
-        {/* PREVIOUS */}
-
-        {total > 1 && (
-          <motion.button
-            type="button"
-            aria-label="Previous gallery image"
-            onClick={previousSlide}
-            initial={false}
-            animate={{
-              x: "-76%",
-              scale: 0.91,
-              opacity: 0.48,
-            }}
-            transition={{
-              type: "spring",
-              stiffness: 280,
-              damping: 30,
-              mass: 0.8,
-            }}
-            className="
-              absolute
-              left-1/2
-              top-1/2
-              z-10
-
-              h-[330px]
-              w-[76vw]
-              max-w-[320px]
-
-              -translate-x-1/2
-              -translate-y-1/2
-
-              overflow-hidden
-              rounded-[24px]
-
-              bg-[#F4E8EC]
-
-              shadow-[0_10px_30px_rgba(58,42,47,0.06)]
-            "
-          >
-            <img
-              src={previousItem.image}
-              alt=""
-              draggable={false}
-              loading="lazy"
-              decoding="async"
-              className="
-                h-full
-                w-full
-                object-cover
-                object-center
-              "
-            />
-
-            <div className="absolute inset-0 bg-[#FFF5F8]/10" />
-          </motion.button>
-        )}
-
-        {/* NEXT */}
-
-        {total > 1 && (
-          <motion.button
-            type="button"
-            aria-label="Next gallery image"
-            onClick={nextSlide}
-            initial={false}
-            animate={{
-              x: "76%",
-              scale: 0.91,
-              opacity: 0.48,
-            }}
-            transition={{
-              type: "spring",
-              stiffness: 280,
-              damping: 30,
-              mass: 0.8,
-            }}
-            className="
-              absolute
-              left-1/2
-              top-1/2
-              z-10
-
-              h-[330px]
-              w-[76vw]
-              max-w-[320px]
-
-              -translate-x-1/2
-              -translate-y-1/2
-
-              overflow-hidden
-              rounded-[24px]
-
-              bg-[#F4E8EC]
-
-              shadow-[0_10px_30px_rgba(58,42,47,0.06)]
-            "
-          >
-            <img
-              src={nextItem.image}
-              alt=""
-              draggable={false}
-              loading="lazy"
-              decoding="async"
-              className="
-                h-full
-                w-full
-                object-cover
-                object-center
-              "
-            />
-
-            <div className="absolute inset-0 bg-[#FFF5F8]/10" />
-          </motion.button>
-        )}
-
         {/* =================================================
-            ACTIVE
+            SLIDER
         ================================================= */}
 
-        <AnimatePresence
-          initial={false}
-          custom={direction}
-          mode="popLayout"
+        <div
+          className="
+            relative
+
+            mx-auto
+
+            h-[315px]
+            w-full
+
+            overflow-hidden
+
+            sm:h-[350px]
+
+            md:h-[390px]
+
+            lg:h-[405px]
+          "
         >
-          <motion.article
-            key={activeItem._id}
-            custom={direction}
-            variants={{
-              enter: (dir: number) => ({
-                x: dir > 0 ? 35 : -35,
-                opacity: 0.8,
-                scale: 0.97,
-              }),
-
-              center: {
-                x: 0,
-                opacity: 1,
-                scale: 1,
-              },
-
-              exit: (dir: number) => ({
-                x: dir > 0 ? -35 : 35,
-                opacity: 0,
-                scale: 0.97,
-              }),
-            }}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{
-              type: "spring",
-              stiffness: 260,
-              damping: 28,
-              mass: 0.75,
-            }}
-            drag={total > 1 ? "x" : false}
-            dragConstraints={{
-              left: 0,
-              right: 0,
-            }}
-            dragElastic={0.16}
-            onDragStart={() => {
-              setPaused(true);
-            }}
-            onDragEnd={(_, info) => {
-              setPaused(false);
-
-              const swipeDistance = 55;
-              const swipeVelocity = 450;
-
-              if (
-                info.offset.x < -swipeDistance ||
-                info.velocity.x < -swipeVelocity
-              ) {
-                nextSlide();
-                return;
-              }
-
-              if (
-                info.offset.x > swipeDistance ||
-                info.velocity.x > swipeVelocity
-              ) {
-                previousSlide();
-              }
-            }}
-            className="
-              absolute
-              left-1/2
-              top-1/2
-              z-20
-
-              h-[360px]
-              w-[76vw]
-              max-w-[320px]
-
-              -translate-x-1/2
-              -translate-y-1/2
-
-              cursor-grab
-              touch-pan-y
-              overflow-hidden
-              rounded-[26px]
-
-              bg-[#F4E8EC]
-
-              shadow-[0_18px_45px_rgba(58,42,47,0.12)]
-
-              active:cursor-grabbing
-
-              min-[390px]:h-[380px]
-            "
+          <AnimatePresence
+            initial={
+              false
+            }
           >
-            <img
-              src={activeItem.image}
-              alt={activeItem.title || "Nirjara Beauty"}
-              draggable={false}
-              decoding="async"
-              className="
-                pointer-events-none
-                h-full
-                w-full
-                select-none
-                object-cover
-                object-center
-              "
-            />
+            {visibleItems.map(
+              (
+                visible
+              ) => {
+                const {
+                  item,
+                  index,
+                  offset,
+                } =
+                  visible;
 
-            {/* GRADIENT */}
+                const active =
+                  offset ===
+                  0;
 
-            {(activeItem.title ||
-              activeItem.category) && (
-              <div
-                className="
-                  pointer-events-none
-                  absolute
-                  inset-x-0
-                  bottom-0
-                  h-[38%]
-
-                  bg-gradient-to-t
-                  from-black/55
-                  via-black/15
-                  to-transparent
-                "
-              />
-            )}
-
-            {/* TEXT */}
-
-            {(activeItem.title ||
-              activeItem.category) && (
-              <div
-                className="
-                  pointer-events-none
-                  absolute
-                  bottom-5
-                  left-5
-                  right-5
-                  z-10
-                  text-left
-                "
-              >
-                {activeItem.category && (
-                  <p
-                    className="
-                      mb-1.5
-                      text-[7px]
-                      font-medium
-                      uppercase
-                      tracking-[2.5px]
-                      text-white/75
-                    "
-                  >
-                    {activeItem.category}
-                  </p>
-                )}
-
-                {activeItem.title && (
-                  <h2
-                    className="
-                      font-serif
-                      text-[19px]
-                      leading-tight
-                      text-white
-                    "
-                  >
-                    {activeItem.title}
-                  </h2>
-                )}
-              </div>
-            )}
-          </motion.article>
-        </AnimatePresence>
-
-        {/* SIDE FADES */}
-
-        <div
-          className="
-            pointer-events-none
-            absolute
-            inset-y-0
-            left-0
-            z-30
-            w-[8%]
-
-            bg-gradient-to-r
-            from-[#FFF5F8]
-            to-transparent
-          "
-        />
-
-        <div
-          className="
-            pointer-events-none
-            absolute
-            inset-y-0
-            right-0
-            z-30
-            w-[8%]
-
-            bg-gradient-to-l
-            from-[#FFF5F8]
-            to-transparent
-          "
-        />
-
-      </div>
-
-      {/* =================================================
-          DOTS
-      ================================================= */}
-
-      {total > 1 && (
-        <div className="mt-2 flex items-center justify-center gap-2">
-          {items.map((item, index) => {
-            const active =
-              index === activeIndex;
-
-            return (
-              <button
-                key={item._id}
-                type="button"
-                aria-label={`Go to image ${index + 1}`}
-                onClick={() => {
-                  setDirection(
-                    index > activeIndex ? 1 : -1
+                const animation =
+                  getCardAnimation(
+                    offset
                   );
 
-                  setActiveIndex(index);
-                }}
-                className={`
-                  h-[5px]
-                  rounded-full
-                  transition-all
-                  duration-300
+                return (
+                  <motion.button
+                    key={
+                      item._id
+                    }
+                    type="button"
+                    onClick={() => {
+                      if (
+                        offset <
+                        0
+                      ) {
+                        previous();
+                      } else if (
+                        offset >
+                        0
+                      ) {
+                        next();
+                      }
+                    }}
+                    initial={
+                      reduceMotion
+                        ? false
+                        : {
+                            x:
+                              offset <
+                              0
+                                ? "-180%"
+                                : offset >
+                                    0
+                                  ? "180%"
+                                  : "0%",
 
-                  ${
-                    active
-                      ? "w-7 bg-[#E75480]"
-                      : "w-[5px] bg-[#E75480]/25"
-                  }
-                `}
-              />
-            );
-          })}
+                            scale:
+                              0.7,
+
+                            opacity:
+                              0,
+                          }
+                    }
+                    animate={
+                      animation
+                    }
+                    exit={
+                      reduceMotion
+                        ? undefined
+                        : {
+                            x:
+                              offset <
+                              0
+                                ? "-190%"
+                                : "190%",
+
+                            scale:
+                              0.68,
+
+                            opacity:
+                              0,
+                          }
+                    }
+                    transition={
+                      reduceMotion
+                        ? {
+                            duration:
+                              0,
+                          }
+                        : {
+                            duration:
+                              SLIDE_DURATION,
+
+                            ease:
+                              [
+                                0.22,
+                                1,
+                                0.36,
+                                1,
+                              ],
+                          }
+                    }
+                    drag={
+                      active &&
+                      total >
+                        1
+                        ? "x"
+                        : false
+                    }
+                    dragConstraints={{
+                      left:
+                        0,
+
+                      right:
+                        0,
+                    }}
+                    dragElastic={
+                      0.14
+                    }
+                    onDragStart={() => {
+                      setPaused(
+                        true
+                      );
+                    }}
+                    onDragEnd={(
+                      _,
+                      info
+                    ) => {
+                      setPaused(
+                        false
+                      );
+
+                      if (
+                        info.offset
+                          .x <
+                          -45 ||
+                        info.velocity
+                          .x <
+                          -400
+                      ) {
+                        next();
+
+                        return;
+                      }
+
+                      if (
+                        info.offset
+                          .x >
+                          45 ||
+                        info.velocity
+                          .x >
+                          400
+                      ) {
+                        previous();
+                      }
+                    }}
+                    style={{
+                      zIndex:
+                        animation.zIndex,
+                    }}
+                    className={`
+                      absolute
+
+                      left-1/2
+                      top-1/2
+
+                      -translate-x-1/2
+                      -translate-y-1/2
+
+                      overflow-hidden
+
+                      border
+
+                      bg-white
+
+                      text-left
+
+                      ${
+                        active
+                          ? `
+                              w-[215px]
+
+                              cursor-grab
+
+                              rounded-[20px]
+
+                              border-[#E75480]/20
+
+                              shadow-[0_18px_40px_rgba(117,71,87,0.14)]
+
+                              active:cursor-grabbing
+
+                              sm:w-[250px]
+
+                              md:w-[285px]
+
+                              lg:w-[305px]
+                            `
+                          : `
+                              w-[150px]
+
+                              cursor-pointer
+
+                              rounded-[16px]
+
+                              border-[#E75480]/10
+
+                              shadow-[0_8px_22px_rgba(117,71,87,0.07)]
+
+                              sm:w-[175px]
+
+                              md:w-[195px]
+
+                              lg:w-[205px]
+                            `
+                      }
+                    `}
+                  >
+                    {/* IMAGE */}
+
+                    <img
+                      src={
+                        item.image
+                      }
+                      alt={
+                        item.title ||
+                        "Nirjara Beauty gallery"
+                      }
+                      draggable={
+                        false
+                      }
+                      loading={
+                        active
+                          ? "eager"
+                          : "lazy"
+                      }
+                      className={`
+                        w-full
+
+                        select-none
+
+                        object-cover
+                        object-center
+
+                        ${
+                          active
+                            ? `
+                                h-[270px]
+
+                                sm:h-[310px]
+
+                                md:h-[345px]
+
+                                lg:h-[360px]
+                              `
+                            : `
+                                h-[200px]
+
+                                sm:h-[225px]
+
+                                md:h-[245px]
+
+                                lg:h-[255px]
+                              `
+                        }
+                      `}
+                    />
+
+                    {/* =====================================
+                        ACTIVE IMAGE TITLE
+                    ===================================== */}
+
+                    {active && (
+                      <div
+                        className="
+                          pointer-events-none
+
+                          absolute
+
+                          inset-x-0
+                          bottom-0
+
+                          bg-gradient-to-t
+                          from-[#3A2A2F]/85
+                          via-[#3A2A2F]/42
+                          to-transparent
+
+                          px-4
+                          pb-4
+                          pt-14
+
+                          sm:px-5
+                          sm:pb-5
+                        "
+                      >
+                        <h2
+                          className="
+                            mx-auto
+
+                            line-clamp-2
+                            max-w-[270px]
+
+                            break-words
+
+                            text-center
+
+                            font-serif
+
+                            text-[17px]
+                            leading-[1.15]
+
+                            text-white
+
+                            sm:text-[19px]
+
+                            md:text-[21px]
+                          "
+                        >
+                          {item.title?.trim() ||
+                            "Nirjara Beauty"}
+                        </h2>
+
+                        {item.category && (
+                          <p
+                            className="
+                              mt-1.5
+
+                              truncate
+
+                              text-center
+
+                              text-[7px]
+                              font-medium
+                              uppercase
+                              tracking-[2px]
+
+                              text-white/80
+
+                              sm:text-[8px]
+                            "
+                          >
+                            {
+                              item.category
+                            }
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </motion.button>
+                );
+              }
+            )}
+          </AnimatePresence>
         </div>
-      )}
 
-      {/* SWIPE TEXT */}
+        {/* =================================================
+            DOTS
+        ================================================= */}
 
-      <div className="mt-5 text-center">
-        <p
-          className="
-            text-[7px]
-            font-medium
-            uppercase
-            tracking-[4px]
-            text-[#E75480]
-          "
-        >
-          Swipe to explore
-        </p>
-      </div>
-
-    </section>
-  );
-}
-
-/* =========================================================
-   DESKTOP GALLERY
-========================================================= */
-
-function DesktopGallery({
-  items,
-  viewportWidth,
-}: {
-  items: GalleryItem[];
-  viewportWidth: number;
-}) {
-  const x = useMotionValue(0);
-
-  const pausedRef = useRef(false);
-  const draggingRef = useRef(false);
-
-  const previousTimeRef =
-    useRef<number | null>(null);
-
-  /* =======================================================
-     DIMENSIONS
-  ======================================================= */
-
-  const dimensions = useMemo(() => {
-    if (viewportWidth >= 1280) {
-      const gap = 14;
-
-      const cardWidth = Math.max(
-        150,
-        Math.min(
-          205,
-          (viewportWidth - gap * 6) / 7
-        )
-      );
-
-      return {
-        cardWidth,
-        gap,
-        heights: DESKTOP_HEIGHTS,
-      };
-    }
-
-    return {
-      cardWidth: 170,
-      gap: 12,
-      heights: TABLET_HEIGHTS,
-    };
-  }, [viewportWidth]);
-
-  const itemWidth =
-    dimensions.cardWidth + dimensions.gap;
-
-  /* =======================================================
-     ENSURE ENOUGH CARDS
-  ======================================================= */
-
-  const baseItems = useMemo(() => {
-    if (!items.length) return [];
-
-    const result: GalleryItem[] = [];
-
-    while (result.length < 14) {
-      result.push(...items);
-    }
-
-    return result.slice(
-      0,
-      Math.max(14, items.length)
-    );
-  }, [items]);
-
-  const repeatedItems = useMemo(
-    () => [
-      ...baseItems,
-      ...baseItems,
-      ...baseItems,
-    ],
-    [baseItems]
-  );
-
-  const singleSetWidth =
-    baseItems.length * itemWidth;
-
-  /* =======================================================
-     START POSITION
-  ======================================================= */
-
-  useEffect(() => {
-    if (!singleSetWidth) return;
-
-    x.set(-singleSetWidth);
-
-    previousTimeRef.current = null;
-  }, [singleSetWidth, x]);
-
-  /* =======================================================
-     AUTO MOVEMENT
-  ======================================================= */
-
-  useAnimationFrame((time) => {
-    if (!singleSetWidth) return;
-
-    if (
-      pausedRef.current ||
-      draggingRef.current
-    ) {
-      previousTimeRef.current = time;
-      return;
-    }
-
-    if (previousTimeRef.current === null) {
-      previousTimeRef.current = time;
-      return;
-    }
-
-    const delta =
-      Math.min(
-        time - previousTimeRef.current,
-        40
-      ) / 1000;
-
-    previousTimeRef.current = time;
-
-    let nextX =
-      x.get() - DESKTOP_SPEED * delta;
-
-    if (
-      nextX <=
-      -singleSetWidth * 2
-    ) {
-      nextX += singleSetWidth;
-    }
-
-    x.set(nextX);
-  });
-
-  /* =======================================================
-     NORMALIZE
-  ======================================================= */
-
-  const normalizeSlider = () => {
-    if (!singleSetWidth) return;
-
-    let current = x.get();
-
-    while (
-      current >
-      -singleSetWidth * 0.25
-    ) {
-      current -= singleSetWidth;
-    }
-
-    while (
-      current <
-      -singleSetWidth * 2.5
-    ) {
-      current += singleSetWidth;
-    }
-
-    x.set(current);
-  };
-
-  /* =======================================================
-     DESKTOP UI
-  ======================================================= */
-
-  return (
-    <section
-      className="
-        relative
-        mt-0
-        flex
-        h-[390px]
-        w-full
-        items-center
-        overflow-hidden
-
-        lg:h-[470px]
-      "
-      onMouseEnter={() => {
-        pausedRef.current = true;
-      }}
-      onMouseLeave={() => {
-        pausedRef.current = false;
-      }}
-    >
-
-      {/* LEFT FADE */}
-
-      <div
-        className="
-          pointer-events-none
-          absolute
-          inset-y-0
-          left-0
-          z-20
-          w-[7%]
-
-          bg-gradient-to-r
-          from-[#FFF5F8]
-          via-[#FFF5F8]/70
-          to-transparent
-        "
-      />
-
-      {/* RIGHT FADE */}
-
-      <div
-        className="
-          pointer-events-none
-          absolute
-          inset-y-0
-          right-0
-          z-20
-          w-[7%]
-
-          bg-gradient-to-l
-          from-[#FFF5F8]
-          via-[#FFF5F8]/70
-          to-transparent
-        "
-      />
-
-      {/* TRACK */}
-
-      <motion.div
-        drag="x"
-        dragMomentum={false}
-        dragElastic={0.035}
-        onDragStart={() => {
-          draggingRef.current = true;
-        }}
-        onDragEnd={() => {
-          draggingRef.current = false;
-
-          previousTimeRef.current = null;
-
-          normalizeSlider();
-        }}
-        style={{
-          x,
-          gap: dimensions.gap,
-          willChange: "transform",
-          transform: "translateZ(0)",
-        }}
-        className="
-          flex
-          cursor-grab
-          touch-pan-y
-          items-center
-
-          active:cursor-grabbing
-        "
-      >
-        {repeatedItems.map(
-          (item, index) => (
-            <DesktopGalleryCard
-              key={`${item._id}-${index}`}
-              item={item}
-              index={index}
-              cardWidth={
-                dimensions.cardWidth
-              }
-              itemWidth={itemWidth}
-              heights={
-                dimensions.heights
-              }
-              x={x}
-              viewportWidth={
-                viewportWidth
-              }
-            />
-          )
-        )}
-      </motion.div>
-
-    </section>
-  );
-}
-
-/* =========================================================
-   DESKTOP CARD
-========================================================= */
-
-type DesktopGalleryCardProps = {
-  item: GalleryItem;
-  index: number;
-  cardWidth: number;
-  itemWidth: number;
-  heights: number[];
-
-  x: ReturnType<
-    typeof useMotionValue<number>
-  >;
-
-  viewportWidth: number;
-};
-
-function DesktopGalleryCard({
-  item,
-  index,
-  cardWidth,
-  itemWidth,
-  heights,
-  x,
-  viewportWidth,
-}: DesktopGalleryCardProps) {
-  const maxHeight = heights[0];
-
-  const minHeight = heights[3];
-
-  const scaleY = useDynamicScale({
-    index,
-    itemWidth,
-    cardWidth,
-    x,
-    viewportWidth,
-    maxHeight,
-    minHeight,
-  });
-
-  return (
-    <div
-      style={{
-        width: cardWidth,
-        height: maxHeight,
-      }}
-      className="
-        relative
-        flex
-        shrink-0
-        items-center
-        justify-center
-      "
-    >
-      <motion.article
-        style={{
-          width: cardWidth,
-          height: maxHeight,
-          scaleY,
-          transformOrigin:
-            "center center",
-          willChange: "transform",
-          backfaceVisibility: "hidden",
-        }}
-        className="
-          relative
-          overflow-hidden
-          rounded-[22px]
-          bg-[#F4E8EC]
-
-          shadow-[0_10px_35px_rgba(58,42,47,0.06)]
-        "
-      >
-        <img
-          src={item.image}
-          alt={
-            item.title ||
-            "Nirjara Beauty gallery"
-          }
-          draggable={false}
-          loading="lazy"
-          decoding="async"
-          className="
-            pointer-events-none
-            h-full
-            w-full
-            select-none
-            object-cover
-            object-center
-          "
-        />
-
-        {(item.title ||
-          item.category) && (
+        {total >
+          1 && (
           <div
             className="
-              pointer-events-none
-              absolute
-              inset-x-0
-              bottom-0
-              h-[38%]
+              mt-2
 
-              bg-gradient-to-t
-              from-black/50
-              via-black/10
-              to-transparent
-            "
-          />
-        )}
+              flex
+              items-center
+              justify-center
 
-        {(item.title ||
-          item.category) && (
-          <div
-            className="
-              pointer-events-none
-              absolute
-              bottom-5
-              left-5
-              right-5
-              z-10
+              gap-[7px]
             "
           >
-            {item.category && (
-              <p
-                className="
-                  mb-1
-                  text-[7px]
-                  font-medium
-                  uppercase
-                  tracking-[2.5px]
-                  text-white/75
-                "
-              >
-                {item.category}
-              </p>
-            )}
+            {galleryItems.map(
+              (
+                item,
+                index
+              ) => {
+                const active =
+                  index ===
+                  activeIndex;
 
-            {item.title && (
-              <h3
-                className="
-                  font-serif
-                  text-[16px]
-                  leading-tight
-                  text-white
-                "
-              >
-                {item.title}
-              </h3>
+                return (
+                  <button
+                    key={
+                      item._id
+                    }
+                    type="button"
+                    aria-label={`Show image ${
+                      index +
+                      1
+                    }`}
+                    onClick={() =>
+                      setActiveIndex(
+                        index
+                      )
+                    }
+                    className={`
+                      rounded-full
+
+                      transition-all
+                      duration-200
+
+                      ${
+                        active
+                          ? `
+                              h-[5px]
+                              w-6
+
+                              bg-[#E75480]
+                            `
+                          : `
+                              h-[5px]
+                              w-[5px]
+
+                              bg-[#E75480]/20
+
+                              hover:bg-[#E75480]/50
+                            `
+                      }
+                    `}
+                  />
+                );
+              }
             )}
           </div>
         )}
-      </motion.article>
-    </div>
+
+        {/* =================================================
+            ACCESSIBLE COUNTER
+        ================================================= */}
+
+        <p
+          className="
+            sr-only
+          "
+          aria-live="polite"
+        >
+          Image{" "}
+          {
+            activeIndex +
+            1
+          }{" "}
+          of{" "}
+          {
+            total
+          }
+          .{" "}
+          {activeItem.title ||
+            "Nirjara Beauty"}
+        </p>
+      </div>
+    </section>
   );
-}
-
-/* =========================================================
-   DESKTOP CURVE
-========================================================= */
-
-type DynamicScaleProps = {
-  index: number;
-  itemWidth: number;
-  cardWidth: number;
-
-  x: ReturnType<
-    typeof useMotionValue<number>
-  >;
-
-  viewportWidth: number;
-  maxHeight: number;
-  minHeight: number;
-};
-
-function useDynamicScale({
-  index,
-  itemWidth,
-  cardWidth,
-  x,
-  viewportWidth,
-  maxHeight,
-  minHeight,
-}: DynamicScaleProps) {
-  const scale = useMotionValue(1);
-
-  useAnimationFrame(() => {
-    if (!viewportWidth) return;
-
-    const cardCenter =
-      x.get() +
-      index * itemWidth +
-      cardWidth / 2;
-
-    const screenCenter =
-      viewportWidth / 2;
-
-    const distance = Math.abs(
-      cardCenter - screenCenter
-    );
-
-    const maxDistance =
-      itemWidth * 3;
-
-    const normalized = Math.min(
-      distance / maxDistance,
-      1
-    );
-
-    /*
-      Smooth curved gallery:
-
-      CENTER = shortest
-      EDGES = tallest
-    */
-
-    const curved =
-      normalized *
-      normalized *
-      (3 - 2 * normalized);
-
-    const height =
-      minHeight +
-      (maxHeight - minHeight) *
-        curved;
-
-    scale.set(
-      height / maxHeight
-    );
-  });
-
-  return scale;
 }
