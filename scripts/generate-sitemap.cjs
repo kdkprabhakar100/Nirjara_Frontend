@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 const BASE_URL = "https://nirjarabeautysalon.com";
-const API_URL = "https://nirjarabeautysalon.onrender.com";
+const API_URL = "https://api.nirjarabeautysalon.com";
 
 const staticRoutes = [
   "",
@@ -36,7 +36,9 @@ async function generateSitemap() {
   const urls = [
     ...staticRoutes.map((route) => `${BASE_URL}${route}`),
 
-    ...blogs.map((blog) => `${BASE_URL}/blog/${blog._id}`),
+    ...blogs
+  .filter((blog) => blog.slug)
+  .map((blog) => `${BASE_URL}/blog/${blog.slug}`),
 
     ...products.map((product) => `${BASE_URL}/products/${product._id}`),
 
