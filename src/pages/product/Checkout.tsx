@@ -6,7 +6,7 @@ import {
 
 import {
   useNavigate,
-} from "react-router-dom";
+} from "react-router";
 
 import {
   useCart,

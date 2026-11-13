@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import axios from "axios";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import SEO from "../../components/SEO";
 
@@ -29,7 +28,7 @@ const EVENTS_SEO = {
    TYPES
 ============================================================ */
 
-interface EventType {
+export interface EventType {
   _id: string;
 
   title: string;
@@ -51,7 +50,7 @@ interface EventType {
   featured: boolean;
 }
 
-interface BranchType {
+export interface BranchType {
   _id: string;
 
   name: string;
@@ -215,11 +214,12 @@ function formatDate(
   return new Date(
     date
   ).toLocaleDateString(
-    undefined,
+    "en-US",
     {
       month: "long",
       day: "numeric",
       year: "numeric",
+      timeZone: "Asia/Kathmandu",
     }
   );
 }
@@ -234,11 +234,12 @@ function formatShortDate(
   return new Date(
     date
   ).toLocaleDateString(
-    undefined,
+    "en-US",
     {
       month: "short",
       day: "numeric",
       year: "numeric",
+      timeZone: "Asia/Kathmandu",
     }
   );
 }
@@ -247,101 +248,70 @@ function formatShortDate(
    EVENTS
 ============================================================ */
 
-const Events = () => {
+export type EventsInitialData = {
+  events: EventType[];
+  branches: BranchType[];
+};
+
+const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+
+function readArray<T>(data: unknown, key: string): T[] {
+  if (Array.isArray(data)) return data as T[];
+  if (!data || typeof data !== "object") return [];
+  const value = data as Record<string, unknown>;
+  if (Array.isArray(value[key])) return value[key] as T[];
+  if (Array.isArray(value.data)) return value.data as T[];
+  return [];
+}
+
+const Events = ({ initialData }: { initialData?: EventsInitialData }) => {
   /* ============================================================
-     DATA
+     DATA — SSR and client-side fallback
   ============================================================ */
 
-  const [events, setEvents] =
-    useState<EventType[]>([]);
-
-  const [branches, setBranches] =
-    useState<BranchType[]>([]);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  /* ============================================================
-     FETCH EVENTS
-  ============================================================ */
-
-  const fetchEvents = async () => {
-    try {
-      setLoading(true);
-
-      const res =
-        await axios.get(
-          `${
-            import.meta.env
-              .VITE_API_URL
-          }/api/events`
-        );
-
-      setEvents(
-        Array.isArray(
-          res.data
-        )
-          ? res.data
-          : []
-      );
-    } catch (error) {
-      console.error(
-        "EVENT FETCH ERROR:",
-        error
-      );
-
-      setEvents([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /* ============================================================
-     FETCH BRANCHES
-
-     This is where the frontend receives the CURRENT
-     address + Google Maps URL from Branch Admin.
-  ============================================================ */
-
-  const fetchBranches =
-    async () => {
-      try {
-        const res =
-          await axios.get(
-            `${
-              import.meta.env
-                .VITE_API_URL
-            }/api/branches`
-          );
-
-        const data =
-          Array.isArray(
-            res.data
-          )
-            ? res.data
-            : res.data
-                ?.branches ||
-              [];
-
-        setBranches(data);
-      } catch (error) {
-        console.error(
-          "BRANCH FETCH ERROR:",
-          error
-        );
-
-        setBranches([]);
-      }
-    };
-
-  /* ============================================================
-     INITIAL FETCH
-  ============================================================ */
+  const [events, setEvents] = useState<EventType[]>(
+    () => initialData?.events ?? []
+  );
+  const [branches, setBranches] = useState<BranchType[]>(
+    () => initialData?.branches ?? []
+  );
+  const [loading, setLoading] = useState(() => !initialData);
 
   useEffect(() => {
-    fetchEvents();
-    fetchBranches();
-  }, []);
+    // The first server and browser renders use the same initial data.
+    if (initialData) return;
+
+    const controller = new AbortController();
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const [eventsResponse, branchesResponse] = await Promise.all([
+          fetch(`${API_BASE}/api/events`, { signal: controller.signal }),
+          fetch(`${API_BASE}/api/branches`, { signal: controller.signal }),
+        ]);
+        if (!eventsResponse.ok || !branchesResponse.ok) {
+          throw new Error("Failed to load event information");
+        }
+        const [eventsPayload, branchesPayload] = await Promise.all([
+          eventsResponse.json(),
+          branchesResponse.json(),
+        ]);
+        if (controller.signal.aborted) return;
+        setEvents(readArray<EventType>(eventsPayload, "events"));
+        setBranches(readArray<BranchType>(branchesPayload, "branches"));
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          console.error("EVENTS FETCH ERROR:", error);
+          setEvents([]);
+          setBranches([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
+    void loadData();
+    return () => controller.abort();
+  }, [initialData]);
 
   /* ============================================================
      BRANCH LOOKUP
@@ -618,7 +588,7 @@ const Events = () => {
         type="website"
       />
 
-      <main className="min-h-screen overflow-hidden bg-[#FFF5F8] text-[#3A2A2F]">
+      <div className="min-h-screen overflow-hidden bg-[#FFF5F8] text-[#3A2A2F]">
         {/* ========================================================
             HERO
         ======================================================== */}
@@ -670,10 +640,7 @@ const Events = () => {
           />
 
           <motion.div
-            initial={{
-              opacity: 0,
-              y: 20,
-            }}
+            initial={false}
             animate={{
               opacity: 1,
               y: 0,
@@ -800,10 +767,7 @@ const Events = () => {
             </div>
 
             <motion.article
-              initial={{
-                opacity: 0,
-                y: 18,
-              }}
+              initial={false}
               whileInView={{
                 opacity: 1,
                 y: 0,
@@ -1285,11 +1249,7 @@ const Events = () => {
                         key={
                           event._id
                         }
-                        initial={{
-                          opacity:
-                            0,
-                          y: 16,
-                        }}
+                        initial={false}
                         whileInView={{
                           opacity:
                             1,
@@ -1561,7 +1521,7 @@ const Events = () => {
               )}
           </div>
         </section>
-      </main>
+      </div>
     </>
   );
 };

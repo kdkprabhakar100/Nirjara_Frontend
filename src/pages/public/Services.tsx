@@ -174,10 +174,18 @@ function getStartingPrice(
 }
 
 /* =========================================================
+   SSR INITIAL DATA
+========================================================= */
+export type ServicesInitialData = {
+  services: Service[];
+  categories: ServiceCategory[];
+};
+
+/* =========================================================
    COMPONENT
 ========================================================= */
 
-export default function Services() {
+export default function Services({ initialData }: { initialData?: ServicesInitialData }) {
   /* =======================================================
      STATE
   ======================================================= */
@@ -187,7 +195,7 @@ export default function Services() {
     setServices,
   ] =
     useState<Service[]>(
-      []
+      () => initialData?.services ?? []
     );
 
   const [
@@ -197,7 +205,7 @@ export default function Services() {
     useState<
       ServiceCategory[]
     >(
-      []
+      () => initialData?.categories ?? []
     );
 
   const [
@@ -212,9 +220,7 @@ export default function Services() {
     loading,
     setLoading,
   ] =
-    useState(
-      true
-    );
+    useState(() => !initialData);
 
   const [
     error,
@@ -240,9 +246,7 @@ export default function Services() {
     servicesPerPage,
     setServicesPerPage,
   ] =
-    useState(
-      getServicesPerPage
-    );
+    useState(8); // Match server HTML during hydration; resize after mount.
 
   /* =======================================================
      LOAD SERVICES + CATEGORIES
@@ -250,6 +254,13 @@ export default function Services() {
 
   useEffect(
     () => {
+      // The SSR server has already fetched both lists.
+      // Keep the same markup on the server and first browser render.
+      if (initialData) return;
+
+      let cancelled = false;
+      const controller = new AbortController();
+
       const loadData =
         async () => {
           try {
@@ -271,14 +282,16 @@ export default function Services() {
                     `${
                       import.meta.env
                         .VITE_API_URL
-                    }/api/services`
+                    }/api/services`,
+                    { signal: controller.signal }
                   ),
 
                   fetch(
                     `${
                       import.meta.env
                         .VITE_API_URL
-                    }/api/service-categories`
+                    }/api/service-categories`,
+                    { signal: controller.signal }
                   ),
                 ]
               );
@@ -339,16 +352,14 @@ export default function Services() {
                     ? categoriesData.data
                     : [];
 
-            setServices(
-              serviceList
-            );
-
-            setCategories(
-              categoryList
-            );
+            if (!cancelled) {
+              setServices(serviceList);
+              setCategories(categoryList);
+            }
           } catch (
             err
           ) {
+            if (cancelled || controller.signal.aborted) return;
             console.error(
               "Services page error:",
               err
@@ -361,16 +372,19 @@ export default function Services() {
                 : "Something went wrong."
             );
           } finally {
-            setLoading(
-              false
-            );
+            if (!cancelled) setLoading(false);
           }
         };
 
-      loadData();
+      void loadData();
+
+      return () => {
+        cancelled = true;
+        controller.abort();
+      };
     },
 
-    []
+    [initialData]
   );
 
   /* =======================================================
@@ -688,7 +702,7 @@ export default function Services() {
     loading
   ) {
     return (
-      <main
+      <div
         className="
           min-h-screen
 
@@ -744,7 +758,7 @@ export default function Services() {
             </p>
           </div>
         </div>
-      </main>
+      </div>
     );
   }
 
@@ -756,7 +770,7 @@ export default function Services() {
     error
   ) {
     return (
-      <main
+      <div
         className="
           min-h-screen
 
@@ -807,7 +821,7 @@ export default function Services() {
             </p>
           </div>
         </div>
-      </main>
+      </div>
     );
   }
 
@@ -836,7 +850,7 @@ export default function Services() {
         type="website"
       />
 
-      <main
+      <div
         className="
           min-h-screen
 
@@ -1511,7 +1525,7 @@ export default function Services() {
             </div>
           )}
         </section>
-      </main>
+      </div>
     </>
   );
 }

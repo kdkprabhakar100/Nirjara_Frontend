@@ -5,7 +5,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import SEO from "../../components/SEO";
 
 const BOOKING_SEO = {
@@ -46,10 +46,19 @@ const isOffAtBranch = (
 type Course = {
   _id: string;
   title: string;
+  /** Unique public URL identifier, supplied by the backend. */
+  slug?: string;
   // False when switched off in the admin
   // panel; listed but cannot be picked.
   available?: boolean;
 };
+
+// The URL may contain a readable slug or a legacy MongoDB ID.
+// Form values and POST requests always use the immutable course _id.
+const findCourseByUrl = (courses: Course[], value: string) =>
+  courses.find((course) =>
+    course._id === value || course.slug === value
+  );
 
 const isBookable = (
   item: Service | Course
@@ -92,6 +101,33 @@ type Branch = {
 };
 
 /* ============================================================
+   SSR INITIAL DATA
+
+   Data supplied by App.tsx during SSR is optional so the
+   booking page also works on client-side navigation.
+============================================================ */
+
+export type BookingInitialData = {
+  services?: Service[];
+  courses?: Course[];
+  branches?: Branch[];
+};
+
+type BookingProps = {
+  initialData?: BookingInitialData;
+};
+
+function readList<T>(payload: unknown, key: string): T[] {
+  if (Array.isArray(payload)) return payload as T[];
+  if (payload && typeof payload === "object") {
+    const record = payload as Record<string, unknown>;
+    if (Array.isArray(record[key])) return record[key] as T[];
+    if (Array.isArray(record.data)) return record.data as T[];
+  }
+  return [];
+}
+
+/* ============================================================
    HELPERS
 ============================================================ */
 
@@ -131,8 +167,9 @@ const formatDate = (date: string) => {
   if (!date) return "";
 
   return new Date(
-    `${date}T00:00:00`
-  ).toLocaleDateString(undefined, {
+    `${date}T12:00:00Z`
+  ).toLocaleDateString("en-US", {
+    timeZone: "UTC",
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -144,16 +181,15 @@ const formatDate = (date: string) => {
    COMPONENT
 ============================================================ */
 
-export default function Booking() {
+export default function Booking({ initialData }: BookingProps) {
   /* ==========================================================
      SERVICE / COURSE FROM THE URL
 
      "Book Now" on a service card opens
-     /booking?service=<id>, and "Enroll Now"
-     on the Academy page opens
-     /booking?course=<id>, so that item
-     starts selected (and stays selected
-     after a refresh).
+     /booking?service=<id> for services.
+     Academy can open /booking?course=<slug> (preferred)
+     or /booking?course=<id> (legacy, still supported).
+     Form submissions always send courseId, never a slug.
   ========================================================== */
 
   const [searchParams, setSearchParams] =
@@ -171,24 +207,26 @@ export default function Booking() {
   ========================================================== */
 
   const [services, setServices] =
-    useState<Service[]>([]);
+    useState<Service[]>(() => initialData?.services ?? []);
 
   const [courses, setCourses] =
-    useState<Course[]>([]);
+    useState<Course[]>(() => initialData?.courses ?? []);
 
   const [branches, setBranches] =
-    useState<Branch[]>([]);
+    useState<Branch[]>(() => initialData?.branches ?? []);
 
   // Services/courses and branches load
   // separately, so each list shows its
   // own loader.
   const [loadingItems, setLoadingItems] =
-    useState(true);
+    useState(() =>
+      initialData?.services === undefined || initialData?.courses === undefined
+    );
 
   const [
     loadingBranches,
     setLoadingBranches,
-  ] = useState(true);
+  ] = useState(() => initialData?.branches === undefined);
 
   const [loadError, setLoadError] =
     useState("");
@@ -199,7 +237,7 @@ export default function Booking() {
 
   const [type, setType] = useState<
     "service" | "course"
-  >("service");
+  >(courseFromUrl ? "course" : "service");
 
   const [name, setName] =
     useState("");
@@ -210,8 +248,15 @@ export default function Booking() {
   const [email, setEmail] =
     useState("");
 
-  const [selectedItem, setSelectedItem] =
-    useState("");
+  const [selectedItem, setSelectedItem] = useState(() => {
+    if (serviceFromUrl) return serviceFromUrl;
+    if (!courseFromUrl) return "";
+    // Match SSR data on the very first render to avoid a hydration mismatch.
+    return (
+      findCourseByUrl(initialData?.courses ?? [], courseFromUrl)?._id ??
+      courseFromUrl
+    );
+  });
 
   // The selected branch's id.
   const [branch, setBranch] =
@@ -283,166 +328,158 @@ export default function Booking() {
     useRef<HTMLFormElement>(null);
 
   /* ==========================================================
-     FETCH SERVICES + COURSES
+     SSR-SAFE DATA LOADING
+
+     Server-provided lists render immediately. Only lists not
+     included in SSR data are requested in the browser.
+     Branches load independently of services/courses.
   ========================================================== */
 
   useEffect(() => {
-    // Loaded on its own, so a branch error
-    // never hides the services.
+    if (initialData?.branches !== undefined) return;
+
+    const controller = new AbortController();
+
     const loadBranches = async () => {
       try {
         const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/branches`
+          `${import.meta.env.VITE_API_URL}/api/branches`,
+          { signal: controller.signal }
         );
-
-        if (!response.ok) {
-          throw new Error(
-            "Unable to load branches."
-          );
-        }
-
+        if (!response.ok) throw new Error("Unable to load branches.");
         const data = await response.json();
-
-        setBranches(
-          Array.isArray(data) ? data : []
-        );
+        if (!controller.signal.aborted) {
+          setBranches(readList<Branch>(data, "branches"));
+        }
       } catch (error) {
-        console.error(
-          "BRANCHES ERROR:",
-          error
-        );
-
+        if (controller.signal.aborted) return;
+        console.error("BRANCHES ERROR:", error);
         setLoadError(
           "We couldn't load the booking options. Please refresh the page."
         );
       } finally {
-        setLoadingBranches(false);
+        if (!controller.signal.aborted) setLoadingBranches(false);
       }
     };
 
-    loadBranches();
+    void loadBranches();
+    return () => controller.abort();
+  }, [initialData?.branches]);
 
-    const loadData = async () => {
+  useEffect(() => {
+    const needsServices = initialData?.services === undefined;
+    const needsCourses = initialData?.courses === undefined;
+    if (!needsServices && !needsCourses) return;
+
+    const controller = new AbortController();
+
+    const loadItems = async () => {
       try {
-        const [
-          servicesResponse,
-          coursesResponse,
-        ] = await Promise.all([
-          fetch(
-            `${import.meta.env.VITE_API_URL}/api/services`
-          ),
+        const endpoints = [
+          ...(needsServices
+            ? [{ key: "services", url: "/api/services" }]
+            : []),
+          ...(needsCourses
+            ? [{ key: "courses", url: "/api/courses" }]
+            : []),
+        ];
 
-          fetch(
-            `${import.meta.env.VITE_API_URL}/api/courses`
-          ),
-        ]);
-
-        if (!servicesResponse.ok) {
-          throw new Error(
-            "Unable to load services."
-          );
-        }
-
-        if (!coursesResponse.ok) {
-          throw new Error(
-            "Unable to load courses."
-          );
-        }
-
-        const servicesData =
-          await servicesResponse.json();
-
-        const coursesData =
-          await coursesResponse.json();
-
-        const serviceList: Service[] =
-          Array.isArray(servicesData)
-            ? servicesData
-            : [];
-
-        const courseList: Course[] =
-          Array.isArray(coursesData)
-            ? coursesData
-            : [];
-
-        setServices(serviceList);
-
-        setCourses(courseList);
-
-        // A stale or mistyped link, or an
-        // item switched off since: drop the id
-        // so the visitor picks another instead
-        // of submitting a hidden one.
-        const linkedId =
-          serviceFromUrl || courseFromUrl;
-
-        const linkedItem = serviceFromUrl
-          ? serviceList.find(
-              (service) =>
-                service._id === linkedId
-            )
-          : courseList.find(
-              (course) =>
-                course._id === linkedId
+        const result = await Promise.all(
+          endpoints.map(async ({ key, url }) => {
+            const response = await fetch(
+              `${import.meta.env.VITE_API_URL}${url}`,
+              { signal: controller.signal }
             );
-
-        if (
-          linkedId &&
-          (!linkedItem ||
-            !isBookable(linkedItem))
-        ) {
-          setSelectedItem((current) =>
-            current === linkedId
-              ? ""
-              : current
-          );
-
-          if (linkedItem) {
-            setSubmitError(
-              serviceFromUrl
-                ? `"${linkedItem.title}" is currently not available for booking. Please choose another service.`
-                : `"${linkedItem.title}" is currently not available for enrollment. Please choose another course.`
-            );
-          }
-        }
-      } catch (error) {
-        console.error(
-          "BOOKING DATA ERROR:",
-          error
+            if (!response.ok) throw new Error(`Unable to load ${key}.`);
+            return { key, data: await response.json() };
+          })
         );
 
+        if (controller.signal.aborted) return;
+
+        result.forEach(({ key, data }) => {
+          if (key === "services") {
+            setServices(readList<Service>(data, "services"));
+          } else {
+            setCourses(readList<Course>(data, "courses"));
+          }
+        });
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        console.error("BOOKING DATA ERROR:", error);
         setLoadError(
           "We couldn't load the booking options. Please refresh the page."
         );
       } finally {
-        setLoadingItems(false);
+        if (!controller.signal.aborted) setLoadingItems(false);
       }
     };
 
-    loadData();
+    void loadItems();
+    return () => controller.abort();
+  }, [initialData?.services, initialData?.courses]);
 
-    /* ========================================================
-       PRESELECT FROM THE URL
-    ======================================================== */
+  /* ==========================================================
+     URL PRESELECTION + VALIDATION
+  ========================================================== */
 
+  useEffect(() => {
     if (serviceFromUrl) {
       setType("service");
       setSelectedItem(serviceFromUrl);
     } else if (courseFromUrl) {
       setType("course");
-      setSelectedItem(courseFromUrl);
+      const linked = findCourseByUrl(courses, courseFromUrl);
+      setSelectedItem(linked?._id ?? courseFromUrl);
+    }
+  }, [serviceFromUrl, courseFromUrl, courses]);
+
+  useEffect(() => {
+    if (loadingItems) return;
+
+    const linkedValue = serviceFromUrl || courseFromUrl;
+    if (!linkedValue) return;
+
+    const linkedItem = serviceFromUrl
+      ? services.find((item) => item._id === linkedValue)
+      : findCourseByUrl(courses, linkedValue);
+
+    if (!linkedItem) {
+      setSelectedItem("");
+      setSubmitError(
+        serviceFromUrl
+          ? "The linked service could not be found. Please choose another service."
+          : "The linked course could not be found. Please choose another course."
+      );
+      return;
     }
 
-    // The Academy page used to hand the
-    // course over through these keys; clear
-    // any left behind by an older visit.
-    localStorage.removeItem(
-      "bookingType"
-    );
+    if (!isBookable(linkedItem)) {
+      setSelectedItem("");
+      setSubmitError(
+        serviceFromUrl
+          ? `"${linkedItem.title}" is currently not available for booking. Please choose another service.`
+          : `"${linkedItem.title}" is currently not available for enrollment. Please choose another course.`
+      );
+      return;
+    }
 
-    localStorage.removeItem(
-      "selectedCourse"
-    );
+    // Select by ID to match <option value={item._id}> and the booking POST.
+    setSelectedItem((current) => current === linkedItem._id ? current : linkedItem._id);
+    setSubmitError("");
+  }, [loadingItems, serviceFromUrl, courseFromUrl, services, courses]);
+
+  useEffect(() => {
+    // Clear legacy browser-only booking handoff keys.
+    localStorage.removeItem("bookingType");
+    localStorage.removeItem("selectedCourse");
+  }, []);
+
+  // The minimum date is set after hydration because server and
+  // browser clocks/time zones can otherwise differ.
+  const [minDate, setMinDate] = useState("");
+  useEffect(() => {
+    setMinDate(getTodayString());
   }, []);
 
   /* ==========================================================
@@ -1066,7 +1103,7 @@ export default function Booking() {
       image={BOOKING_SEO.image}
       type="website"
     />
-    <main
+    <div
       className="
         min-h-screen
         bg-[#FFF5F8]
@@ -1678,7 +1715,7 @@ export default function Booking() {
               <input
                 type="date"
                 value={date}
-                min={getTodayString()}
+                min={minDate}
                 onChange={(e) =>
                   setDate(
                     e.target.value
@@ -2336,7 +2373,7 @@ export default function Booking() {
           )}
         </form>
       </section>
-    </main>
+    </div>
     </>
   );
 }

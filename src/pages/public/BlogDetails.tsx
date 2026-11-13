@@ -6,13 +6,13 @@ import {
 import {
   Link,
   useParams,
-} from "react-router-dom";
+} from "react-router";
 
 import SEO from "../../components/SEO";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import BlogSidebar from "../../components/BlogSidebar";
 
-type Blog = {
+export type Blog = {
   _id: string;
   title: string;
   slug: string;
@@ -28,6 +28,35 @@ type Blog = {
   seoDescription?: string;
   seoKeywords?: string[];
 };
+
+export type BlogDetailsInitialData = {
+  /** The slug this server payload belongs to. */
+  slug: string;
+  blog: Blog | null;
+  recentPosts: Blog[];
+};
+
+type BlogDetailsProps = {
+  initialData?: BlogDetailsInitialData;
+};
+
+function extractBlog(value: unknown): Blog | null {
+  if (!value || typeof value !== "object") return null;
+  const body = value as { blog?: unknown; data?: unknown; _id?: unknown };
+  if (body._id) return value as Blog;
+  const nested = body.blog ?? body.data;
+  return nested && typeof nested === "object" && !Array.isArray(nested)
+    ? (nested as Blog)
+    : null;
+}
+
+function extractBlogs(value: unknown): Blog[] {
+  if (Array.isArray(value)) return value as Blog[];
+  if (!value || typeof value !== "object") return [];
+  const body = value as { blogs?: unknown; data?: unknown };
+  const items = body.blogs ?? body.data;
+  return Array.isArray(items) ? (items as Blog[]) : [];
+}
 
 const formatDate = (
   value?: string | null,
@@ -50,6 +79,7 @@ const formatDate = (
   return date.toLocaleDateString(
     "en-US",
     {
+      timeZone: "UTC",
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -57,51 +87,59 @@ const formatDate = (
   );
 };
 
-export default function BlogDetails() {
+export default function BlogDetails({ initialData }: BlogDetailsProps) {
   const { slug } =
     useParams<{
       slug: string;
     }>();
 
+  const hasInitialData = initialData?.slug === slug;
+
   const [
     blog,
     setBlog,
-  ] =
-    useState<Blog | null>(
-      null,
-    );
+  ] = useState<Blog | null>(
+    () => hasInitialData ? initialData!.blog : null,
+  );
 
   const [
     recentPosts,
     setRecentPosts,
-  ] =
-    useState<Blog[]>(
-      [],
-    );
+  ] = useState<Blog[]>(
+    () => hasInitialData ? initialData!.recentPosts : [],
+  );
 
   const [
     loading,
     setLoading,
-  ] =
-    useState(true);
+  ] = useState(() => !hasInitialData);
 
   const [
     notFound,
     setNotFound,
-  ] =
-    useState(false);
+  ] = useState(() => hasInitialData && !initialData!.blog);
 
   /* =======================================================
      FETCH CURRENT BLOG
   ======================================================= */
 
   useEffect(() => {
+    // Direct SSR navigation already has the correct article or not-found result.
+    if (initialData && initialData.slug === slug) {
+      setBlog(initialData.blog);
+      setNotFound(!initialData.blog);
+      setLoading(false);
+      return;
+    }
+
     if (!slug) {
       setNotFound(true);
       setLoading(false);
 
       return;
     }
+
+    const controller = new AbortController();
 
     const fetchBlog =
       async () => {
@@ -117,7 +155,10 @@ export default function BlogDetails() {
               }/api/blogs/slug/${encodeURIComponent(
                 slug,
               )}`,
+              { signal: controller.signal },
             );
+
+          if (controller.signal.aborted) return;
 
           if (
             res.status ===
@@ -138,8 +179,11 @@ export default function BlogDetails() {
           const data =
             await res.json();
 
-          setBlog(data);
+          const parsed = extractBlog(data);
+          setBlog(parsed);
+          setNotFound(!parsed);
         } catch (error) {
+          if (controller.signal.aborted) return;
           console.error(
             "BLOG DETAILS ERROR:",
             error,
@@ -148,18 +192,25 @@ export default function BlogDetails() {
           setBlog(null);
           setNotFound(true);
         } finally {
-          setLoading(false);
+          if (!controller.signal.aborted) setLoading(false);
         }
       };
 
-    fetchBlog();
-  }, [slug]);
+    void fetchBlog();
+    return () => controller.abort();
+  }, [slug, initialData]);
 
   /* =======================================================
      FETCH RECENT POSTS
   ======================================================= */
 
   useEffect(() => {
+    if (initialData && initialData.slug === slug) {
+      setRecentPosts(initialData.recentPosts);
+      return;
+    }
+
+    const controller = new AbortController();
     const fetchRecentPosts =
       async () => {
         try {
@@ -169,6 +220,7 @@ export default function BlogDetails() {
                 import.meta.env
                   .VITE_API_URL
               }/api/blogs`,
+              { signal: controller.signal },
             );
 
           if (!res.ok) {
@@ -180,12 +232,11 @@ export default function BlogDetails() {
           const data =
             await res.json();
 
-          setRecentPosts(
-            Array.isArray(data)
-              ? data
-              : [],
-          );
+          if (!controller.signal.aborted) {
+            setRecentPosts(extractBlogs(data).filter(post => post.status !== "draft"));
+          }
         } catch (error) {
+          if (controller.signal.aborted) return;
           console.error(
             "RECENT BLOG ERROR:",
             error,
@@ -195,8 +246,9 @@ export default function BlogDetails() {
         }
       };
 
-    fetchRecentPosts();
-  }, []);
+    void fetchRecentPosts();
+    return () => controller.abort();
+  }, [slug, initialData]);
 
   /* =======================================================
      SCROLL TO TOP ON ARTICLE CHANGE
@@ -215,7 +267,7 @@ export default function BlogDetails() {
 
   if (loading) {
     return (
-      <main
+      <div
         className="
           min-h-screen
           bg-[#FFF8FA]
@@ -292,7 +344,7 @@ export default function BlogDetails() {
             />
           </div>
         </div>
-      </main>
+      </div>
     );
   }
 
@@ -315,7 +367,7 @@ export default function BlogDetails() {
           type="website"
         />
 
-        <main
+        <div
           className="
             flex
             min-h-screen
@@ -402,7 +454,7 @@ export default function BlogDetails() {
               View All Blogs
             </Link>
           </div>
-        </main>
+        </div>
       </>
     );
   }
@@ -444,7 +496,7 @@ export default function BlogDetails() {
         type="article"
       />
 
-      <main
+      <div
         className="
           min-h-screen
 
@@ -857,7 +909,7 @@ export default function BlogDetails() {
             />
           </div>
         </div>
-      </main>
+      </div>
     </>
   );
 }

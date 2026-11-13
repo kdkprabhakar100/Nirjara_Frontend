@@ -5,7 +5,7 @@ import {
 
 import {
   useNavigate,
-} from "react-router-dom";
+} from "react-router";
 
 import {
   ShoppingBag,
@@ -26,7 +26,9 @@ type Service = {
   _id?: string;
   title: string;
   description: string;
-  price: string;
+  price?: string | number;
+  startingPrice?: number;
+  maxPrice?: number | null;
   icon?: string;
   image?: string;
   available?: boolean;
@@ -47,6 +49,12 @@ type HomepageStats = {
   establishedYear: number;
   happyClients: number;
   certifiedGraduates: number;
+};
+
+export type HomeInitialData = {
+  services: Service[];
+  branches: Branch[];
+  homepageStats: HomepageStats;
 };
 
 /* ============================================================
@@ -112,10 +120,31 @@ function formatCounter(
 }
 
 /* ============================================================
+   PRICE COMPATIBILITY (NEW + LEGACY CMS RECORDS)
+============================================================ */
+
+function getStartingPrice(service: Service): number {
+  if (
+    typeof service.startingPrice === "number" &&
+    Number.isFinite(service.startingPrice) &&
+    service.startingPrice >= 0
+  ) {
+    return service.startingPrice;
+  }
+
+  const cleaned = String(service.price ?? "")
+    .replace(/,/g, "")
+    .replace(/[^0-9.]/g, "");
+
+  const parsed = Number(cleaned);
+  return cleaned && Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+}
+
+/* ============================================================
    HOME
 ============================================================ */
 
-export default function Home() {
+export default function Home({ initialData }: { initialData?: HomeInitialData }) {
   const navigate =
     useNavigate();
 
@@ -132,7 +161,7 @@ export default function Home() {
     setServices,
   ] =
     useState<Service[]>(
-      []
+      () => initialData?.services ?? []
     );
 
   const [
@@ -140,7 +169,7 @@ export default function Home() {
     setBranches,
   ] =
     useState<Branch[]>(
-      []
+      () => initialData?.branches ?? []
     );
 
   const [
@@ -148,7 +177,7 @@ export default function Home() {
     setHomepageStats,
   ] =
     useState<HomepageStats>(
-      DEFAULT_HOMEPAGE_STATS
+      () => initialData?.homepageStats ?? DEFAULT_HOMEPAGE_STATS
     );
 
   /* ==========================================================
@@ -277,14 +306,13 @@ export default function Home() {
           await response.json();
 
         setServices(
-          Array.isArray(
-            data
-          )
-            ? data.slice(
-                0,
-                6
-              )
-            : []
+          (Array.isArray(data)
+            ? data
+            : Array.isArray(data?.services)
+              ? data.services
+              : Array.isArray(data?.data)
+                ? data.data
+                : []).slice(0, 6)
         );
       } catch (
         error
@@ -324,11 +352,13 @@ export default function Home() {
           await response.json();
 
         setBranches(
-          Array.isArray(
-            data
-          )
+          Array.isArray(data)
             ? data
-            : []
+            : Array.isArray(data?.branches)
+              ? data.branches
+              : Array.isArray(data?.data)
+                ? data.data
+                : []
         );
       } catch (
         error
@@ -413,17 +443,15 @@ export default function Home() {
      INITIAL FETCH
   ========================================================== */
 
-  useEffect(
-    () => {
-      fetchServices();
+  useEffect(() => {
+    // On the initial SSR hydration, data already exists in both renders.
+    // On client-side navigation (without initialData), fetch as before.
+    if (initialData) return;
 
-      fetchBranches();
-
-      fetchHomepageStats();
-    },
-
-    []
-  );
+    fetchServices();
+    fetchBranches();
+    fetchHomepageStats();
+  }, [initialData]);
 
   /* ==========================================================
      AUTO SLIDE
@@ -577,7 +605,7 @@ export default function Home() {
         type="website"
       />
 
-      <main className="overflow-x-hidden bg-[#FFF5F8] text-[#3A2A2F]">
+      <div className="overflow-x-hidden bg-[#FFF5F8] text-[#3A2A2F]">
 
         {/* ====================================================
             HERO
@@ -1021,8 +1049,10 @@ export default function Home() {
                         false}
                       title={service.title}
                       description={service.description}
-                      image={service.image ||
-                        ""} startingPrice={0}                    />
+                      image={service.image || ""}
+                      startingPrice={getStartingPrice(service)}
+                      maxPrice={service.maxPrice ?? null}
+                    />
                   </div>
                 )
               )}
@@ -1064,27 +1094,16 @@ export default function Home() {
                 index
               ) => (
                 <ServiceCard
-                  key={
-                    service._id ||
-                    index
-                  }
-                  serviceId={
-                    service._id
-                  }
-                  available={
-                    service.available !==
-                    false
-                  }
-                  title={
-                    service.title
-                  }
-                  description={
-                    service.description
-                  }
-                  image={
-                    service.image ||
-                    ""
-                  }
+                  key={service._id ||
+                    index}
+                  serviceId={service._id}
+                  available={service.available !==
+                    false}
+                  title={service.title}
+                  description={service.description}
+                  image={service.image || ""}
+                  startingPrice={getStartingPrice(service)}
+                  maxPrice={service.maxPrice ?? null}
                 />
               )
             )}
@@ -1623,7 +1642,7 @@ export default function Home() {
             </div>
           )}
         </section>
-      </main>
+      </div>
     </>
   );
 }

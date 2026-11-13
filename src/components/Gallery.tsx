@@ -3,6 +3,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ComponentType,
 } from "react";
 
 import {
@@ -39,7 +40,6 @@ type FlipDirection =
 ========================================================= */
 
 const AUTOPLAY_TIME = 3400;
-
 const FLIP_DURATION = 0.82;
 
 /* =========================================================
@@ -64,23 +64,19 @@ const GALLERY_SEO = {
 };
 
 /* =========================================================
-   PAGE
+   MAIN PAGE
 ========================================================= */
 
 export default function Gallery() {
   const [
     gallery,
     setGallery,
-  ] =
-    useState<
-      GalleryItem[]
-    >([]);
+  ] = useState<GalleryItem[]>([]);
 
   const [
     loading,
     setLoading,
-  ] =
-    useState(true);
+  ] = useState(true);
 
   useEffect(() => {
     const fetchGallery =
@@ -94,9 +90,7 @@ export default function Gallery() {
               }/api/gallery`
             );
 
-          if (
-            !response.ok
-          ) {
+          if (!response.ok) {
             throw new Error(
               `Gallery request failed: ${response.status}`
             );
@@ -107,9 +101,7 @@ export default function Gallery() {
 
           const items:
             GalleryItem[] =
-            Array.isArray(
-              data
-            )
+            Array.isArray(data)
               ? data
               : Array.isArray(
                     data?.data
@@ -121,48 +113,27 @@ export default function Gallery() {
                   ? data.gallery
                   : [];
 
-          setGallery(
-            items
-          );
-        } catch (
-          error
-        ) {
+          setGallery(items);
+        } catch (error) {
           console.error(
             "Failed to fetch gallery:",
             error
           );
         } finally {
-          setLoading(
-            false
-          );
+          setLoading(false);
         }
       };
 
     fetchGallery();
   }, []);
 
-  if (
-    loading
-  ) {
+  if (loading) {
     return (
       <>
         <GallerySEO />
 
-        <main
-          className="
-            min-h-screen
-            bg-[#FFF5F8]
-            pt-16
-          "
-        >
-          <div
-            className="
-              flex
-              min-h-[480px]
-              items-center
-              justify-center
-            "
-          >
+        <main className="min-h-screen bg-[#FFF5F8] pt-16">
+          <div className="flex min-h-[460px] items-center justify-center">
             <div
               className="
                 h-9
@@ -180,38 +151,16 @@ export default function Gallery() {
     );
   }
 
-  if (
-    !gallery.length
-  ) {
+  if (!gallery.length) {
     return (
       <>
         <GallerySEO />
 
-        <main
-          className="
-            min-h-screen
-            bg-[#FFF5F8]
-            pt-16
-          "
-        >
+        <main className="min-h-screen bg-[#FFF5F8] pt-16">
           <GalleryHeader />
 
-          <div
-            className="
-              flex
-              min-h-[280px]
-              items-center
-              justify-center
-            "
-          >
-            <p
-              className="
-                font-serif
-                text-xl
-                italic
-                text-[#8A6F78]
-              "
-            >
+          <div className="flex min-h-[280px] items-center justify-center">
+            <p className="font-serif text-xl italic text-[#8A6F78]">
               Gallery coming soon.
             </p>
           </div>
@@ -235,9 +184,7 @@ export default function Gallery() {
         <GalleryHeader />
 
         <PremiumGallery
-          items={
-            gallery
-          }
+          items={gallery}
         />
       </main>
     </>
@@ -251,9 +198,7 @@ export default function Gallery() {
 function GallerySEO() {
   return (
     <SEO
-      title={
-        GALLERY_SEO.title
-      }
+      title={GALLERY_SEO.title}
       description={
         GALLERY_SEO.description
       }
@@ -263,9 +208,7 @@ function GallerySEO() {
       canonical={
         GALLERY_SEO.canonical
       }
-      image={
-        GALLERY_SEO.image
-      }
+      image={GALLERY_SEO.image}
       type="website"
     />
   );
@@ -301,8 +244,8 @@ function GalleryHeader() {
           className="
             hidden
             h-px
-            w-9
-            bg-[#E75480]/30
+            w-10
+            bg-[#E75480]/25
 
             sm:block
           "
@@ -326,8 +269,8 @@ function GalleryHeader() {
           className="
             hidden
             h-px
-            w-9
-            bg-[#E75480]/30
+            w-10
+            bg-[#E75480]/25
 
             sm:block
           "
@@ -349,12 +292,7 @@ function GalleryHeader() {
       >
         Beauty{" "}
 
-        <span
-          className="
-            italic
-            text-[#E75480]
-          "
-        >
+        <span className="italic text-[#E75480]">
           Journal
         </span>
       </h1>
@@ -371,9 +309,8 @@ function GalleryHeader() {
           sm:text-[12px]
         "
       >
-        A collection of
-        transformations, artistry
-        and memorable Nirjara
+        A collection of transformations,
+        artistry and memorable Nirjara
         moments.
       </p>
     </section>
@@ -381,14 +318,13 @@ function GalleryHeader() {
 }
 
 /* =========================================================
-   GALLERY
+   PREMIUM GALLERY
 ========================================================= */
 
 function PremiumGallery({
   items,
 }: {
-  items:
-    GalleryItem[];
+  items: GalleryItem[];
 }) {
   const reduceMotion =
     useReducedMotion();
@@ -396,17 +332,10 @@ function PremiumGallery({
   const galleryItems =
     useMemo(
       () =>
-        items.filter(
-          (
-            item
-          ) =>
-            Boolean(
-              item.image
-            )
+        items.filter((item) =>
+          Boolean(item.image)
         ),
-      [
-        items,
-      ]
+      [items]
     );
 
   const total =
@@ -415,16 +344,13 @@ function PremiumGallery({
   const [
     activeIndex,
     setActiveIndex,
-  ] =
-    useState(0);
+  ] = useState(0);
 
   const [
     mobileDirection,
     setMobileDirection,
   ] =
-    useState<
-      1 | -1
-    >(1);
+    useState<1 | -1>(1);
 
   const [
     flipping,
@@ -437,8 +363,7 @@ function PremiumGallery({
   const [
     paused,
     setPaused,
-  ] =
-    useState(false);
+  ] = useState(false);
 
   const busyRef =
     useRef(false);
@@ -447,27 +372,23 @@ function PremiumGallery({
      ITEM HELPERS
   ======================================================= */
 
-  const getItem =
-    (
-      index:
-        number
-    ) => {
-      const safeIndex =
-        (
-          index +
-          total
-        ) %
-        total;
+  const getItem = (
+    index: number
+  ) => {
+    const safeIndex =
+      (
+        index +
+        total
+      ) %
+      total;
 
-      return galleryItems[
-        safeIndex
-      ];
-    };
+    return galleryItems[
+      safeIndex
+    ];
+  };
 
   const current =
-    getItem(
-      activeIndex
-    );
+    getItem(activeIndex);
 
   const nextIndex =
     (
@@ -485,97 +406,76 @@ function PremiumGallery({
     total;
 
   const nextItem =
-    getItem(
-      nextIndex
-    );
+    getItem(nextIndex);
 
   const previousItem =
-    getItem(
-      previousIndex
-    );
+    getItem(previousIndex);
 
   const farPreviousItem =
-    getItem(
-      activeIndex -
-        2
-    );
+    getItem(activeIndex - 2);
 
   const farNextItem =
-    getItem(
-      activeIndex +
-        2
-    );
+    getItem(activeIndex + 2);
+
+  const thirdPreviousItem =
+    getItem(activeIndex - 3);
+
+  const thirdNextItem =
+    getItem(activeIndex + 3);
 
   /* =======================================================
-     MOBILE NAVIGATION
+     MOBILE
   ======================================================= */
 
   const mobileNext =
     () => {
-      if (
-        total <= 1
-      ) {
+      if (total <= 1) {
         return;
       }
 
-      setMobileDirection(
-        1
-      );
-
-      setActiveIndex(
-        nextIndex
-      );
+      setMobileDirection(1);
+      setActiveIndex(nextIndex);
     };
 
   const mobilePrevious =
     () => {
-      if (
-        total <= 1
-      ) {
+      if (total <= 1) {
         return;
       }
 
-      setMobileDirection(
-        -1
-      );
-
+      setMobileDirection(-1);
       setActiveIndex(
         previousIndex
       );
     };
 
   /* =======================================================
-     DESKTOP PAGE TURN
+     DESKTOP FLIP
   ======================================================= */
 
-  const startFlip =
-    (
-      direction:
-        Exclude<
-          FlipDirection,
-          null
-        >
-    ) => {
-      if (
-        total <= 1 ||
-        busyRef.current
-      ) {
-        return;
-      }
+  const startFlip = (
+    direction:
+      Exclude<
+        FlipDirection,
+        null
+      >
+  ) => {
+    if (
+      total <= 1 ||
+      busyRef.current
+    ) {
+      return;
+    }
 
-      busyRef.current =
-        true;
+    busyRef.current = true;
 
-      setFlipping(
-        direction
-      );
-    };
+    setFlipping(direction);
+  };
 
   const finishFlip =
     () => {
       if (
-        flipping ===
-        "next"
+        flipping === "next"
       ) {
         setActiveIndex(
           nextIndex
@@ -591,76 +491,64 @@ function PremiumGallery({
         );
       }
 
-      setFlipping(
-        null
-      );
+      setFlipping(null);
 
-      busyRef.current =
-        false;
+      busyRef.current = false;
     };
 
   /* =======================================================
      AUTOPLAY
   ======================================================= */
 
-  useEffect(
-    () => {
-      if (
-        total <= 1 ||
-        paused ||
-        flipping
-      ) {
-        return;
-      }
+  useEffect(() => {
+    if (
+      total <= 1 ||
+      paused ||
+      flipping
+    ) {
+      return;
+    }
 
-      const timer =
-        window.setTimeout(
-          () => {
-            if (
-              window.innerWidth <
-              640
-            ) {
-              setMobileDirection(
-                1
-              );
+    const timer =
+      window.setTimeout(
+        () => {
+          if (
+            window.innerWidth <
+            640
+          ) {
+            setMobileDirection(1);
 
-              setActiveIndex(
+            setActiveIndex(
+              (
+                currentIndex
+              ) =>
                 (
-                  currentIndex
-                ) =>
-                  (
-                    currentIndex +
-                    1
-                  ) %
-                  total
-              );
-
-              return;
-            }
-
-            startFlip(
-              "next"
+                  currentIndex +
+                  1
+                ) %
+                total
             );
-          },
-          AUTOPLAY_TIME
-        );
 
-      return () =>
-        window.clearTimeout(
-          timer
-        );
-    },
-    [
-      activeIndex,
-      flipping,
-      paused,
-      total,
-    ]
-  );
+            return;
+          }
 
-  if (
-    !galleryItems.length
-  ) {
+          startFlip("next");
+        },
+        AUTOPLAY_TIME
+      );
+
+    return () =>
+      window.clearTimeout(
+        timer
+      );
+  }, [
+    activeIndex,
+    flipping,
+    paused,
+    total,
+  ]);
+
+  if (!galleryItems.length) {
     return null;
   }
 
@@ -669,72 +557,83 @@ function PremiumGallery({
       className="
         mx-auto
         w-full
-        max-w-[1160px]
+        max-w-[1220px]
         px-3
-        pb-10
+        pb-8
         pt-3
 
         sm:px-5
-        lg:px-8
+
+        lg:px-7
       "
     >
+      {/* =================================================
+          PREMIUM FRAME
+      ================================================= */}
+
       <div
         className="
+          relative
           overflow-hidden
           rounded-[26px]
           border
-          border-[#E75480]/10
-          bg-white/65
-          px-2
+          border-[#E75480]/[0.08]
+          bg-white/[0.42]
+          px-1
           py-4
-          shadow-[0_16px_50px_rgba(58,42,47,0.055)]
 
-          sm:px-4
+          sm:px-3
           sm:py-5
+
+          md:px-5
         "
         onMouseEnter={() =>
-          setPaused(
-            true
-          )
+          setPaused(true)
         }
         onMouseLeave={() =>
-          setPaused(
-            false
-          )
+          setPaused(false)
         }
       >
+        {/* subtle top glow */}
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            left-1/2
+            top-0
+            h-[150px]
+            w-[60%]
+            -translate-x-1/2
+            rounded-full
+            bg-white/70
+            blur-[70px]
+          "
+        />
+
         {/* =================================================
             MOBILE
         ================================================= */}
 
-        <div
-          className="
-            sm:hidden
-          "
-        >
+        <div className="relative sm:hidden">
           <div
             className="
               relative
               flex
-              h-[310px]
+              h-[305px]
               items-center
               justify-center
             "
           >
-            {total >
-              2 && (
+            {total > 2 && (
               <>
                 <MobileSidePreview
-                  item={
-                    previousItem
-                  }
+                  item={previousItem}
                   side="left"
                 />
 
                 <MobileSidePreview
-                  item={
-                    nextItem
-                  }
+                  item={nextItem}
                   side="right"
                 />
               </>
@@ -742,14 +641,10 @@ function PremiumGallery({
 
             <AnimatePresence
               mode="wait"
-              initial={
-                false
-              }
+              initial={false}
             >
               <motion.div
-                key={
-                  current._id
-                }
+                key={current._id}
                 initial={
                   reduceMotion
                     ? false
@@ -757,25 +652,18 @@ function PremiumGallery({
                         x:
                           mobileDirection >
                           0
-                            ? 45
-                            : -45,
+                            ? 42
+                            : -42,
 
-                        opacity:
-                          0,
+                        opacity: 0,
 
-                        scale:
-                          0.97,
+                        scale: 0.97,
                       }
                 }
                 animate={{
-                  x:
-                    0,
-
-                  opacity:
-                    1,
-
-                  scale:
-                    1,
+                  x: 0,
+                  opacity: 1,
+                  scale: 1,
                 }}
                 exit={
                   reduceMotion
@@ -784,21 +672,19 @@ function PremiumGallery({
                         x:
                           mobileDirection >
                           0
-                            ? -45
-                            : 45,
+                            ? -42
+                            : 42,
 
-                        opacity:
-                          0,
+                        opacity: 0,
 
-                        scale:
-                          0.97,
+                        scale: 0.97,
                       }
                 }
                 transition={{
                   duration:
                     reduceMotion
                       ? 0
-                      : 0.32,
+                      : 0.3,
 
                   ease: [
                     0.22,
@@ -808,33 +694,23 @@ function PremiumGallery({
                   ],
                 }}
                 drag={
-                  total >
-                  1
+                  total > 1
                     ? "x"
                     : false
                 }
                 dragConstraints={{
-                  left:
-                    0,
-
-                  right:
-                    0,
+                  left: 0,
+                  right: 0,
                 }}
-                dragElastic={
-                  0.08
-                }
+                dragElastic={0.08}
                 onDragStart={() =>
-                  setPaused(
-                    true
-                  )
+                  setPaused(true)
                 }
                 onDragEnd={(
                   _,
                   info
                 ) => {
-                  setPaused(
-                    false
-                  );
+                  setPaused(false);
 
                   if (
                     info.offset.x <
@@ -843,7 +719,6 @@ function PremiumGallery({
                       -350
                   ) {
                     mobileNext();
-
                     return;
                   }
 
@@ -859,30 +734,26 @@ function PremiumGallery({
                 className="
                   relative
                   z-20
-                  h-[265px]
-                  w-[210px]
+                  h-[260px]
+                  w-[205px]
                   cursor-grab
                   overflow-hidden
-                  rounded-[20px]
+                  rounded-[19px]
                   border
-                  border-[#E8DADC]
+                  border-[#E9DCDD]
                   bg-white
-                  shadow-[0_20px_44px_rgba(58,42,47,0.15)]
+                  shadow-[0_20px_45px_rgba(58,42,47,0.16)]
 
                   active:cursor-grabbing
                 "
               >
                 <img
-                  src={
-                    current.image
-                  }
+                  src={current.image}
                   alt={
                     current.title ||
                     "Nirjara Beauty"
                   }
-                  draggable={
-                    false
-                  }
+                  draggable={false}
                   className="
                     h-full
                     w-full
@@ -891,32 +762,23 @@ function PremiumGallery({
                 />
 
                 <JournalCaption
-                  item={
-                    current
-                  }
+                  item={current}
                 />
               </motion.div>
             </AnimatePresence>
           </div>
 
-          {total >
-            1 && (
+          {total > 1 && (
             <GalleryControls
-              total={
-                total
-              }
+              total={total}
               activeIndex={
                 activeIndex
               }
               previous={
                 mobilePrevious
               }
-              next={
-                mobileNext
-              }
-              onDot={(
-                index
-              ) => {
+              next={mobileNext}
+              onDot={(index) => {
                 const forward =
                   (
                     index -
@@ -927,8 +789,7 @@ function PremiumGallery({
 
                 setMobileDirection(
                   forward <=
-                    total /
-                      2
+                    total / 2
                     ? 1
                     : -1
                 );
@@ -942,12 +803,14 @@ function PremiumGallery({
         </div>
 
         {/* =================================================
-            TABLET + DESKTOP
+            TABLET / DESKTOP
         ================================================= */}
 
         <div
           className="
+            relative
             hidden
+
             sm:block
           "
         >
@@ -955,23 +818,31 @@ function PremiumGallery({
             className="
               relative
               flex
-              h-[380px]
+              h-[375px]
               items-center
               justify-center
 
-              [perspective:2300px]
+              [perspective:2400px]
 
-              md:h-[415px]
+              md:h-[405px]
 
-              lg:h-[430px]
+              lg:h-[420px]
             "
           >
             {/* =================================================
-                SIDE PREVIEWS
+                STACKED SIDE CARDS
             ================================================= */}
 
-            {total >
-              4 && (
+            {total >= 7 && (
+              <DesktopSidePreview
+                item={
+                  thirdPreviousItem
+                }
+                position="outer-left"
+              />
+            )}
+
+            {total >= 5 && (
               <DesktopSidePreview
                 item={
                   farPreviousItem
@@ -980,8 +851,7 @@ function PremiumGallery({
               />
             )}
 
-            {total >
-              2 && (
+            {total > 2 && (
               <DesktopSidePreview
                 item={
                   previousItem
@@ -990,23 +860,26 @@ function PremiumGallery({
               />
             )}
 
-            {total >
-              2 && (
+            {total > 2 && (
               <DesktopSidePreview
-                item={
-                  nextItem
-                }
+                item={nextItem}
                 position="right"
               />
             )}
 
-            {total >
-              4 && (
+            {total >= 5 && (
+              <DesktopSidePreview
+                item={farNextItem}
+                position="far-right"
+              />
+            )}
+
+            {total >= 7 && (
               <DesktopSidePreview
                 item={
-                  farNextItem
+                  thirdNextItem
                 }
-                position="far-right"
+                position="outer-right"
               />
             )}
 
@@ -1018,7 +891,7 @@ function PremiumGallery({
               animate={{
                 opacity:
                   flipping
-                    ? 0.16
+                    ? 0.17
                     : 0.11,
 
                 scaleX:
@@ -1027,25 +900,24 @@ function PremiumGallery({
                     : 1,
               }}
               transition={{
-                duration:
-                  0.35,
+                duration: 0.3,
               }}
               className="
                 pointer-events-none
                 absolute
                 bottom-[14px]
                 left-1/2
-                h-[46px]
-                w-[52%]
+                h-[44px]
+                w-[49%]
                 -translate-x-1/2
                 rounded-full
-                bg-[#392A30]
-                blur-[25px]
+                bg-[#3A2A2F]
+                blur-[24px]
               "
             />
 
             {/* =================================================
-                JOURNAL
+                MAIN JOURNAL
             ================================================= */}
 
             <div
@@ -1053,35 +925,35 @@ function PremiumGallery({
                 relative
                 z-30
 
-                h-[295px]
+                h-[285px]
                 w-[470px]
 
-                [perspective:2100px]
+                [perspective:2200px]
                 [transform-style:preserve-3d]
 
-                md:h-[325px]
-                md:w-[560px]
+                md:h-[315px]
+                md:w-[555px]
 
-                lg:h-[345px]
+                lg:h-[335px]
                 lg:w-[610px]
               "
             >
-              {/* =============================================
-                  CLEAN PAPER THICKNESS
-
-                  Only visible around bottom/right.
-              ============================================= */}
+              {/* =================================================
+                  PAPER THICKNESS
+              ================================================= */}
 
               <div
                 className="
                   pointer-events-none
                   absolute
-                  inset-x-[8px]
-                  bottom-[-7px]
-                  top-[7px]
-                  rounded-[21px]
-                  bg-[#E5D7D4]
-                  shadow-[0_8px_14px_rgba(58,42,47,0.13)]
+                  inset-x-[10px]
+                  bottom-[-8px]
+                  top-[8px]
+                  rounded-[20px]
+                  border
+                  border-[#D9CACA]
+                  bg-[#E8DDDA]
+                  shadow-[0_12px_24px_rgba(58,42,47,0.11)]
                 "
               />
 
@@ -1089,21 +961,32 @@ function PremiumGallery({
                 className="
                   pointer-events-none
                   absolute
-                  inset-x-[4px]
+                  inset-x-[6px]
+                  bottom-[-5px]
+                  top-[5px]
+                  rounded-[20px]
+                  bg-[#F3EBE7]
+                "
+              />
+
+              <div
+                className="
+                  pointer-events-none
+                  absolute
                   bottom-[-4px]
-                  top-[4px]
-                  rounded-[21px]
-                  bg-[#F2E9E5]
+                  left-[15px]
+                  right-[15px]
+                  h-[6px]
+                  rounded-b-[12px]
+                  bg-gradient-to-b
+                  from-[#F9F3EE]
+                  to-[#D9CBC8]
                 "
               />
 
-              {/* =============================================
-                  TARGET FULL IMAGE UNDERNEATH
-
-                  This is important:
-                  when turning, next/previous
-                  photo is already underneath.
-              ============================================= */}
+              {/* =================================================
+                  TARGET UNDERNEATH
+              ================================================= */}
 
               {flipping && (
                 <div
@@ -1112,11 +995,11 @@ function PremiumGallery({
                     inset-0
                     z-10
                     overflow-hidden
-                    rounded-[21px]
+                    rounded-[20px]
                     border
-                    border-[#E4D5D6]
+                    border-[#E3D4D5]
                     bg-white
-                    shadow-[0_24px_58px_rgba(58,42,47,0.17)]
+                    shadow-[0_26px_60px_rgba(58,42,47,0.18)]
                   "
                 >
                   <img
@@ -1127,9 +1010,7 @@ function PremiumGallery({
                         : previousItem.image
                     }
                     alt=""
-                    draggable={
-                      false
-                    }
+                    draggable={false}
                     className="
                       h-full
                       w-full
@@ -1148,13 +1029,12 @@ function PremiumGallery({
                 </div>
               )}
 
-              {/* =============================================
-                  NORMAL RESTING STATE
+              {/* =================================================
+                  NORMAL RESTING IMAGE
 
-                  IMPORTANT:
-                  one full uninterrupted photo.
-                  NO visible center split.
-              ============================================= */}
+                  SINGLE PHOTO
+                  NO SEAM
+              ================================================= */}
 
               {!flipping && (
                 <div
@@ -1163,24 +1043,20 @@ function PremiumGallery({
                     inset-0
                     z-20
                     overflow-hidden
-                    rounded-[21px]
+                    rounded-[20px]
                     border
-                    border-[#E4D5D6]
+                    border-[#E3D4D5]
                     bg-white
-                    shadow-[0_24px_58px_rgba(58,42,47,0.18)]
+                    shadow-[0_28px_62px_rgba(58,42,47,0.18)]
                   "
                 >
                   <img
-                    src={
-                      current.image
-                    }
+                    src={current.image}
                     alt={
                       current.title ||
                       "Nirjara Beauty"
                     }
-                    draggable={
-                      false
-                    }
+                    draggable={false}
                     className="
                       h-full
                       w-full
@@ -1189,9 +1065,7 @@ function PremiumGallery({
                   />
 
                   <FullPhotoCaption
-                    item={
-                      current
-                    }
+                    item={current}
                   />
 
                   <div
@@ -1199,23 +1073,24 @@ function PremiumGallery({
                       pointer-events-none
                       absolute
                       inset-0
+                      rounded-[20px]
                       ring-1
                       ring-inset
-                      ring-white/25
+                      ring-white/30
                     "
                   />
                 </div>
               )}
 
-              {/* =============================================
-                  NEXT PAGE TURN
+              {/* =================================================
+                  NEXT FLIP
                   RIGHT -> LEFT
-              ============================================= */}
+              ================================================= */}
 
               {flipping ===
                 "next" && (
                 <>
-                  {/* KEEP CURRENT LEFT HALF */}
+                  {/* CURRENT LEFT */}
 
                   <div
                     className="
@@ -1226,7 +1101,7 @@ function PremiumGallery({
                       z-30
                       w-1/2
                       overflow-hidden
-                      rounded-l-[21px]
+                      rounded-l-[20px]
                     "
                   >
                     <SplitPhotoHalf
@@ -1237,12 +1112,11 @@ function PremiumGallery({
                     />
                   </div>
 
-                  {/* FOLDING RIGHT HALF */}
+                  {/* TURNING RIGHT */}
 
                   <motion.div
                     initial={{
-                      rotateY:
-                        0,
+                      rotateY: 0,
                     }}
                     animate={{
                       rotateY:
@@ -1275,26 +1149,21 @@ function PremiumGallery({
 
                       [transform-style:preserve-3d]
                     "
-                    style={{
-                      transformStyle:
-                        "preserve-3d",
-                    }}
                   >
-                    {/* FRONT:
-                        CURRENT RIGHT HALF */}
+                    {/* FRONT */}
 
                     <div
                       className="
                         absolute
                         inset-0
                         overflow-hidden
-                        rounded-r-[21px]
+                        rounded-r-[20px]
 
                         [backface-visibility:hidden]
                       "
                       style={{
                         boxShadow:
-                          "-10px 10px 26px rgba(58,42,47,0.16)",
+                          "-14px 8px 28px rgba(58,42,47,0.16)",
                       }}
                     >
                       <SplitPhotoHalf
@@ -1308,10 +1177,10 @@ function PremiumGallery({
                         animate={{
                           opacity: [
                             0,
-                            0.1,
-                            0.38,
-                            0.5,
-                            0.18,
+                            0.08,
+                            0.34,
+                            0.46,
+                            0.12,
                             0,
                           ],
                         }}
@@ -1325,12 +1194,10 @@ function PremiumGallery({
                           inset-0
                           bg-gradient-to-l
                           from-transparent
-                          via-black/[0.05]
+                          via-black/[0.04]
                           to-black/55
                         "
                       />
-
-                      {/* thin page edge */}
 
                       <div
                         className="
@@ -1339,28 +1206,27 @@ function PremiumGallery({
                           bottom-0
                           right-0
                           top-0
-                          w-[3px]
-                          bg-[#E9DDD8]
+                          w-[2px]
+                          bg-[#EEE2DD]
                         "
                       />
                     </div>
 
-                    {/* BACK:
-                        NEXT LEFT HALF */}
+                    {/* BACK */}
 
                     <div
                       className="
                         absolute
                         inset-0
                         overflow-hidden
-                        rounded-l-[21px]
+                        rounded-l-[20px]
 
                         [backface-visibility:hidden]
                         [transform:rotateY(180deg)]
                       "
                       style={{
                         boxShadow:
-                          "10px 10px 26px rgba(58,42,47,0.16)",
+                          "12px 8px 28px rgba(58,42,47,0.15)",
                       }}
                     >
                       <SplitPhotoHalf
@@ -1373,13 +1239,13 @@ function PremiumGallery({
                       <motion.div
                         initial={{
                           opacity:
-                            0.38,
+                            0.3,
                         }}
                         animate={{
                           opacity: [
-                            0.38,
-                            0.24,
-                            0.08,
+                            0.3,
+                            0.17,
+                            0.04,
                             0,
                           ],
                         }}
@@ -1392,7 +1258,7 @@ function PremiumGallery({
                           absolute
                           inset-0
                           bg-gradient-to-r
-                          from-black/25
+                          from-black/20
                           to-transparent
                         "
                       />
@@ -1401,15 +1267,15 @@ function PremiumGallery({
                 </>
               )}
 
-              {/* =============================================
-                  PREVIOUS PAGE TURN
+              {/* =================================================
+                  PREVIOUS FLIP
                   LEFT -> RIGHT
-              ============================================= */}
+              ================================================= */}
 
               {flipping ===
                 "previous" && (
                 <>
-                  {/* KEEP CURRENT RIGHT HALF */}
+                  {/* CURRENT RIGHT */}
 
                   <div
                     className="
@@ -1420,7 +1286,7 @@ function PremiumGallery({
                       z-30
                       w-1/2
                       overflow-hidden
-                      rounded-r-[21px]
+                      rounded-r-[20px]
                     "
                   >
                     <SplitPhotoHalf
@@ -1431,12 +1297,11 @@ function PremiumGallery({
                     />
                   </div>
 
-                  {/* FOLDING LEFT HALF */}
+                  {/* TURNING LEFT */}
 
                   <motion.div
                     initial={{
-                      rotateY:
-                        0,
+                      rotateY: 0,
                     }}
                     animate={{
                       rotateY:
@@ -1469,26 +1334,21 @@ function PremiumGallery({
 
                       [transform-style:preserve-3d]
                     "
-                    style={{
-                      transformStyle:
-                        "preserve-3d",
-                    }}
                   >
-                    {/* FRONT:
-                        CURRENT LEFT */}
+                    {/* FRONT */}
 
                     <div
                       className="
                         absolute
                         inset-0
                         overflow-hidden
-                        rounded-l-[21px]
+                        rounded-l-[20px]
 
                         [backface-visibility:hidden]
                       "
                       style={{
                         boxShadow:
-                          "10px 10px 26px rgba(58,42,47,0.16)",
+                          "14px 8px 28px rgba(58,42,47,0.16)",
                       }}
                     >
                       <SplitPhotoHalf
@@ -1502,10 +1362,10 @@ function PremiumGallery({
                         animate={{
                           opacity: [
                             0,
-                            0.1,
-                            0.38,
-                            0.5,
-                            0.18,
+                            0.08,
+                            0.34,
+                            0.46,
+                            0.12,
                             0,
                           ],
                         }}
@@ -1519,7 +1379,7 @@ function PremiumGallery({
                           inset-0
                           bg-gradient-to-r
                           from-transparent
-                          via-black/[0.05]
+                          via-black/[0.04]
                           to-black/55
                         "
                       />
@@ -1531,28 +1391,27 @@ function PremiumGallery({
                           bottom-0
                           left-0
                           top-0
-                          w-[3px]
-                          bg-[#E9DDD8]
+                          w-[2px]
+                          bg-[#EEE2DD]
                         "
                       />
                     </div>
 
-                    {/* BACK:
-                        PREVIOUS RIGHT */}
+                    {/* BACK */}
 
                     <div
                       className="
                         absolute
                         inset-0
                         overflow-hidden
-                        rounded-r-[21px]
+                        rounded-r-[20px]
 
                         [backface-visibility:hidden]
                         [transform:rotateY(180deg)]
                       "
                       style={{
                         boxShadow:
-                          "-10px 10px 26px rgba(58,42,47,0.16)",
+                          "-12px 8px 28px rgba(58,42,47,0.15)",
                       }}
                     >
                       <SplitPhotoHalf
@@ -1565,13 +1424,13 @@ function PremiumGallery({
                       <motion.div
                         initial={{
                           opacity:
-                            0.38,
+                            0.3,
                         }}
                         animate={{
                           opacity: [
-                            0.38,
-                            0.24,
-                            0.08,
+                            0.3,
+                            0.17,
+                            0.04,
                             0,
                           ],
                         }}
@@ -1584,7 +1443,7 @@ function PremiumGallery({
                           absolute
                           inset-0
                           bg-gradient-to-l
-                          from-black/25
+                          from-black/20
                           to-transparent
                         "
                       />
@@ -1593,27 +1452,22 @@ function PremiumGallery({
                 </>
               )}
 
-              {/* =============================================
-                  CENTER SPINE
-
-                  Only show while page
-                  is actually turning.
-              ============================================= */}
+              {/* =================================================
+                  TEMPORARY SPINE
+                  ONLY DURING FOLD
+              ================================================= */}
 
               <AnimatePresence>
                 {flipping && (
                   <motion.div
                     initial={{
-                      opacity:
-                        0,
+                      opacity: 0,
                     }}
                     animate={{
-                      opacity:
-                        1,
+                      opacity: 1,
                     }}
                     exit={{
-                      opacity:
-                        0,
+                      opacity: 0,
                     }}
                     className="
                       pointer-events-none
@@ -1622,13 +1476,12 @@ function PremiumGallery({
                       left-1/2
                       top-0
                       z-[60]
-                      w-[14px]
+                      w-[12px]
                       -translate-x-1/2
-
                       bg-gradient-to-r
-                      from-black/[0.08]
-                      via-white/[0.08]
-                      to-black/[0.08]
+                      from-black/[0.07]
+                      via-white/[0.06]
+                      to-black/[0.07]
                     "
                   />
                 )}
@@ -1637,15 +1490,12 @@ function PremiumGallery({
           </div>
 
           {/* =================================================
-              DESKTOP CONTROLS
+              CONTROLS
           ================================================= */}
 
-          {total >
-            1 && (
+          {total > 1 && (
             <GalleryControls
-              total={
-                total
-              }
+              total={total}
               activeIndex={
                 activeIndex
               }
@@ -1664,9 +1514,7 @@ function PremiumGallery({
                   "next"
                 )
               }
-              onDot={(
-                index
-              ) => {
+              onDot={(index) => {
                 if (
                   index ===
                     activeIndex ||
@@ -1705,23 +1553,27 @@ function PremiumGallery({
             text-[7px]
             font-semibold
             uppercase
-            tracking-[2px]
-            text-[#B89BA5]
+            tracking-[2.2px]
+            text-[#B99DA6]
           "
         >
           {String(
-            activeIndex +
-              1
+            activeIndex + 1
           ).padStart(
             2,
             "0"
           )}
 
-          {" / "}
+          <span
+            className="
+              mx-1
+              text-[#E75480]/35
+            "
+          >
+            /
+          </span>
 
-          {String(
-            total
-          ).padStart(
+          {String(total).padStart(
             2,
             "0"
           )}
@@ -1733,19 +1585,13 @@ function PremiumGallery({
 
 /* =========================================================
    SPLIT PHOTO
-
-   Used ONLY while folding.
-
-   At rest we use a single normal <img>,
-   so there is no visible center seam.
 ========================================================= */
 
 function SplitPhotoHalf({
   image,
   side,
 }: {
-  image:
-    string;
+  image: string;
 
   side:
     | "left"
@@ -1760,13 +1606,9 @@ function SplitPhotoHalf({
       "
     >
       <img
-        src={
-          image
-        }
+        src={image}
         alt=""
-        draggable={
-          false
-        }
+        draggable={false}
         className="
           absolute
           top-0
@@ -1777,13 +1619,12 @@ function SplitPhotoHalf({
           object-center
         "
         style={{
-          width:
-            "200%",
+          width: "200%",
 
           left:
             side ===
             "left"
-              ? "0"
+              ? "0%"
               : "-100%",
         }}
       />
@@ -1799,66 +1640,63 @@ function DesktopSidePreview({
   item,
   position,
 }: {
-  item:
-    GalleryItem;
+  item: GalleryItem;
 
   position:
+    | "outer-left"
     | "far-left"
     | "left"
     | "right"
-    | "far-right";
+    | "far-right"
+    | "outer-right";
 }) {
-  const config = {
+  const settings = {
+    "outer-left": {
+      x: -405,
+      rotate: -4.5,
+      scale: 0.67,
+      opacity: 0.19,
+      zIndex: 1,
+    },
+
     "far-left": {
-      x:
-        -330,
-      rotate:
-        -4,
-      scale:
-        0.73,
-      opacity:
-        0.17,
-      zIndex:
-        3,
+      x: -345,
+      rotate: -3.5,
+      scale: 0.73,
+      opacity: 0.31,
+      zIndex: 3,
     },
 
     left: {
-      x:
-        -255,
-      rotate:
-        -2,
-      scale:
-        0.82,
-      opacity:
-        0.37,
-      zIndex:
-        6,
+      x: -278,
+      rotate: -1.8,
+      scale: 0.82,
+      opacity: 0.56,
+      zIndex: 6,
     },
 
     right: {
-      x:
-        255,
-      rotate:
-        2,
-      scale:
-        0.82,
-      opacity:
-        0.37,
-      zIndex:
-        6,
+      x: 278,
+      rotate: 1.8,
+      scale: 0.82,
+      opacity: 0.56,
+      zIndex: 6,
     },
 
     "far-right": {
-      x:
-        330,
-      rotate:
-        4,
-      scale:
-        0.73,
-      opacity:
-        0.17,
-      zIndex:
-        3,
+      x: 345,
+      rotate: 3.5,
+      scale: 0.73,
+      opacity: 0.31,
+      zIndex: 3,
+    },
+
+    "outer-right": {
+      x: 405,
+      rotate: 4.5,
+      scale: 0.67,
+      opacity: 0.19,
+      zIndex: 1,
     },
   }[
     position
@@ -1867,21 +1705,16 @@ function DesktopSidePreview({
   return (
     <motion.div
       animate={{
-        x:
-          config.x,
-
+        x: settings.x,
         rotate:
-          config.rotate,
-
+          settings.rotate,
         scale:
-          config.scale,
-
+          settings.scale,
         opacity:
-          config.opacity,
+          settings.opacity,
       }}
       transition={{
-        duration:
-          0.42,
+        duration: 0.4,
 
         ease: [
           0.22,
@@ -1895,37 +1728,51 @@ function DesktopSidePreview({
         absolute
         left-1/2
         top-1/2
-        h-[265px]
-        w-[180px]
+
+        h-[255px]
+        w-[176px]
+
         -translate-x-1/2
         -translate-y-1/2
-        overflow-hidden
-        rounded-[17px]
-        border
-        border-[#E6D9DA]
-        bg-white
-        shadow-[0_14px_32px_rgba(58,42,47,0.10)]
 
-        md:h-[285px]
-        md:w-[195px]
+        overflow-hidden
+
+        rounded-[17px]
+
+        border
+        border-[#E6D8D9]
+
+        bg-[#FFFDF9]
+
+        shadow-[0_13px_28px_rgba(58,42,47,0.11)]
+
+        md:h-[278px]
+        md:w-[192px]
       "
       style={{
         zIndex:
-          config.zIndex,
+          settings.zIndex,
       }}
     >
       <img
-        src={
-          item.image
-        }
+        src={item.image}
         alt=""
-        draggable={
-          false
-        }
+        draggable={false}
         className="
           h-full
           w-full
           object-cover
+        "
+      />
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          inset-0
+          ring-1
+          ring-inset
+          ring-white/25
         "
       />
     </motion.div>
@@ -1940,8 +1787,7 @@ function MobileSidePreview({
   item,
   side,
 }: {
-  item:
-    GalleryItem;
+  item: GalleryItem;
 
   side:
     | "left"
@@ -1954,35 +1800,43 @@ function MobileSidePreview({
         absolute
         left-1/2
         top-1/2
-        h-[220px]
-        w-[145px]
+
+        h-[215px]
+        w-[142px]
+
         -translate-y-1/2
+
         overflow-hidden
+
         rounded-[17px]
+
         border
-        border-[#E75480]/10
+        border-[#E7D9DA]
+
         bg-white
-        opacity-25
+
+        opacity-28
+
+        shadow-[0_10px_25px_rgba(58,42,47,0.08)]
 
         ${
           side ===
           "left"
             ? `
-                -translate-x-[82%]
+                -translate-x-[83%]
                 -rotate-[4deg]
               `
             : `
-                -translate-x-[18%]
+                -translate-x-[17%]
                 rotate-[4deg]
               `
         }
       `}
     >
       <img
-        src={
-          item.image
-        }
+        src={item.image}
         alt=""
+        draggable={false}
         className="
           h-full
           w-full
@@ -2000,8 +1854,7 @@ function MobileSidePreview({
 function FullPhotoCaption({
   item,
 }: {
-  item:
-    GalleryItem;
+  item: GalleryItem;
 }) {
   return (
     <div
@@ -2010,10 +1863,12 @@ function FullPhotoCaption({
         absolute
         inset-x-0
         bottom-0
+
         bg-gradient-to-t
-        from-[#281B20]/80
-        via-[#281B20]/18
+        from-[#2A1C21]/75
+        via-[#2A1C21]/13
         to-transparent
+
         px-4
         pb-4
         pt-16
@@ -2063,8 +1918,7 @@ function FullPhotoCaption({
 function JournalCaption({
   item,
 }: {
-  item:
-    GalleryItem;
+  item: GalleryItem;
 }) {
   return (
     <div
@@ -2073,10 +1927,12 @@ function JournalCaption({
         absolute
         inset-x-0
         bottom-0
+
         bg-gradient-to-t
-        from-[#281B20]/82
-        via-[#281B20]/24
+        from-[#281B20]/80
+        via-[#281B20]/20
         to-transparent
+
         px-4
         pb-4
         pt-14
@@ -2093,25 +1949,6 @@ function JournalCaption({
         {item.title?.trim() ||
           "Nirjara Beauty"}
       </h2>
-
-      {item.category && (
-        <p
-          className="
-            mt-1
-            truncate
-            text-center
-            text-[6px]
-            font-semibold
-            uppercase
-            tracking-[2px]
-            text-white/75
-          "
-        >
-          {
-            item.category
-          }
-        </p>
-      )}
     </div>
   );
 }
@@ -2128,11 +1965,9 @@ function GalleryControls({
   onDot,
   disabled = false,
 }: {
-  total:
-    number;
+  total: number;
 
-  activeIndex:
-    number;
+  activeIndex: number;
 
   previous:
     () => void;
@@ -2142,12 +1977,10 @@ function GalleryControls({
 
   onDot:
     (
-      index:
-        number
+      index: number
     ) => void;
 
-  disabled?:
-    boolean;
+  disabled?: boolean;
 }) {
   return (
     <div
@@ -2161,12 +1994,8 @@ function GalleryControls({
     >
       <button
         type="button"
-        disabled={
-          disabled
-        }
-        onClick={
-          previous
-        }
+        disabled={disabled}
+        onClick={previous}
         aria-label="Previous image"
         className="
           flex
@@ -2174,15 +2003,23 @@ function GalleryControls({
           w-9
           items-center
           justify-center
+
           rounded-full
+
           border
           border-[#E75480]/15
-          bg-white
+
+          bg-white/95
+
           text-[#E75480]
-          shadow-[0_4px_12px_rgba(58,42,47,0.08)]
+
+          shadow-[0_4px_14px_rgba(58,42,47,0.08)]
+
           transition-all
+          duration-200
 
           hover:-translate-y-0.5
+          hover:border-[#E75480]/35
           hover:bg-[#E75480]
           hover:text-white
 
@@ -2191,9 +2028,7 @@ function GalleryControls({
         "
       >
         <ChevronLeft
-          size={
-            15
-          }
+          size={15}
         />
       </button>
 
@@ -2205,32 +2040,25 @@ function GalleryControls({
         "
       >
         {Array.from({
-          length:
-            total,
+          length: total,
         }).map(
           (
             _,
             index
           ) => (
             <button
-              key={
-                index
-              }
+              key={index}
               type="button"
-              disabled={
-                disabled
-              }
+              disabled={disabled}
               onClick={() =>
-                onDot(
-                  index
-                )
+                onDot(index)
               }
               aria-label={`Open image ${
-                index +
-                1
+                index + 1
               }`}
               className={`
                 rounded-full
+
                 transition-all
                 duration-200
 
@@ -2239,7 +2067,7 @@ function GalleryControls({
                   activeIndex
                     ? `
                         h-[5px]
-                        w-5
+                        w-[22px]
                         bg-[#E75480]
                       `
                     : `
@@ -2247,7 +2075,7 @@ function GalleryControls({
                         w-[5px]
                         bg-[#E75480]/20
 
-                        hover:bg-[#E75480]/50
+                        hover:bg-[#E75480]/45
                       `
                 }
               `}
@@ -2258,12 +2086,8 @@ function GalleryControls({
 
       <button
         type="button"
-        disabled={
-          disabled
-        }
-        onClick={
-          next
-        }
+        disabled={disabled}
+        onClick={next}
         aria-label="Next image"
         className="
           flex
@@ -2271,15 +2095,23 @@ function GalleryControls({
           w-9
           items-center
           justify-center
+
           rounded-full
+
           border
           border-[#E75480]/15
-          bg-white
+
+          bg-white/95
+
           text-[#E75480]
-          shadow-[0_4px_12px_rgba(58,42,47,0.08)]
+
+          shadow-[0_4px_14px_rgba(58,42,47,0.08)]
+
           transition-all
+          duration-200
 
           hover:-translate-y-0.5
+          hover:border-[#E75480]/35
           hover:bg-[#E75480]
           hover:text-white
 
@@ -2288,9 +2120,7 @@ function GalleryControls({
         "
       >
         <ChevronRight
-          size={
-            15
-          }
+          size={15}
         />
       </button>
     </div>

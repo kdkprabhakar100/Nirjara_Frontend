@@ -9,7 +9,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 
 import BranchCard from "../../components/BranchCard";
 import SEO from "../../components/SEO";
@@ -18,7 +18,7 @@ import SEO from "../../components/SEO";
    TYPES
 ============================================================ */
 
-type Branch = {
+export type Branch = {
   _id: string;
   name: string;
   label?: string;
@@ -27,6 +27,14 @@ type Branch = {
   phone?: string;
   mapUrl?: string;
   active?: boolean;
+};
+
+export type BranchesInitialData = {
+  branches: Branch[];
+};
+
+type BranchesProps = {
+  initialData?: BranchesInitialData;
 };
 
 /* ============================================================
@@ -54,17 +62,19 @@ const BRANCHES_SEO = {
    PAGE
 ============================================================ */
 
-export default function Branches() {
+export default function Branches({
+  initialData,
+}: BranchesProps) {
   const navigate = useNavigate();
 
   const sliderRef =
     useRef<HTMLDivElement | null>(null);
 
   const [branches, setBranches] =
-    useState<Branch[]>([]);
+    useState<Branch[]>(() => initialData?.branches ?? []);
 
   const [loading, setLoading] =
-    useState(true);
+    useState(() => initialData === undefined);
 
   const [error, setError] =
     useState("");
@@ -82,53 +92,58 @@ export default function Branches() {
      FETCH BRANCHES
   ============================================================ */
 
-  const fetchBranches = async () => {
+  const fetchBranches = async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       setError("");
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/branches`
+        `${import.meta.env.VITE_API_URL || ""}/api/branches`,
+        { signal }
       );
 
       if (!response.ok) {
-        throw new Error(
-          "Failed to load branches."
-        );
+        throw new Error("Failed to load branches.");
       }
 
-      const data =
-        await response.json();
+      const data: unknown = await response.json();
 
-      const branchList =
-        Array.isArray(data)
-          ? data
-          : data?.branches || [];
+      const branchList = Array.isArray(data)
+        ? data
+        : data && typeof data === "object" &&
+            "branches" in data &&
+            Array.isArray(data.branches)
+          ? data.branches
+          : [];
 
-      setBranches(branchList);
+      if (signal?.aborted) return;
+      setBranches(branchList as Branch[]);
     } catch (error) {
-      console.error(
-        "BRANCH FETCH ERROR:",
-        error
-      );
+      if (signal?.aborted) return;
 
-      setError(
-        "We couldn't load our branch information right now."
-      );
-
+      console.error("BRANCH FETCH ERROR:", error);
+      setError("We couldn't load our branch information right now.");
       setBranches([]);
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   };
 
   /* ============================================================
      INITIAL FETCH
+
+     SSR data is used immediately when provided.
+     Client-side navigation fetches from the API.
   ============================================================ */
 
   useEffect(() => {
-    fetchBranches();
-  }, []);
+    if (initialData !== undefined) return;
+
+    const controller = new AbortController();
+    void fetchBranches(controller.signal);
+
+    return () => controller.abort();
+  }, [initialData]);
 
   /* ============================================================
      RESPONSIVE CARD COUNT
@@ -393,7 +408,7 @@ export default function Branches() {
         type="website"
       />
 
-      <main
+      <div
         className="
           min-h-screen
           overflow-hidden
@@ -744,15 +759,11 @@ export default function Branches() {
                             data-branch-slide
                             className="
                               flex
+                              w-full
                               shrink-0
                               snap-start
+                              sm:w-[calc(50%_-_8px)]
                             "
-                            style={{
-                              width:
-                                visibleCards === 1
-                                  ? "100%"
-                                  : "calc((100% - 16px) / 2)",
-                            }}
                           >
                             <BranchCard
                               number={String(
@@ -1067,7 +1078,7 @@ export default function Branches() {
               </div>
             )}
         </section>
-      </main>
+      </div>
     </>
   );
 }

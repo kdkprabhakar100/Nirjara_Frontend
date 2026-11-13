@@ -12,7 +12,7 @@ const CONTACT_SEO = {
   type: "website",
 };
 
-type Branch = {
+export type ContactBranch = {
   _id?: string;
   name: string;
   label?: string;
@@ -22,9 +22,18 @@ type Branch = {
   mapUrl?: string;
 };
 
-type SiteSettings = {
+export type ContactSiteSettings = {
   phone?: string;
   email?: string;
+};
+
+export type ContactInitialData = {
+  branches: ContactBranch[];
+  settings: ContactSiteSettings;
+};
+
+type ContactProps = {
+  initialData?: ContactInitialData;
 };
 
 /* ============================================================
@@ -141,16 +150,19 @@ function ExternalLinkIcon({
   );
 }
 
-export default function Contact() {
+export default function Contact({ initialData }: ContactProps) {
+  // SSR data is available during the very first render, including hydration.
+  // When the page is opened via client-side navigation, API fetching still works.
+  const [branches, setBranches] = useState<ContactBranch[]>(
+    () => initialData?.branches ?? []
+  );
+  const [settings, setSettings] = useState<ContactSiteSettings>(
+    () => initialData?.settings ?? { phone: "", email: "" }
+  );
+
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  const [branches, setBranches] = useState<Branch[]>([]);
-
-  const [settings, setSettings] = useState<SiteSettings>({
-    phone: "",
-    email: "",
-  });
+  const [submitError, setSubmitError] = useState("");
 
   const [form, setForm] = useState({
     name: "",
@@ -160,103 +172,86 @@ export default function Contact() {
   });
 
   /* ============================================================
-     FETCH BRANCHES
+     LOAD CONTACT INFORMATION IF SSR DATA IS NOT PROVIDED
+     These requests run only in the browser, never during SSR.
   ============================================================ */
-
-  const fetchBranches = async () => {
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/branches`
-      );
-
-      if (!res.ok) {
-        throw new Error("Failed to fetch branches");
-      }
-
-      const data = await res.json();
-
-      setBranches(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("BRANCH FETCH ERROR:", error);
-      setBranches([]);
-    }
-  };
-
-  /* ============================================================
-     FETCH SITE SETTINGS
-  ============================================================ */
-
-  const fetchSettings = async () => {
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/site-settings`
-      );
-
-      if (!res.ok) {
-        throw new Error("Failed to fetch site settings");
-      }
-
-      const data = await res.json();
-
-      setSettings({
-        phone: data?.phone || "",
-        email: data?.email || "",
-      });
-    } catch (error) {
-      console.error("SITE SETTINGS FETCH ERROR:", error);
-
-      setSettings({
-        phone: "",
-        email: "",
-      });
-    }
-  };
-
-  /* ============================================================
-     INITIAL FETCH
-  ============================================================ */
-
   useEffect(() => {
-    fetchBranches();
-    fetchSettings();
-  }, []);
+    if (initialData) return;
+
+    const controller = new AbortController();
+    const apiUrl = import.meta.env.VITE_API_URL ?? "";
+
+    const loadContactData = async () => {
+      const [branchesResult, settingsResult] = await Promise.allSettled([
+        fetch(`${apiUrl}/api/branches`, { signal: controller.signal })
+          .then(async (response) => {
+            if (!response.ok) throw new Error("Failed to fetch branches");
+            const data = await response.json();
+            return Array.isArray(data)
+              ? data
+              : Array.isArray(data?.branches)
+                ? data.branches
+                : Array.isArray(data?.data)
+                  ? data.data
+                  : [];
+          }),
+        fetch(`${apiUrl}/api/site-settings`, { signal: controller.signal })
+          .then(async (response) => {
+            if (!response.ok) throw new Error("Failed to fetch site settings");
+            const data = await response.json();
+            const value = data?.settings ?? data?.data ?? data;
+            return {
+              phone: value?.phone ?? "",
+              email: value?.email ?? "",
+            } as ContactSiteSettings;
+          }),
+      ]);
+
+      if (controller.signal.aborted) return;
+
+      if (branchesResult.status === "fulfilled") {
+        setBranches(branchesResult.value);
+      } else {
+        console.error("BRANCH FETCH ERROR:", branchesResult.reason);
+      }
+
+      if (settingsResult.status === "fulfilled") {
+        setSettings(settingsResult.value);
+      } else {
+        console.error("SITE SETTINGS FETCH ERROR:", settingsResult.reason);
+      }
+    };
+
+    void loadContactData();
+    return () => controller.abort();
+  }, [initialData]);
 
   /* ============================================================
-     CONTACT FORM
+     CONTACT FORM: browser-only POST, unchanged backend endpoint
   ============================================================ */
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (loading) return;
 
     setLoading(true);
     setSent(false);
+    setSubmitError("");
 
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/contact`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(form),
-        }
-      );
+      const apiUrl = import.meta.env.VITE_API_URL ?? "";
+      const res = await fetch(`${apiUrl}/api/contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
 
-      if (!res.ok) {
-        throw new Error("Failed to send message");
-      }
+      if (!res.ok) throw new Error("Failed to send message");
 
       setSent(true);
-
-      setForm({
-        name: "",
-        email: "",
-        subject: "",
-        message: "",
-      });
+      setForm({ name: "", email: "", subject: "", message: "" });
     } catch (error) {
       console.error("CONTACT FORM ERROR:", error);
+      setSubmitError("Your message could not be sent. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -273,7 +268,7 @@ export default function Contact() {
         type="website"
       />
 
-      <main
+      <div
         className="
           min-h-screen
           bg-[#FFF5F8]
@@ -1080,6 +1075,15 @@ export default function Contact() {
                 </div>
               )}
 
+              {submitError && (
+                <div
+                  role="alert"
+                  className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                >
+                  {submitError}
+                </div>
+              )}
+
               {/* ==================================================
                   FORM
               ================================================== */}
@@ -1292,7 +1296,7 @@ export default function Contact() {
             </section>
           </div>
         </section>
-      </main>
+      </div>
     </>
   );
 }
