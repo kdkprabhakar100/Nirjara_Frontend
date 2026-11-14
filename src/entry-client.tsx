@@ -8,25 +8,54 @@ import "./index.css";
 import "react-toastify/dist/ReactToastify.css";
 
 import App from "./App";
+import type { AppInitialData } from "./App";
+
 import { CartProvider } from "./context/CartContext";
 import { ToastContainer } from "react-toastify";
 
-import type { ServicesInitialData } from "./pages/public/Services";
+/* ============================================================
+   SSR INITIAL DATA
 
-type InitialData = {
-  services?: ServicesInitialData;
-};
+   Uses the same data interface as App.tsx so that
+   every server-rendered page can receive its data.
+============================================================ */
 
 declare global {
   interface Window {
-    __NIRJARA_DATA__?: InitialData;
+    __NIRJARA_DATA__?: AppInitialData;
   }
 }
 
-const initialData = window.__NIRJARA_DATA__;
+/* ============================================================
+   READ DATA INJECTED BY THE SSR SERVER
+============================================================ */
+
+const initialData: AppInitialData =
+  window.__NIRJARA_DATA__ ?? {};
+
+/* ============================================================
+   GET ROOT ELEMENT
+============================================================ */
+
+const rootElement = document.getElementById("root");
+
+if (!rootElement) {
+  throw new Error(
+    'Nirjara hydration failed: #root element was not found.'
+  );
+}
+
+/* ============================================================
+   HYDRATE SERVER-RENDERED HTML
+
+   hydrateRoot attaches React's event handlers to the
+   existing server-rendered markup.
+
+   Do not replace hydrateRoot with createRoot here.
+============================================================ */
 
 hydrateRoot(
-  document.getElementById("root")!,
+  rootElement,
   <StrictMode>
     <HelmetProvider>
       <BrowserRouter>

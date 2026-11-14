@@ -614,8 +614,10 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
         <section
           className="
             relative
-            mt-[72px]
-            min-h-[calc(100vh-72px)]
+            mt-[56px]
+            min-h-[calc(100svh-56px)]
+            lg:mt-[72px]
+            lg:min-h-[calc(100vh-72px)]
             overflow-hidden
             bg-[#3A2A2F]
           "
@@ -691,7 +693,8 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
               z-10
               mx-auto
               flex
-              min-h-[calc(100vh-72px)]
+              min-h-[calc(100svh-56px)]
+              lg:min-h-[calc(100vh-72px)]
               max-w-7xl
               items-center
               justify-center
@@ -969,7 +972,7 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
             SERVICES
         ==================================================== */}
 
-        <section className="overflow-hidden bg-[#FFF5F8] py-16 md:px-12 md:py-24">
+        <section className="overflow-hidden bg-[#FFF5F8] pb-8 pt-10 sm:pb-10 sm:pt-12 md:px-12 md:py-24">
 
           {/* HEADING */}
 
@@ -1163,7 +1166,7 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
             GALLERY
         ==================================================== */}
 
-        <Gallery />
+        <Gallery embedded />
 
         {/* ====================================================
             BRANCHES
@@ -1173,10 +1176,12 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
           className="
             bg-white
             px-4
-            py-14
+            pb-10
+            pt-8
 
             sm:px-6
-            sm:py-16
+            sm:pb-12
+            sm:pt-10
 
             md:px-8
             md:py-20

@@ -3,7 +3,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type ComponentType,
 } from "react";
 
 import {
@@ -67,7 +66,12 @@ const GALLERY_SEO = {
    MAIN PAGE
 ========================================================= */
 
-export default function Gallery() {
+type GalleryProps = {
+  /** True when Gallery is displayed within Home instead of /gallery. */
+  embedded?: boolean;
+};
+
+export default function Gallery({ embedded = false }: GalleryProps) {
   const [
     gallery,
     setGallery,
@@ -130,10 +134,13 @@ export default function Gallery() {
   if (loading) {
     return (
       <>
-        <GallerySEO />
+        {!embedded && <GallerySEO />}
 
-        <main className="min-h-screen bg-[#FFF5F8] pt-16">
-          <div className="flex min-h-[460px] items-center justify-center">
+        <div className={embedded
+          ? "bg-[#FFF5F8] pt-5 pb-4 sm:pt-8 sm:pb-8"
+          : "min-h-screen bg-[#FFF5F8] pt-16"
+        }>
+          <div className={`flex items-center justify-center ${embedded ? "min-h-[160px] sm:min-h-[240px]" : "min-h-[460px]"}`}>
             <div
               className="
                 h-9
@@ -146,7 +153,7 @@ export default function Gallery() {
               "
             />
           </div>
-        </main>
+        </div>
       </>
     );
   }
@@ -154,39 +161,40 @@ export default function Gallery() {
   if (!gallery.length) {
     return (
       <>
-        <GallerySEO />
+        {!embedded && <GallerySEO />}
 
-        <main className="min-h-screen bg-[#FFF5F8] pt-16">
-          <GalleryHeader />
+        <div className={embedded
+          ? "bg-[#FFF5F8] pt-5 pb-4 sm:pt-8 sm:pb-8"
+          : "min-h-screen bg-[#FFF5F8] pt-16"
+        }>
+          <GalleryHeader embedded={embedded} />
 
-          <div className="flex min-h-[280px] items-center justify-center">
+          <div className={`flex items-center justify-center ${embedded ? "min-h-[120px]" : "min-h-[280px]"}`}>
             <p className="font-serif text-xl italic text-[#8A6F78]">
               Gallery coming soon.
             </p>
           </div>
-        </main>
+        </div>
       </>
     );
   }
 
   return (
     <>
-      <GallerySEO />
+      {!embedded && <GallerySEO />}
 
-      <main
-        className="
-          min-h-screen
-          overflow-hidden
-          bg-[#FFF5F8]
-          pt-16
-        "
+      <div
+        className={embedded
+          ? "overflow-hidden bg-[#FFF5F8] pt-5 pb-3 sm:pt-8 sm:pb-6"
+          : "min-h-screen overflow-hidden bg-[#FFF5F8] pt-16"
+        }
       >
-        <GalleryHeader />
+        <GalleryHeader embedded={embedded} />
 
         <PremiumGallery
           items={gallery}
         />
-      </main>
+      </div>
     </>
   );
 }
@@ -218,7 +226,8 @@ function GallerySEO() {
    HEADER
 ========================================================= */
 
-function GalleryHeader() {
+function GalleryHeader({ embedded = false }: { embedded?: boolean }) {
+  const Heading = embedded ? "h2" : "h1";
   return (
     <section
       className="
@@ -277,7 +286,7 @@ function GalleryHeader() {
         />
       </div>
 
-      <h1
+      <Heading
         className="
           mt-2
           font-serif
@@ -295,7 +304,7 @@ function GalleryHeader() {
         <span className="italic text-[#E75480]">
           Journal
         </span>
-      </h1>
+      </Heading>
 
       <p
         className="

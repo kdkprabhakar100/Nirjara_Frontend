@@ -604,9 +604,7 @@ export default function Branches({
 
                 <button
                   type="button"
-                  onClick={
-                    fetchBranches
-                  }
+                  onClick={() => fetchBranches()}
                   className="
                     mt-6
 
