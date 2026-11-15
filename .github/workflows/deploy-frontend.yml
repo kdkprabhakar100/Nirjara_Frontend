@@ -39,9 +39,15 @@ jobs:
         run: |
           rm -rf dist
           npm run build
-          test -f dist/index.html
+          test -f dist/client/index.html
+          test -f dist/server/entry-server.js
 
-      - name: Upload build to VPS
+      - name: Prepare release folder
+        run: |
+          mkdir -p release
+          cp -r dist server.mjs package.json package-lock.json ecosystem.config.cjs release/
+
+      - name: Deploy to VPS and restart server
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
@@ -58,6 +64,20 @@ jobs:
           printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
+          SSH="ssh -i $HOME/.ssh/deploy_key -p $VPS_PORT -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes"
+          APP_DIR=/var/www/nirjara/frontend-ssr
+
+          # node_modules and .env on the server are excluded, so --delete never removes them
           rsync -rz --delete-delay --chmod=D755,F644 \
-            -e "ssh -i $HOME/.ssh/deploy_key -p $VPS_PORT -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes" \
-            dist/ "$VPS_USER@$VPS_HOST:/var/www/nirjara/frontend/"
+            --exclude node_modules --exclude .env \
+            -e "$SSH" \
+            release/ "$VPS_USER@$VPS_HOST:$APP_DIR/"
+
+          # server.mjs imports vite at startup, so dev dependencies are installed too
+          $SSH "$VPS_USER@$VPS_HOST" "set -e
+            cd $APP_DIR
+            npm ci --no-audit --no-fund
+            pm2 startOrReload ecosystem.config.cjs --update-env
+            pm2 save
+            sleep 3
+            curl -fsS -o /dev/null http://127.0.0.1:3000/ && echo 'SSR server is up'"
