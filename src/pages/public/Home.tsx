@@ -641,10 +641,30 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
             "
           >
             <source
-              src="/videos/hero.MOV"
+              src="/videos/hero1.mp4"
               type="video/mp4"
             />
           </video>
+
+
+{/* HERO SVG BACKGROUND */}
+
+{/* <img
+  src="/videos/hero.svg"
+  alt=""
+  aria-hidden="true"
+  className="
+    absolute
+    inset-0
+    z-0
+    h-full
+    w-full
+    object-cover
+    object-center
+  "
+/> */}
+
+
 
           {/* VIDEO OVERLAY */}
 
