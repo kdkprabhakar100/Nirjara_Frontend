@@ -13,7 +13,7 @@ import TeamSection from "../../components/TeamSection";
    TYPES
 ========================================================= */
 
-type TeamMember = {
+export type TeamMember = {
   _id: string;
   name: string;
   designation: string;
@@ -21,6 +21,14 @@ type TeamMember = {
   image?: string;
   order?: number;
   status?: string;
+};
+
+export type AboutInitialData = {
+  teamMembers: TeamMember[];
+};
+
+type AboutProps = {
+  initialData?: AboutInitialData;
 };
 
 /* =========================================================
@@ -67,47 +75,74 @@ const ABOUT_SEO = {
    ABOUT PAGE
 ========================================================= */
 
-export default function About() {
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [loading, setLoading] = useState(true);
-
+export default function About({ initialData }: AboutProps) {
+  // Data passed during SSR must also be used for the first client render.
+  // This avoids both hydration mismatch and an unnecessary API request.
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(
+    () => initialData?.teamMembers ?? []
+  );
+  const [loading, setLoading] = useState(
+    () => initialData === undefined
+  );
+  const [error, setError] = useState("");
 
   /* =======================================================
-     FETCH TEAM
+     FETCH TEAM WHEN SSR DATA IS NOT SUPPLIED
   ======================================================= */
 
   useEffect(() => {
+    if (initialData !== undefined) return;
+
+    const controller = new AbortController();
+
     const fetchTeam = async () => {
       try {
         setLoading(true);
+        setError("");
 
+        const apiUrl = import.meta.env.VITE_API_URL || "";
         const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/teams/public`
+          `${apiUrl}/api/teams/public`,
+          { signal: controller.signal }
         );
 
         if (!response.ok) {
           throw new Error("Failed to fetch team members");
         }
 
-        const data = await response.json();
+        const data: unknown = await response.json();
+        if (controller.signal.aborted) return;
+
+        const payload = data as {
+          data?: unknown;
+          teamMembers?: unknown;
+          members?: unknown;
+        } | null;
 
         const members: TeamMember[] = Array.isArray(data)
           ? data
-          : Array.isArray(data?.data)
-            ? data.data
-            : [];
+          : Array.isArray(payload?.data)
+            ? payload.data
+            : Array.isArray(payload?.teamMembers)
+              ? payload.teamMembers
+              : Array.isArray(payload?.members)
+                ? payload.members
+                : [];
 
         setTeamMembers(members);
-      } catch (error) {
-        console.error("TEAM FETCH ERROR:", error);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        console.error("TEAM FETCH ERROR:", err);
+        setError("We couldn't load our team right now.");
         setTeamMembers([]);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
 
-    fetchTeam();
-  }, []);
+    void fetchTeam();
+    return () => controller.abort();
+  }, [initialData]);
 
   /* =======================================================
      FIND CEO
@@ -142,9 +177,6 @@ export default function About() {
 
   
   /* =======================================================
-
-
-  /* =======================================================
      PAGE
   ======================================================= */
 
@@ -159,7 +191,7 @@ export default function About() {
         type="website"
       />
 
-      <main className="overflow-hidden bg-[#FFF5F8]">
+      <div className="overflow-hidden bg-[#FFF5F8]">
 
         {/* ===================================================
             HERO
@@ -171,10 +203,7 @@ export default function About() {
             {/* HERO TEXT */}
 
             <motion.div
-              initial={{
-                opacity: 0,
-                y: 25,
-              }}
+              initial={false}
               animate={{
                 opacity: 1,
                 y: 0,
@@ -227,10 +256,7 @@ export default function About() {
             {/* CEO HERO IMAGE */}
 
             <motion.div
-              initial={{
-                opacity: 0,
-                scale: 0.97,
-              }}
+              initial={false}
               animate={{
                 opacity: 1,
                 scale: 1,
@@ -447,6 +473,12 @@ export default function About() {
     TEAM
 =================================================== */}
 
+{error && (
+  <p role="status" className="px-6 py-4 text-center text-sm text-[#8A6F78]">
+    {error}
+  </p>
+)}
+
 <TeamSection
   members={sliderMembers}
   loading={loading}
@@ -486,7 +518,7 @@ export default function About() {
           </div>
         </section>
 
-      </main>
+      </div>
     </>
   );
 }

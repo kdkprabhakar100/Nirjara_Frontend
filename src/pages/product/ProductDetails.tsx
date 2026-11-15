@@ -7,7 +7,7 @@ import {
   Link,
   useNavigate,
   useParams,
-} from "react-router-dom";
+} from "react-router";
 
 import { useCart } from "../../context/CartContext";
 

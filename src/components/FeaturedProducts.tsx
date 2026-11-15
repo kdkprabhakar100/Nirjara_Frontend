@@ -11,7 +11,7 @@ import {
   Heart,
 } from "lucide-react";
 
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 /* =========================================================
    TYPES

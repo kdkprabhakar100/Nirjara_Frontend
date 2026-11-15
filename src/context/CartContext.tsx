@@ -1,8 +1,10 @@
+
 import {
   createContext,
   useContext,
   useEffect,
   useState,
+  type ReactNode,
 } from "react";
 
 type CartItem = {
@@ -22,41 +24,82 @@ type CartContextType = {
   clearCart: () => void;
 };
 
-const CartContext =
-  createContext<CartContextType | null>(null);
+const CartContext = createContext<CartContextType | null>(null);
+
+const CART_STORAGE_KEY = "cart";
+
+function readStoredCart(): CartItem[] {
+  try {
+    const stored = window.localStorage.getItem(CART_STORAGE_KEY);
+
+    if (!stored) return [];
+
+    const parsed: unknown = JSON.parse(stored);
+
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.filter(
+      (item): item is CartItem =>
+        item !== null &&
+        typeof item === "object" &&
+        typeof item._id === "string" &&
+        typeof item.name === "string" &&
+        typeof item.price === "number" &&
+        Number.isFinite(item.price) &&
+        typeof item.image === "string" &&
+        typeof item.quantity === "number" &&
+        Number.isInteger(item.quantity) &&
+        item.quantity > 0
+    );
+  } catch (error) {
+    console.error("Failed to load stored cart:", error);
+    return [];
+  }
+}
 
 export function CartProvider({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
-  const [cart, setCart] = useState<CartItem[]>(() => {
-    const stored = localStorage.getItem("cart");
+  // Both server and first browser render start identically.
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [storageLoaded, setStorageLoaded] = useState(false);
 
-    return stored ? JSON.parse(stored) : [];
-  });
-
+  // Read localStorage only after mounting in the browser.
   useEffect(() => {
-    localStorage.setItem(
-      "cart",
-      JSON.stringify(cart)
-    );
-  }, [cart]);
+    setCart(readStoredCart());
+    setStorageLoaded(true);
+  }, []);
+
+  // Save only after the stored cart has been restored.
+  useEffect(() => {
+    if (!storageLoaded) return;
+
+    try {
+      window.localStorage.setItem(
+        CART_STORAGE_KEY,
+        JSON.stringify(cart)
+      );
+    } catch (error) {
+      console.error("Failed to save cart:", error);
+    }
+  }, [cart, storageLoaded]);
 
   const addToCart = (item: CartItem) => {
     setCart((prev) => {
       const existing = prev.find(
-        (p) => p._id === item._id
+        (product) => product._id === item._id
       );
 
       if (existing) {
-        return prev.map((p) =>
-          p._id === item._id
+        return prev.map((product) =>
+          product._id === item._id
             ? {
-                ...p,
-                quantity: p.quantity + 1,
+                ...product,
+                quantity: product.quantity + 1,
               }
-            : p
+            : product
         );
       }
 
@@ -89,10 +132,7 @@ export function CartProvider({
         item._id === id
           ? {
               ...item,
-              quantity:
-                item.quantity > 1
-                  ? item.quantity - 1
-                  : 1,
+              quantity: Math.max(1, item.quantity - 1),
             }
           : item
       )

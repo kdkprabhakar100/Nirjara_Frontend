@@ -3,20 +3,20 @@ import {
   useState,
 } from "react";
 
-import axios from "axios";
 
 import {
   Link,
   useParams,
-} from "react-router-dom";
+} from "react-router";
 
 import { motion } from "framer-motion";
+import SEO from "../../components/SEO";
 
 /* ============================================================
    TYPES
 ============================================================ */
 
-interface EventType {
+export interface EventType {
   _id: string;
 
   title: string;
@@ -41,7 +41,7 @@ interface EventType {
   featured: boolean;
 }
 
-interface BranchType {
+export interface BranchType {
   _id: string;
 
   name: string;
@@ -206,11 +206,12 @@ function formatDate(
   return new Date(
     date
   ).toLocaleDateString(
-    undefined,
+    "en-US",
     {
       month: "long",
       day: "numeric",
       year: "numeric",
+      timeZone: "Asia/Kathmandu",
     }
   );
 }
@@ -247,184 +248,106 @@ function normalizeLocation(
    EVENT DETAILS
 ============================================================ */
 
-const EventDetails = () => {
+export type EventDetailsInitialData = {
+  event: EventType | null;
+  relatedEvents: EventType[];
+  branches: BranchType[];
+};
+
+const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+
+function readArray<T>(data: unknown, key: string): T[] {
+  if (Array.isArray(data)) return data as T[];
+  if (!data || typeof data !== "object") return [];
+  const value = data as Record<string, unknown>;
+  if (Array.isArray(value[key])) return value[key] as T[];
+  if (Array.isArray(value.data)) return value.data as T[];
+  return [];
+}
+
+const EventDetails = ({ initialData }: { initialData?: EventDetailsInitialData }) => {
   const { id } =
     useParams();
 
   /* ============================================================
-     STATE
+     STATE — SSR and client-side navigation fallback
   ============================================================ */
 
-  const [
-    event,
-    setEvent,
-  ] =
-    useState<EventType | null>(
-      null
-    );
+  const hasMatchingInitialData =
+    initialData !== undefined &&
+    (initialData.event === null || initialData.event._id === id);
 
-  const [
-    relatedEvents,
-    setRelatedEvents,
-  ] =
-    useState<EventType[]>(
-      []
-    );
-
-  const [
-    branches,
-    setBranches,
-  ] =
-    useState<BranchType[]>(
-      []
-    );
-
-  const [
-    loading,
-    setLoading,
-  ] =
-    useState(true);
-
-  /* ============================================================
-     FETCH EVENT
-  ============================================================ */
-
-  const fetchEvent =
-    async () => {
-      try {
-        setLoading(
-          true
-        );
-
-        const res =
-          await axios.get(
-            `${
-              import.meta.env
-                .VITE_API_URL
-            }/api/events/${id}`
-          );
-
-        setEvent(
-          res.data
-        );
-      } catch (error) {
-        console.error(
-          "EVENT FETCH ERROR:",
-          error
-        );
-
-        setEvent(
-          null
-        );
-      } finally {
-        setLoading(
-          false
-        );
-      }
-    };
-
-  /* ============================================================
-     FETCH RELATED EVENTS
-  ============================================================ */
-
-  const fetchRelatedEvents =
-    async () => {
-      try {
-        const res =
-          await axios.get(
-            `${
-              import.meta.env
-                .VITE_API_URL
-            }/api/events`
-          );
-
-        const data =
-          Array.isArray(
-            res.data
-          )
-            ? res.data
-            : [];
-
-        const filtered =
-          data.filter(
-            (
-              item: EventType
-            ) =>
-              item._id !==
-              id
-          );
-
-        setRelatedEvents(
-          filtered.slice(
-            0,
-            3
-          )
-        );
-      } catch (error) {
-        console.error(
-          "RELATED EVENTS ERROR:",
-          error
-        );
-
-        setRelatedEvents(
-          []
-        );
-      }
-    };
-
-  /* ============================================================
-     FETCH BRANCHES
-
-     Gets the latest address + mapUrl directly
-     from Branch Admin.
-  ============================================================ */
-
-  const fetchBranches =
-    async () => {
-      try {
-        const res =
-          await axios.get(
-            `${
-              import.meta.env
-                .VITE_API_URL
-            }/api/branches`
-          );
-
-        const data =
-          Array.isArray(
-            res.data
-          )
-            ? res.data
-            : res.data
-                ?.branches ||
-              [];
-
-        setBranches(
-          data
-        );
-      } catch (error) {
-        console.error(
-          "BRANCH FETCH ERROR:",
-          error
-        );
-
-        setBranches(
-          []
-        );
-      }
-    };
-
-  /* ============================================================
-     INITIAL FETCH
-  ============================================================ */
+  const [event, setEvent] = useState<EventType | null>(
+    () => hasMatchingInitialData ? initialData!.event : null
+  );
+  const [relatedEvents, setRelatedEvents] = useState<EventType[]>(
+    () => hasMatchingInitialData ? initialData!.relatedEvents : []
+  );
+  const [branches, setBranches] = useState<BranchType[]>(
+    () => hasMatchingInitialData ? initialData!.branches : []
+  );
+  const [loading, setLoading] = useState(() => !hasMatchingInitialData);
 
   useEffect(() => {
-    fetchEvent();
+    if (hasMatchingInitialData) return;
+    if (!id) {
+      setEvent(null);
+      setLoading(false);
+      return;
+    }
 
-    fetchRelatedEvents();
+    const controller = new AbortController();
+    const loadData = async () => {
+      setLoading(true);
+      setEvent(null);
+      setRelatedEvents([]);
+      setBranches([]);
 
-    fetchBranches();
-  }, [id]);
+      try {
+        const [eventResponse, eventsResponse, branchesResponse] =
+          await Promise.all([
+            fetch(`${API_BASE}/api/events/${encodeURIComponent(id)}`, {
+              signal: controller.signal,
+            }),
+            fetch(`${API_BASE}/api/events`, { signal: controller.signal }),
+            fetch(`${API_BASE}/api/branches`, { signal: controller.signal }),
+          ]);
+
+        if (!eventResponse.ok) {
+          throw new Error(`Event returned ${eventResponse.status}`);
+        }
+        if (!eventsResponse.ok || !branchesResponse.ok) {
+          throw new Error("Could not load related event information");
+        }
+
+        const [eventPayload, eventsPayload, branchesPayload] =
+          await Promise.all([
+            eventResponse.json(),
+            eventsResponse.json(),
+            branchesResponse.json(),
+          ]);
+        if (controller.signal.aborted) return;
+
+        const currentEvent = (eventPayload?.event ?? eventPayload?.data ?? eventPayload) as EventType;
+        setEvent(currentEvent?._id ? currentEvent : null);
+        setRelatedEvents(
+          readArray<EventType>(eventsPayload, "events")
+            .filter((item) => item._id !== id)
+            .slice(0, 3)
+        );
+        setBranches(readArray<BranchType>(branchesPayload, "branches"));
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          console.error("EVENT DETAILS FETCH ERROR:", error);
+          setEvent(null);
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
+    void loadData();
+    return () => controller.abort();
+  }, [id, hasMatchingInitialData]);
 
   /* ============================================================
      FIND EVENT BRANCH
@@ -741,7 +664,14 @@ const EventDetails = () => {
     !event
   ) {
     return (
-      <main
+      <>
+        <SEO
+          title="Event Not Found | Nirjara Beauty"
+          description="The requested Nirjara Beauty event could not be found."
+          canonical={id ? `/events/${encodeURIComponent(id)}` : "/events"}
+          noindex
+        />
+      <div
         className="
           flex
           min-h-screen
@@ -780,7 +710,8 @@ const EventDetails = () => {
             ← Back to Events
           </Link>
         </div>
-      </main>
+      </div>
+      </>
     );
   }
 
@@ -799,7 +730,14 @@ const EventDetails = () => {
     );
 
   return (
-    <main
+    <>
+      <SEO
+        title={`${event.title} | Nirjara Beauty Events`}
+        description={event.description?.trim().slice(0, 155) || `Explore ${event.title} at Nirjara Beauty.`}
+        canonical={`/events/${encodeURIComponent(event._id)}`}
+        image={event.image || "/images/nirjara-og.jpg"}
+      />
+    <div
       className="
         min-h-screen
         overflow-hidden
@@ -885,10 +823,7 @@ const EventDetails = () => {
           "
         >
           <motion.div
-            initial={{
-              opacity: 0,
-              y: 18,
-            }}
+            initial={false}
             animate={{
               opacity: 1,
               y: 0,
@@ -992,10 +927,7 @@ const EventDetails = () => {
         "
       >
         <motion.div
-          initial={{
-            opacity: 0,
-            y: 20,
-          }}
+          initial={false}
           whileInView={{
             opacity: 1,
             y: 0,
@@ -1265,10 +1197,7 @@ const EventDetails = () => {
           {/* DESCRIPTION */}
 
           <motion.article
-            initial={{
-              opacity: 0,
-              y: 20,
-            }}
+            initial={false}
             whileInView={{
               opacity: 1,
               y: 0,
@@ -1363,10 +1292,7 @@ const EventDetails = () => {
           ==================================================== */}
 
           <motion.aside
-            initial={{
-              opacity: 0,
-              x: 15,
-            }}
+            initial={false}
             whileInView={{
               opacity: 1,
               x: 0,
@@ -1735,11 +1661,7 @@ const EventDetails = () => {
                       key={
                         item._id
                       }
-                      initial={{
-                        opacity:
-                          0,
-                        y: 15,
-                      }}
+                      initial={false}
                       whileInView={{
                         opacity:
                           1,
@@ -2024,7 +1946,8 @@ const EventDetails = () => {
           </div>
         </section>
       )}
-    </main>
+    </div>
+    </>
   );
 };
 

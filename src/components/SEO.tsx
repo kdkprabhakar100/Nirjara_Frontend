@@ -1,3 +1,4 @@
+
 import { Helmet } from "react-helmet-async";
 
 type SEOProps = {
@@ -11,90 +12,121 @@ type SEOProps = {
 };
 
 const SITE_NAME = "Nirjara Beauty";
-const SITE_URL = import.meta.env.VITE_SITE_URL || "http://localhost:5173";
+const SITE_URL = (
+  import.meta.env.VITE_SITE_URL ||
+  "https://nirjarabeautysalon.com"
+).replace(/\/+$/, "");
+
+const DEFAULT_IMAGE = "/images/nirjara-og.jpg";
+
+function getAbsoluteUrl(value: string): string {
+  if (/^https?:\/\//i.test(value)) {
+    return value;
+  }
+
+  const path = value.startsWith("/") ? value : `/${value}`;
+
+  return `${SITE_URL}${path}`;
+}
 
 export default function SEO({
   title,
   description,
   keywords = "",
   canonical = "/",
-  image = "/images/nirjara-og.jpg",
+  image = DEFAULT_IMAGE,
   type = "website",
   noindex = false,
 }: SEOProps) {
-  const canonicalUrl = canonical.startsWith("http")
-    ? canonical
-    : `${SITE_URL}${canonical}`;
+  const cleanTitle =
+    title.trim() || "Nirjara Beauty Salon";
 
-  const imageUrl = image.startsWith("http")
-    ? image
-    : `${SITE_URL}${image}`;
+  const cleanDescription =
+    description.trim() ||
+    "Discover beauty services, academy courses, and beauty products at Nirjara Beauty Salon.";
+
+  const canonicalUrl = getAbsoluteUrl(canonical);
+
+  const imageUrl = getAbsoluteUrl(image);
+
+  const robots = noindex
+    ? "noindex,follow"
+    : "index,follow";
 
   return (
     <Helmet>
-      {/* BASIC SEO */}
-      <title>{title}</title>
+      {/* Main SEO */}
+      <title>{cleanTitle}</title>
 
       <meta
         name="description"
-        content={description}
+        content={cleanDescription}
       />
 
-      {keywords && (
+      {keywords.trim() && (
         <meta
           name="keywords"
-          content={keywords}
+          content={keywords.trim()}
         />
       )}
+
+      <meta
+        name="robots"
+        content={robots}
+      />
 
       <link
         rel="canonical"
         href={canonicalUrl}
       />
 
-      {noindex && (
-        <meta
-          name="robots"
-          content="noindex,nofollow"
-        />
-      )}
-
-      {/* OPEN GRAPH */}
-      <meta property="og:title" content={title} />
-      <meta
-        property="og:description"
-        content={description}
-      />
+      {/* Open Graph */}
       <meta
         property="og:type"
         content={type}
       />
-      <meta
-        property="og:url"
-        content={canonicalUrl}
-      />
-      <meta
-        property="og:image"
-        content={imageUrl}
-      />
+
       <meta
         property="og:site_name"
         content={SITE_NAME}
       />
 
-      {/* TWITTER */}
+      <meta
+        property="og:title"
+        content={cleanTitle}
+      />
+
+      <meta
+        property="og:description"
+        content={cleanDescription}
+      />
+
+      <meta
+        property="og:url"
+        content={canonicalUrl}
+      />
+
+      <meta
+        property="og:image"
+        content={imageUrl}
+      />
+
+      {/* Twitter */}
       <meta
         name="twitter:card"
         content="summary_large_image"
       />
+
       <meta
         name="twitter:title"
-        content={title}
+        content={cleanTitle}
       />
+
       <meta
         name="twitter:description"
-        content={description}
+        content={cleanDescription}
       />
+
       <meta
         name="twitter:image"
         content={imageUrl}

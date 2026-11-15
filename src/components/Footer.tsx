@@ -6,7 +6,7 @@ import {
 import {
   Link,
   useLocation,
-} from "react-router-dom";
+} from "react-router";
 
 import {
   ArrowUpRight,
@@ -36,7 +36,6 @@ type SocialLinks = {
 
 type FooterSettings = {
   showSocialLinks: boolean;
-  showAdminLogin: boolean;
   showBookAppointment: boolean;
   showBranches?: boolean;
 
@@ -105,9 +104,6 @@ const defaultSettings:
   footer: {
     showSocialLinks:
       true,
-
-    showAdminLogin:
-      false,
 
     showBookAppointment:
       true,
@@ -1139,21 +1135,6 @@ export default function Footer() {
               >
                 Terms & Conditions
               </Link>
-
-              {footer.showAdminLogin && (
-                <a
-                  href="http://localhost:5174/login"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="
-                    transition
-
-                    hover:text-[#E75480]
-                  "
-                >
-                  Admin Login
-                </a>
-              )}
             </div>
           </div>
         </div>

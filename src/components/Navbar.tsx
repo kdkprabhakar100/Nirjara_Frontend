@@ -5,7 +5,7 @@ import {
 
 import {
   NavLink,
-} from "react-router-dom";
+} from "react-router";
 
 import {
   ShoppingBag,
