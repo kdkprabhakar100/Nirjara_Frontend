@@ -1,5 +1,5 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://nirjarabeautysalon.vercel.app/sitemap.xml
-llms: https://nirjarabeautysalon.vercel.app/llms.txt
+Sitemap: https://nirjarabeautysalon.com/sitemap.xml
+llms: https://nirjarabeautysalon.com/llms.txt

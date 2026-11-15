@@ -1,0 +1,83 @@
+name: Deploy Nirjara Frontend
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nirjara-frontend-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Download source code
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        env:
+          VITE_API_URL: https://api.nirjarabeautysalon.com
+          VITE_SITE_URL: https://nirjarabeautysalon.com
+        run: |
+          rm -rf dist
+          npm run build
+          test -f dist/client/index.html
+          test -f dist/server/entry-server.js
+
+      - name: Prepare release folder
+        run: |
+          mkdir -p release
+          cp -r dist server.mjs package.json package-lock.json ecosystem.config.cjs release/
+
+      - name: Deploy to VPS and restart server
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          trap 'rm -f ~/.ssh/deploy_key' EXIT
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+          SSH="ssh -i $HOME/.ssh/deploy_key -p $VPS_PORT -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes"
+          APP_DIR=/var/www/nirjara/frontend-ssr
+
+          # node_modules and .env on the server are excluded, so --delete never removes them
+          rsync -rz --delete-delay --chmod=D755,F644 \
+            --exclude node_modules --exclude .env \
+            -e "$SSH" \
+            release/ "$VPS_USER@$VPS_HOST:$APP_DIR/"
+
+          # server.mjs imports vite at startup, so dev dependencies are installed too
+          $SSH "$VPS_USER@$VPS_HOST" "set -e
+            cd $APP_DIR
+            npm ci --no-audit --no-fund
+            pm2 startOrReload ecosystem.config.cjs --update-env
+            pm2 save
+            sleep 3
+            curl -fsS -o /dev/null http://127.0.0.1:3000/ && echo 'SSR server is up'"
