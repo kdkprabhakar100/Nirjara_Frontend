@@ -19,6 +19,8 @@ import Gallery from "../../components/Gallery";
 type Service = {
   _id?: string;
 
+  slug?: string;
+
   title: string;
 
   description: string;
@@ -1348,8 +1350,8 @@ export default function Home({
                       index
                     }
                     className="
-                      w-[84vw]
-                      max-w-[340px]
+                      w-[76vw]
+                      max-w-[300px]
 
                       shrink-0
                       snap-center
@@ -1359,6 +1361,10 @@ export default function Home({
                       serviceId={
                         service._id
                       }
+                      slug={
+                        service.slug
+                      }
+                      compact
                       available={
                         service.available !==
                         false
@@ -1435,19 +1441,19 @@ export default function Home({
           <div
             className="
               mx-auto
-              mt-10
+              mt-8
 
               hidden
-              max-w-6xl
+              max-w-5xl
 
-              gap-6
+              gap-5
 
               md:grid
               md:grid-cols-2
 
-              lg:mt-12
+              lg:mt-9
               lg:grid-cols-3
-              lg:gap-7
+              lg:gap-6
             "
           >
             {services.map(
@@ -1463,6 +1469,10 @@ export default function Home({
                   serviceId={
                     service._id
                   }
+                  slug={
+                    service.slug
+                  }
+                  compact
                   available={
                     service.available !==
                     false
@@ -1500,9 +1510,9 @@ export default function Home({
 
               px-6
 
-              md:mt-9
+              md:mt-7
 
-              lg:mt-10
+              lg:mt-8
             "
           >
             <button

@@ -34,6 +34,12 @@ type ServiceCardProps = {
   slug?: string;
 
   available?: boolean;
+
+  /**
+   * Compact version used on Home page.
+   * Full service page keeps the regular card.
+   */
+  compact?: boolean;
 };
 
 /* ============================================================
@@ -46,10 +52,42 @@ function formatPrice(
   return new Intl.NumberFormat(
     "en-NP",
     {
-      maximumFractionDigits:
-        0,
+      maximumFractionDigits: 0,
     }
   ).format(value);
+}
+
+/* ============================================================
+   SLUG GENERATOR
+============================================================ */
+
+function createSlug(
+  title: string
+): string {
+  return title
+    .normalize("NFKD")
+    .replace(
+      /[\u0300-\u036f]/g,
+      ""
+    )
+    .toLowerCase()
+    .trim()
+    .replace(
+      /&/g,
+      " and "
+    )
+    .replace(
+      /[^a-z0-9]+/g,
+      "-"
+    )
+    .replace(
+      /^-+|-+$/g,
+      ""
+    )
+    .replace(
+      /-+/g,
+      "-"
+    );
 }
 
 /* ============================================================
@@ -65,15 +103,12 @@ export default function ServiceCard({
   serviceId,
   slug,
   available = true,
+  compact = false,
 }: ServiceCardProps) {
   /* ==========================================================
-     URLS
+     BOOKING URL
   ========================================================== */
 
-  /**
-   * Booking still uses the MongoDB service ID
-   * because your booking system already expects it.
-   */
   const bookingUrl =
     serviceId
       ? `/booking?service=${encodeURIComponent(
@@ -81,16 +116,26 @@ export default function ServiceCard({
         )}`
       : "/booking";
 
-  /**
-   * Public service detail page uses the slug.
-   *
-   * Example:
-   * /services/bridal-makeup
-   */
+  /* ==========================================================
+     DETAIL URL
+
+     Prefer backend slug.
+     If missing, generate one from title.
+  ========================================================== */
+
+  const generatedSlug =
+    createSlug(
+      title
+    );
+
+  const serviceSlug =
+    slug?.trim() ||
+    generatedSlug;
+
   const detailUrl =
-    slug
+    serviceSlug
       ? `/services/${encodeURIComponent(
-          slug
+          serviceSlug
         )}`
       : "/services";
 
@@ -136,11 +181,16 @@ export default function ServiceCard({
         min-w-0
         flex-col
         overflow-hidden
+
         rounded-[18px]
+
         border
         border-[#E75480]/10
+
         bg-white
+
         shadow-[0_5px_20px_rgba(117,71,87,0.05)]
+
         transition-shadow
         duration-300
 
@@ -158,20 +208,35 @@ export default function ServiceCard({
       <Link
         to={detailUrl}
         aria-label={`View ${title} details`}
-        className="
+        className={`
           relative
           block
-          h-[150px]
           overflow-hidden
 
-          sm:h-[210px]
+          ${
+            compact
+              ? `
+                h-[145px]
 
-          md:h-[220px]
+                sm:h-[165px]
 
-          lg:h-[230px]
+                md:h-[175px]
 
-          xl:h-[240px]
-        "
+                lg:h-[185px]
+              `
+              : `
+                h-[150px]
+
+                sm:h-[210px]
+
+                md:h-[220px]
+
+                lg:h-[230px]
+
+                xl:h-[240px]
+              `
+          }
+        `}
       >
         <img
           src={
@@ -188,6 +253,7 @@ export default function ServiceCard({
             h-full
             w-full
             object-cover
+
             transition-transform
             duration-700
 
@@ -204,11 +270,14 @@ export default function ServiceCard({
             pointer-events-none
             absolute
             inset-0
+
             bg-gradient-to-t
             from-[#3A2A2F]/10
             via-transparent
             to-transparent
+
             opacity-0
+
             transition-opacity
             duration-300
 
@@ -226,15 +295,21 @@ export default function ServiceCard({
               absolute
               left-3
               top-3
+
               rounded-full
+
               bg-[#3A2A2F]/85
+
               px-3
               py-1.5
+
               text-[8px]
               font-semibold
               uppercase
               tracking-[1.5px]
+
               text-white
+
               backdrop-blur-sm
 
               sm:left-4
@@ -258,13 +333,19 @@ export default function ServiceCard({
               absolute
               bottom-3
               right-3
+
               rounded-[14px]
+
               border
               border-white/70
+
               bg-white/95
+
               px-3.5
               py-2
+
               shadow-[0_5px_18px_rgba(58,42,47,0.10)]
+
               backdrop-blur-md
 
               sm:bottom-4
@@ -284,11 +365,13 @@ export default function ServiceCard({
               <p
                 className="
                   whitespace-nowrap
+
                   text-[6px]
                   font-semibold
                   uppercase
                   leading-none
                   tracking-[1.4px]
+
                   text-[#A98994]
 
                   sm:text-[7px]
@@ -300,10 +383,13 @@ export default function ServiceCard({
               <p
                 className="
                   whitespace-nowrap
+
                   font-serif
+
                   text-[13px]
                   font-semibold
                   leading-none
+
                   text-[#E75480]
 
                   sm:text-[15px]
@@ -329,20 +415,31 @@ export default function ServiceCard({
             absolute
             right-3
             top-3
+
             flex
             h-8
             w-8
+
             translate-y-1
+
             items-center
             justify-center
+
             rounded-full
+
             border
             border-white/60
+
             bg-white/90
+
             text-[#E75480]
+
             opacity-0
+
             shadow-sm
+
             backdrop-blur-md
+
             transition-all
             duration-300
 
@@ -366,16 +463,29 @@ export default function ServiceCard({
       ====================================================== */}
 
       <div
-        className="
+        className={`
           flex
           flex-1
           flex-col
-          p-3
 
-          sm:p-5
+          ${
+            compact
+              ? `
+                p-4
 
-          lg:p-6
-        "
+                sm:p-4
+
+                lg:p-5
+              `
+              : `
+                p-3
+
+                sm:p-5
+
+                lg:p-6
+              `
+          }
+        `}
       >
         {/* ====================================================
             SERVICE TITLE
@@ -389,21 +499,38 @@ export default function ServiceCard({
           "
         >
           <h3
-            className="
+            className={`
               line-clamp-2
+
               font-serif
-              text-[17px]
+
               leading-[1.2]
+
               text-[#3A2A2F]
+
               transition-colors
               duration-300
 
               group-hover/title:text-[#E75480]
 
-              sm:text-xl
+              ${
+                compact
+                  ? `
+                    text-[18px]
 
-              lg:text-2xl
-            "
+                    sm:text-[19px]
+
+                    lg:text-[21px]
+                  `
+                  : `
+                    text-[17px]
+
+                    sm:text-xl
+
+                    lg:text-2xl
+                  `
+              }
+            `}
           >
             {title}
           </h3>
@@ -411,41 +538,51 @@ export default function ServiceCard({
 
         {/* ====================================================
             SERVICE DESCRIPTION
+
+            Hidden on compact Home cards.
         ==================================================== */}
 
-        <Link
-          to={detailUrl}
-          tabIndex={-1}
-          className="
-            block
-          "
-        >
-          <p
+        {!compact && (
+          <Link
+            to={detailUrl}
+            tabIndex={-1}
             className="
-              mt-2
-              line-clamp-2
-              text-[10px]
-              leading-[1.6]
-              text-[#8A6F78]
-
-              sm:mt-3
-              sm:line-clamp-3
-              sm:text-xs
-              sm:leading-6
-
-              lg:text-sm
-              lg:leading-7
+              block
             "
           >
-            {description}
-          </p>
-        </Link>
+            <p
+              className="
+                mt-2
+
+                line-clamp-2
+
+                text-[10px]
+                leading-[1.6]
+
+                text-[#8A6F78]
+
+                sm:mt-3
+                sm:line-clamp-3
+                sm:text-xs
+                sm:leading-6
+
+                lg:text-sm
+                lg:leading-7
+              "
+            >
+              {description}
+            </p>
+          </Link>
+        )}
 
         {/* ====================================================
             PRICE RANGE
+
+            Kept available if you want to restore it later.
         ==================================================== */}
 
-        {/* {validStartingPrice && (
+        {/*
+        {validStartingPrice && (
           <div
             className="
               mt-3
@@ -454,6 +591,7 @@ export default function ServiceCard({
               items-center
               gap-x-2
               gap-y-1
+
               text-[9px]
 
               sm:mt-4
@@ -496,7 +634,8 @@ export default function ServiceCard({
               </>
             )}
           </div>
-        )} */}
+        )}
+        */}
 
         {/* ====================================================
             VIEW DETAILS
@@ -505,26 +644,33 @@ export default function ServiceCard({
         <Link
           to={detailUrl}
           aria-label={`View details for ${title}`}
-          className="
-            mt-3
+          className={`
             inline-flex
             w-fit
             items-center
             gap-1.5
+
             text-[8px]
             font-semibold
             uppercase
             tracking-[1.4px]
+
             text-[#E75480]
+
             transition-all
             duration-300
 
             hover:gap-2.5
 
-            sm:mt-4
             sm:text-[9px]
             sm:tracking-[1.7px]
-          "
+
+            ${
+              compact
+                ? "mt-2.5"
+                : "mt-3 sm:mt-4"
+            }
+          `}
         >
           View Details
 
@@ -539,32 +685,33 @@ export default function ServiceCard({
         ==================================================== */}
 
         <div
-          className="
-            mt-auto
-            pt-4
-
-            sm:pt-5
-
-            lg:pt-6
-          "
+          className={
+            compact
+              ? "mt-auto pt-3"
+              : "mt-auto pt-4 sm:pt-5 lg:pt-6"
+          }
         >
           {available ? (
             <Link
               to={bookingUrl}
               aria-label={`Book ${title}`}
-              className="
+              className={`
                 block
                 w-full
+
                 rounded-full
+
                 bg-[#E75480]
+
                 px-2
-                py-2.5
+
                 text-center
-                text-[8px]
+
                 font-semibold
                 uppercase
-                tracking-[1px]
+
                 text-white
+
                 transition-all
                 duration-300
 
@@ -577,16 +724,39 @@ export default function ServiceCard({
                 focus-visible:outline-offset-2
                 focus-visible:outline-[#E75480]
 
-                sm:px-4
-                sm:py-3
-                sm:text-[10px]
-                sm:tracking-[1.5px]
+                ${
+                  compact
+                    ? `
+                      py-2.5
+                      text-[8px]
+                      tracking-[1.4px]
 
-                lg:px-6
-                lg:py-3.5
-                lg:text-xs
-                lg:tracking-[2px]
-              "
+                      sm:px-4
+                      sm:py-2.5
+                      sm:text-[9px]
+
+                      lg:px-5
+                      lg:py-3
+                      lg:text-[10px]
+                      lg:tracking-[1.7px]
+                    `
+                    : `
+                      py-2.5
+                      text-[8px]
+                      tracking-[1px]
+
+                      sm:px-4
+                      sm:py-3
+                      sm:text-[10px]
+                      sm:tracking-[1.5px]
+
+                      lg:px-6
+                      lg:py-3.5
+                      lg:text-xs
+                      lg:tracking-[2px]
+                    `
+                }
+              `}
             >
               Book Now
             </Link>
@@ -594,29 +764,54 @@ export default function ServiceCard({
             <button
               type="button"
               disabled
-              className="
+              className={`
                 w-full
+
                 cursor-not-allowed
+
                 rounded-full
+
                 bg-[#F4F1F2]
+
                 px-2
-                py-2.5
-                text-[8px]
+
                 font-semibold
                 uppercase
-                tracking-[1px]
+
                 text-[#A98D96]
 
-                sm:px-4
-                sm:py-3
-                sm:text-[10px]
-                sm:tracking-[1.5px]
+                ${
+                  compact
+                    ? `
+                      py-2.5
+                      text-[8px]
+                      tracking-[1.2px]
 
-                lg:px-6
-                lg:py-3.5
-                lg:text-xs
-                lg:tracking-[2px]
-              "
+                      sm:px-4
+                      sm:py-2.5
+                      sm:text-[9px]
+
+                      lg:px-5
+                      lg:py-3
+                      lg:text-[10px]
+                    `
+                    : `
+                      py-2.5
+                      text-[8px]
+                      tracking-[1px]
+
+                      sm:px-4
+                      sm:py-3
+                      sm:text-[10px]
+                      sm:tracking-[1.5px]
+
+                      lg:px-6
+                      lg:py-3.5
+                      lg:text-xs
+                      lg:tracking-[2px]
+                    `
+                }
+              `}
             >
               Currently Not Available
             </button>
