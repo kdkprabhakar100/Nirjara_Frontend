@@ -4,8 +4,8 @@ import {
   useState,
 } from "react";
 
-import ServiceCard from "../../components/ServiceCard";
-import SEO from "../../components/SEO";
+import ServiceCard from "../../../components/ServiceCard";
+import SEO from "../../../components/SEO";
 
 /* =========================================================
    TYPES
@@ -22,29 +22,27 @@ type ServiceCategory = {
 type Service = {
   _id: string;
 
+  /*
+   * Slug may be absent on older SSR data
+   * or records created before slug support.
+   */
+  slug?: string;
+
   title: string;
 
   description: string;
 
-  /*
-    NEW PRICE FIELDS
-  */
+  startingPrice?: number;
 
-  startingPrice?:
-    number;
-
-  maxPrice?:
-    number | null;
+  maxPrice?: number | null;
 
   /*
-    OLD FIELD
-
-    Temporary fallback while existing
-    MongoDB services are migrated.
-  */
-
-  price?:
-    string | number;
+   * OLD FIELD
+   *
+   * Temporary fallback while existing
+   * MongoDB services are migrated.
+   */
+  price?: string | number;
 
   image?: string;
 
@@ -83,6 +81,74 @@ const SERVICES_SEO = {
   type:
     "website",
 };
+
+/* =========================================================
+   SLUG HELPER
+
+   Backend remains the real source of truth.
+
+   This fallback prevents old SSR/API data with no slug
+   from making View Details point back to /services.
+========================================================= */
+
+function createSlug(
+  value: string
+): string {
+  const slug = value
+    .normalize("NFKD")
+    .replace(
+      /[\u0300-\u036f]/g,
+      ""
+    )
+    .toLowerCase()
+    .trim()
+    .replace(
+      /&/g,
+      " and "
+    )
+    .replace(
+      /[^a-z0-9]+/g,
+      "-"
+    )
+    .replace(
+      /^-+|-+$/g,
+      ""
+    )
+    .replace(
+      /-+/g,
+      "-"
+    );
+
+  return slug || "service";
+}
+
+/* =========================================================
+   NORMALIZE SERVICE
+
+   Makes sure every service reaching ServiceCard has a slug.
+========================================================= */
+
+function normalizeService(
+  service: Service
+): Service {
+  return {
+    ...service,
+
+    slug:
+      service.slug?.trim() ||
+      createSlug(
+        service.title
+      ),
+  };
+}
+
+function normalizeServices(
+  services: Service[]
+): Service[] {
+  return services.map(
+    normalizeService
+  );
+}
 
 /* =========================================================
    GET RESPONSIVE SERVICES PER PAGE
@@ -176,8 +242,10 @@ function getStartingPrice(
 /* =========================================================
    SSR INITIAL DATA
 ========================================================= */
+
 export type ServicesInitialData = {
   services: Service[];
+
   categories: ServiceCategory[];
 };
 
@@ -185,7 +253,11 @@ export type ServicesInitialData = {
    COMPONENT
 ========================================================= */
 
-export default function Services({ initialData }: { initialData?: ServicesInitialData }) {
+export default function Services({
+  initialData,
+}: {
+  initialData?: ServicesInitialData;
+}) {
   /* =======================================================
      STATE
   ======================================================= */
@@ -195,7 +267,11 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
     setServices,
   ] =
     useState<Service[]>(
-      () => initialData?.services ?? []
+      () =>
+        normalizeServices(
+          initialData?.services ??
+            []
+        )
     );
 
   const [
@@ -205,7 +281,9 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
     useState<
       ServiceCategory[]
     >(
-      () => initialData?.categories ?? []
+      () =>
+        initialData?.categories ??
+        []
     );
 
   const [
@@ -220,7 +298,10 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
     loading,
     setLoading,
   ] =
-    useState(() => !initialData);
+    useState(
+      () =>
+        !initialData
+    );
 
   const [
     error,
@@ -246,7 +327,9 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
     servicesPerPage,
     setServicesPerPage,
   ] =
-    useState(8); // Match server HTML during hydration; resize after mount.
+    useState(
+      8
+    );
 
   /* =======================================================
      LOAD SERVICES + CATEGORIES
@@ -254,12 +337,20 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
 
   useEffect(
     () => {
-      // The SSR server has already fetched both lists.
-      // Keep the same markup on the server and first browser render.
-      if (initialData) return;
+      /*
+       * SSR already provided the first render.
+       */
+      if (
+        initialData
+      ) {
+        return;
+      }
 
-      let cancelled = false;
-      const controller = new AbortController();
+      let cancelled =
+        false;
+
+      const controller =
+        new AbortController();
 
       const loadData =
         async () => {
@@ -283,7 +374,10 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
                       import.meta.env
                         .VITE_API_URL
                     }/api/services`,
-                    { signal: controller.signal }
+                    {
+                      signal:
+                        controller.signal,
+                    }
                   ),
 
                   fetch(
@@ -291,7 +385,10 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
                       import.meta.env
                         .VITE_API_URL
                     }/api/service-categories`,
-                    { signal: controller.signal }
+                    {
+                      signal:
+                        controller.signal,
+                    }
                   ),
                 ]
               );
@@ -319,47 +416,83 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
               await categoriesResponse.json();
 
             /* ===============================================
-               SUPPORT MULTIPLE RESPONSE FORMATS
+               SUPPORT MULTIPLE SERVICE RESPONSE FORMATS
             =============================================== */
 
-            const serviceList =
+            const rawServiceList:
+              Service[] =
               Array.isArray(
                 servicesData
               )
                 ? servicesData
                 : Array.isArray(
-                      servicesData?.services
-                    )
-                  ? servicesData.services
-                  : Array.isArray(
-                        servicesData?.data
-                      )
-                    ? servicesData.data
-                    : [];
+                    servicesData
+                      ?.services
+                  )
+                ? servicesData.services
+                : Array.isArray(
+                    servicesData
+                      ?.data
+                  )
+                ? servicesData.data
+                : [];
 
-            const categoryList =
+            /*
+             * Important:
+             *
+             * Ensures every card gets a slug even when
+             * an old record or stale SSR payload doesn't
+             * contain one yet.
+             */
+            const serviceList =
+              normalizeServices(
+                rawServiceList
+              );
+
+            /* ===============================================
+               SUPPORT MULTIPLE CATEGORY RESPONSE FORMATS
+            =============================================== */
+
+            const categoryList:
+              ServiceCategory[] =
               Array.isArray(
                 categoriesData
               )
                 ? categoriesData
                 : Array.isArray(
-                      categoriesData?.categories
-                    )
-                  ? categoriesData.categories
-                  : Array.isArray(
-                        categoriesData?.data
-                      )
-                    ? categoriesData.data
-                    : [];
+                    categoriesData
+                      ?.categories
+                  )
+                ? categoriesData.categories
+                : Array.isArray(
+                    categoriesData
+                      ?.data
+                  )
+                ? categoriesData.data
+                : [];
 
-            if (!cancelled) {
-              setServices(serviceList);
-              setCategories(categoryList);
+            if (
+              !cancelled
+            ) {
+              setServices(
+                serviceList
+              );
+
+              setCategories(
+                categoryList
+              );
             }
           } catch (
             err
           ) {
-            if (cancelled || controller.signal.aborted) return;
+            if (
+              cancelled ||
+              controller.signal
+                .aborted
+            ) {
+              return;
+            }
+
             console.error(
               "Services page error:",
               err
@@ -372,14 +505,22 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
                 : "Something went wrong."
             );
           } finally {
-            if (!cancelled) setLoading(false);
+            if (
+              !cancelled
+            ) {
+              setLoading(
+                false
+              );
+            }
           }
         };
 
       void loadData();
 
       return () => {
-        cancelled = true;
+        cancelled =
+          true;
+
         controller.abort();
       };
     },
@@ -705,9 +846,7 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
       <div
         className="
           min-h-screen
-
           bg-[#FFF5F8]
-
           px-6
           pb-24
           pt-36
@@ -719,7 +858,6 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
           className="
             flex
             min-h-[400px]
-
             items-center
             justify-center
           "
@@ -728,14 +866,10 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
             <div
               className="
                 mx-auto
-
                 h-9
                 w-9
-
                 animate-spin
-
                 rounded-full
-
                 border-2
                 border-[#E75480]/20
                 border-t-[#E75480]
@@ -745,11 +879,9 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
             <p
               className="
                 mt-5
-
                 text-sm
                 uppercase
                 tracking-[3px]
-
                 text-[#E75480]
               "
             >
@@ -773,9 +905,7 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
       <div
         className="
           min-h-screen
-
           bg-[#FFF5F8]
-
           px-6
           pb-24
           pt-36
@@ -787,7 +917,6 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
           className="
             flex
             min-h-[400px]
-
             items-center
             justify-center
           "
@@ -796,9 +925,7 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
             <h2
               className="
                 font-serif
-
                 text-3xl
-
                 text-[#3A2A2F]
               "
             >
@@ -809,9 +936,7 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
             <p
               className="
                 mt-3
-
                 text-sm
-
                 text-[#8A6F78]
               "
             >
@@ -853,9 +978,7 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
       <div
         className="
           min-h-screen
-
           bg-[#FFF5F8]
-
           px-4
           pb-24
           pt-32
@@ -875,9 +998,7 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
         <div
           className="
             mx-auto
-
             max-w-7xl
-
             text-center
           "
         >
@@ -886,7 +1007,6 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
               text-[11px]
               uppercase
               tracking-[4px]
-
               text-[#E75480]
 
               sm:text-xs
@@ -898,11 +1018,8 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
           <h1
             className="
               mt-4
-
               font-serif
-
               text-4xl
-
               text-[#3A2A2F]
 
               sm:text-5xl
@@ -912,7 +1029,12 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
           >
             Beauty{" "}
 
-            <span className="italic text-[#E75480]">
+            <span
+              className="
+                italic
+                text-[#E75480]
+              "
+            >
               Services
             </span>
           </h1>
@@ -921,10 +1043,8 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
             className="
               mx-auto
               mt-6
-
               h-px
               w-20
-
               bg-[#E75480]/40
             "
           />
@@ -938,7 +1058,6 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
           className="
             mx-auto
             mt-7
-
             w-full
             max-w-7xl
 
@@ -949,15 +1068,11 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
             className="
               flex
               w-full
-
               items-center
               justify-start
-
               gap-2
-
               overflow-x-auto
               scroll-smooth
-
               px-4
               pb-2
 
@@ -984,18 +1099,14 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
               className={`
                 shrink-0
                 whitespace-nowrap
-
                 rounded-full
                 border
-
                 px-4
                 py-2.5
-
                 text-[8px]
                 font-medium
                 uppercase
                 tracking-[1.5px]
-
                 transition-all
                 duration-300
 
@@ -1046,18 +1157,14 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
                   className={`
                     shrink-0
                     whitespace-nowrap
-
                     rounded-full
                     border
-
                     px-4
                     py-2.5
-
                     text-[8px]
                     font-medium
                     uppercase
                     tracking-[1.5px]
-
                     transition-all
                     duration-300
 
@@ -1104,9 +1211,7 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
           className="
             mx-auto
             mt-12
-
             max-w-7xl
-
             scroll-mt-28
 
             lg:mt-16
@@ -1120,7 +1225,6 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
               <div
                 className="
                   mb-5
-
                   flex
                   items-center
                   justify-between
@@ -1133,7 +1237,6 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
                     text-[9px]
                     uppercase
                     tracking-[2px]
-
                     text-[#A98994]
 
                     sm:text-[10px]
@@ -1154,7 +1257,6 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
                     text-[9px]
                     uppercase
                     tracking-[2px]
-
                     text-[#A98994]
 
                     sm:text-[10px]
@@ -1178,7 +1280,6 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
                 className="
                   grid
                   grid-cols-2
-
                   gap-3
 
                   sm:gap-4
@@ -1193,36 +1294,61 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
                 {paginatedServices.map(
                   (
                     service
-                  ) => (
-                    <ServiceCard
-                      key={
-                        service._id
-                      }
-                      serviceId={
-                        service._id
-                      }
-                      available={
-                        service.available !==
-                        false
-                      }
-                      title={
+                  ) => {
+                    /*
+                     * Always produce a detail slug.
+                     *
+                     * Backend slug wins.
+                     * Title fallback handles old data.
+                     */
+                    const serviceSlug =
+                      service.slug?.trim() ||
+                      createSlug(
                         service.title
-                      }
-                      description={
-                        service.description
-                      }
-                      startingPrice={getStartingPrice(
-                        service
-                      )}
-                      maxPrice={
-                        service.maxPrice ??
-                        null
-                      }
-                      image={
-                        service.image
-                      }
-                    />
-                  )
+                      );
+
+                    return (
+                      <ServiceCard
+                        key={
+                          service._id
+                        }
+
+                        serviceId={
+                          service._id
+                        }
+
+                        slug={
+                          serviceSlug
+                        }
+
+                        available={
+                          service.available !==
+                          false
+                        }
+
+                        title={
+                          service.title
+                        }
+
+                        description={
+                          service.description
+                        }
+
+                        startingPrice={getStartingPrice(
+                          service
+                        )}
+
+                        maxPrice={
+                          service.maxPrice ??
+                          null
+                        }
+
+                        image={
+                          service.image
+                        }
+                      />
+                    );
+                  }
                 )}
               </div>
 
@@ -1236,11 +1362,9 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
                   aria-label="Services pagination"
                   className="
                     mt-10
-
                     flex
                     items-center
                     justify-center
-
                     gap-2
 
                     sm:mt-12
@@ -1265,22 +1389,15 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
                       flex
                       h-10
                       w-10
-
                       items-center
                       justify-center
-
                       rounded-full
-
                       border
                       border-[#E75480]/20
-
                       bg-white
-
                       text-lg
                       text-[#E75480]
-
                       shadow-sm
-
                       transition-all
                       duration-300
 
@@ -1324,18 +1441,13 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
                           flex
                           h-10
                           min-w-10
-
                           items-center
                           justify-center
-
                           rounded-full
                           border
-
                           px-3
-
                           text-xs
                           font-medium
-
                           transition-all
                           duration-300
 
@@ -1388,22 +1500,15 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
                       flex
                       h-10
                       w-10
-
                       items-center
                       justify-center
-
                       rounded-full
-
                       border
                       border-[#E75480]/20
-
                       bg-white
-
                       text-lg
                       text-[#E75480]
-
                       shadow-sm
-
                       transition-all
                       duration-300
 
@@ -1430,14 +1535,10 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
             <div
               className="
                 rounded-3xl
-
                 bg-white
-
                 px-6
                 py-20
-
                 text-center
-
                 shadow-sm
               "
             >
@@ -1446,7 +1547,6 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
                   text-xs
                   uppercase
                   tracking-[3px]
-
                   text-[#E75480]
                 "
               >
@@ -1456,11 +1556,8 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
               <h2
                 className="
                   mt-4
-
                   font-serif
-
                   text-3xl
-
                   text-[#3A2A2F]
                 "
               >
@@ -1472,12 +1569,9 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
                 className="
                   mx-auto
                   mt-3
-
                   max-w-md
-
                   text-sm
                   leading-7
-
                   text-[#8A6F78]
                 "
               >
@@ -1499,20 +1593,14 @@ export default function Services({ initialData }: { initialData?: ServicesInitia
                   }
                   className="
                     mt-6
-
                     rounded-full
-
                     bg-[#E75480]
-
                     px-7
                     py-3
-
                     text-xs
                     uppercase
                     tracking-[2px]
-
                     text-white
-
                     transition
 
                     hover:bg-[#D94873]

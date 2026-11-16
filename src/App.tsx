@@ -10,9 +10,9 @@ import { Routes, Route } from "react-router";
 ============================================================ */
 
 import type { HomeInitialData } from "./pages/public/Home";
-import type { ServicesInitialData } from "./pages/public/Services";
+import type { ServicesInitialData } from "./pages/public/services/Services";
 import type { BranchesInitialData } from "./pages/public/Branches";
-import type { AcademyInitialData } from "./pages/public/Academy";
+import type { AcademyInitialData } from "./pages/public/academy/Academy";
 import type { BlogInitialData } from "./pages/public/Blog";
 import type { BlogDetailsInitialData } from "./pages/public/BlogDetails";
 import type { ContactInitialData } from "./pages/public/Contact";
@@ -37,9 +37,11 @@ import Gallery from "./components/Gallery";
 ============================================================ */
 
 import Home from "./pages/public/Home";
-import Services from "./pages/public/Services";
+import Services from "./pages/public/services/Services";
+import ServiceDetail from "./pages/public/services/ServiceDetail";
 import Branches from "./pages/public/Branches";
-import Academy from "./pages/public/Academy";
+import Academy from "./pages/public/academy/Academy";
+import CourseDetail from "./pages/public/academy/CourseDetail";
 import Blog from "./pages/public/Blog";
 import BlogDetails from "./pages/public/BlogDetails";
 import Contact from "./pages/public/Contact";
@@ -164,6 +166,15 @@ export default function App({
         }
       />
 
+      <Route
+        path="/services/:slug"
+        element={
+          <PublicLayout>
+            <ServiceDetail />
+          </PublicLayout>
+        }
+      />
+
       {/* ======================================================
           GALLERY
       ====================================================== */}
@@ -199,6 +210,15 @@ export default function App({
         element={
           <PublicLayout>
             <Academy initialData={initialData?.academy} />
+          </PublicLayout>
+        }
+      />
+
+      <Route
+        path="/academy/:slug"
+        element={
+          <PublicLayout>
+            <CourseDetail />
           </PublicLayout>
         }
       />
