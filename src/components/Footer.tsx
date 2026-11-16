@@ -985,7 +985,7 @@ export default function Footer() {
                         text-[#8A6F78]
                       "
                     >
-                      Find a Nirjara branch
+                      Find Nirjara branchs
                     </p>
                   </div>
 
