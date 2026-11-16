@@ -641,7 +641,7 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
             "
           >
             <source
-              src="/videos/hero1.mp4"
+              src="/videos/hero.MOV"
               type="video/mp4"
             />
           </video>
