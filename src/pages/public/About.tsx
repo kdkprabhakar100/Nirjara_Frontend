@@ -283,19 +283,19 @@ export default function About({ initialData }: AboutProps) {
               </div>
 
               {ceo && (
-                <div className="absolute bottom-5 left-5 right-5 rounded-[22px] bg-white/95 px-6 py-5 shadow-sm backdrop-blur">
-                  <p className="text-[9px] font-semibold uppercase tracking-[3px] text-[#E75480]">
-                    Leadership
-                  </p>
+                  <div className="absolute bottom-5 left-5 right-5 rounded-[22px] bg-white/80 px-6 py-5 shadow-sm backdrop-blur">
+                <p className="text-[9px] font-semibold uppercase tracking-[3px] text-[#E75480]">
+                  Leadership
+                </p>
 
-                  <h2 className="mt-1 font-serif text-2xl text-[#3A2A2F]">
-                    {ceo.name}
-                  </h2>
+                <h2 className="mt-1 font-serif text-2xl text-[#3A2A2F]">
+                  {ceo.name}
+                </h2>
 
-                  <p className="mt-1 text-xs uppercase tracking-[2px] text-[#8A6F78]">
-                    {ceo.designation}
-                  </p>
-                </div>
+                <p className="mt-1 text-xs uppercase tracking-[2px] text-[#000000]/90">
+                  {ceo.designation}
+                </p>
+              </div>
               )}
             </motion.div>
           </div>
