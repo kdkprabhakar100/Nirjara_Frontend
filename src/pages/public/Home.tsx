@@ -7,12 +7,6 @@ import {
   useNavigate,
 } from "react-router";
 
-import {
-  ShoppingBag,
-  Menu,
-  X,
-} from "lucide-react";
-
 import SEO from "../../components/SEO";
 import ServiceCard from "../../components/ServiceCard";
 import BranchCard from "../../components/BranchCard";
@@ -24,36 +18,55 @@ import Gallery from "../../components/Gallery";
 
 type Service = {
   _id?: string;
+
   title: string;
+
   description: string;
+
   price?: string | number;
+
   startingPrice?: number;
+
   maxPrice?: number | null;
+
   icon?: string;
+
   image?: string;
+
   available?: boolean;
 };
 
 type Branch = {
   _id?: string;
+
   name: string;
+
   label?: string;
+
   address: string;
+
   phone?: string;
+
   openingHours?: string;
+
   mapUrl?: string;
+
   active?: boolean;
 };
 
 type HomepageStats = {
   establishedYear: number;
+
   happyClients: number;
+
   certifiedGraduates: number;
 };
 
 export type HomeInitialData = {
   services: Service[];
+
   branches: Branch[];
+
   homepageStats: HomepageStats;
 };
 
@@ -64,7 +77,9 @@ export type HomeInitialData = {
 const DEFAULT_HOMEPAGE_STATS:
   HomepageStats = {
   establishedYear: 2014,
+
   happyClients: 5000,
+
   certifiedGraduates: 200,
 };
 
@@ -87,13 +102,10 @@ const HOME_SEO = {
 
   image:
     "/images/nirjara-og.jpg",
-
-  type:
-    "website",
 };
 
 /* ============================================================
-   COUNTER FORMATTER
+   COUNTER
 ============================================================ */
 
 function formatCounter(
@@ -120,31 +132,59 @@ function formatCounter(
 }
 
 /* ============================================================
-   PRICE COMPATIBILITY (NEW + LEGACY CMS RECORDS)
+   PRICE COMPATIBILITY
 ============================================================ */
 
-function getStartingPrice(service: Service): number {
+function getStartingPrice(
+  service: Service
+): number {
   if (
-    typeof service.startingPrice === "number" &&
-    Number.isFinite(service.startingPrice) &&
+    typeof service.startingPrice ===
+      "number" &&
+    Number.isFinite(
+      service.startingPrice
+    ) &&
     service.startingPrice >= 0
   ) {
     return service.startingPrice;
   }
 
-  const cleaned = String(service.price ?? "")
-    .replace(/,/g, "")
-    .replace(/[^0-9.]/g, "");
+  const cleaned =
+    String(
+      service.price ?? ""
+    )
+      .replace(
+        /,/g,
+        ""
+      )
+      .replace(
+        /[^0-9.]/g,
+        ""
+      );
 
-  const parsed = Number(cleaned);
-  return cleaned && Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+  const parsed =
+    Number(
+      cleaned
+    );
+
+  return cleaned &&
+    Number.isFinite(
+      parsed
+    ) &&
+    parsed >= 0
+    ? parsed
+    : 0;
 }
 
 /* ============================================================
    HOME
 ============================================================ */
 
-export default function Home({ initialData }: { initialData?: HomeInitialData }) {
+export default function Home({
+  initialData,
+}: {
+  initialData?: HomeInitialData;
+}) {
   const navigate =
     useNavigate();
 
@@ -161,7 +201,9 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
     setServices,
   ] =
     useState<Service[]>(
-      () => initialData?.services ?? []
+      () =>
+        initialData?.services ??
+        []
     );
 
   const [
@@ -169,7 +211,9 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
     setBranches,
   ] =
     useState<Branch[]>(
-      () => initialData?.branches ?? []
+      () =>
+        initialData?.branches ??
+        []
     );
 
   const [
@@ -177,7 +221,9 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
     setHomepageStats,
   ] =
     useState<HomepageStats>(
-      () => initialData?.homepageStats ?? DEFAULT_HOMEPAGE_STATS
+      () =>
+        initialData?.homepageStats ??
+        DEFAULT_HOMEPAGE_STATS
     );
 
   /* ==========================================================
@@ -201,12 +247,7 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
     );
 
   /* ==========================================================
-     ACTIVE / VISIBLE BRANCHES
-
-     Only active branches are:
-     - counted
-     - displayed
-     - included in slider
+     VISIBLE BRANCHES
   ========================================================== */
 
   const visibleBranches =
@@ -222,7 +263,7 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
     visibleBranches.length;
 
   /* ==========================================================
-     HOMEPAGE STATS
+     STATS
   ========================================================== */
 
   const currentYear =
@@ -234,7 +275,8 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
       ? Math.max(
           0,
           currentYear -
-            homepageStats.establishedYear
+            homepageStats
+              .establishedYear
         )
       : 0;
 
@@ -305,14 +347,26 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
         const data =
           await response.json();
 
-        setServices(
-          (Array.isArray(data)
+        const list =
+          Array.isArray(
+            data
+          )
             ? data
-            : Array.isArray(data?.services)
-              ? data.services
-              : Array.isArray(data?.data)
-                ? data.data
-                : []).slice(0, 6)
+            : Array.isArray(
+                data?.services
+              )
+            ? data.services
+            : Array.isArray(
+                data?.data
+              )
+            ? data.data
+            : [];
+
+        setServices(
+          list.slice(
+            0,
+            6
+          )
         );
       } catch (
         error
@@ -352,13 +406,19 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
           await response.json();
 
         setBranches(
-          Array.isArray(data)
+          Array.isArray(
+            data
+          )
             ? data
-            : Array.isArray(data?.branches)
-              ? data.branches
-              : Array.isArray(data?.data)
-                ? data.data
-                : []
+            : Array.isArray(
+                data?.branches
+              )
+            ? data.branches
+            : Array.isArray(
+                data?.data
+              )
+            ? data.data
+            : []
         );
       } catch (
         error
@@ -375,7 +435,7 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
     };
 
   /* ==========================================================
-     FETCH HOMEPAGE STATS
+     FETCH STATS
   ========================================================== */
 
   const fetchHomepageStats =
@@ -443,18 +503,28 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
      INITIAL FETCH
   ========================================================== */
 
-  useEffect(() => {
-    // On the initial SSR hydration, data already exists in both renders.
-    // On client-side navigation (without initialData), fetch as before.
-    if (initialData) return;
+  useEffect(
+    () => {
+      if (
+        initialData
+      ) {
+        return;
+      }
 
-    fetchServices();
-    fetchBranches();
-    fetchHomepageStats();
-  }, [initialData]);
+      void fetchServices();
+
+      void fetchBranches();
+
+      void fetchHomepageStats();
+    },
+
+    [
+      initialData,
+    ]
+  );
 
   /* ==========================================================
-     AUTO SLIDE
+     AUTO BRANCH SLIDER
   ========================================================== */
 
   useEffect(
@@ -500,7 +570,7 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
   );
 
   /* ==========================================================
-     RESET SLIDER
+     RESET BRANCH
   ========================================================== */
 
   useEffect(
@@ -533,7 +603,7 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
   );
 
   /* ==========================================================
-     NEXT BRANCH
+     NEXT
   ========================================================== */
 
   const nextBranch =
@@ -559,7 +629,7 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
     };
 
   /* ==========================================================
-     PREVIOUS BRANCH
+     PREVIOUS
   ========================================================== */
 
   const previousBranch =
@@ -584,6 +654,10 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
       );
     };
 
+  /* ==========================================================
+     RENDER
+  ========================================================== */
+
   return (
     <>
       <SEO
@@ -605,8 +679,13 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
         type="website"
       />
 
-      <div className="overflow-x-hidden bg-[#FFF5F8] text-[#3A2A2F]">
-
+      <div
+        className="
+          overflow-x-hidden
+          bg-[#FFF5F8]
+          text-[#3A2A2F]
+        "
+      >
         {/* ====================================================
             HERO
         ==================================================== */}
@@ -614,12 +693,15 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
         <section
           className="
             relative
+
             mt-[56px]
             min-h-[calc(100svh-56px)]
-            lg:mt-[72px]
-            lg:min-h-[calc(100vh-72px)]
+
             overflow-hidden
             bg-[#3A2A2F]
+
+            lg:mt-[64px]
+            lg:min-h-[calc(100vh-64px)]
           "
         >
           {/* VIDEO */}
@@ -634,8 +716,10 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
               absolute
               inset-0
               z-0
+
               h-full
               w-full
+
               object-cover
               object-center
             "
@@ -646,26 +730,6 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
             />
           </video>
 
-
-{/* HERO SVG BACKGROUND */}
-
-{/* <img
-  src="/videos/hero.svg"
-  alt=""
-  aria-hidden="true"
-  className="
-    absolute
-    inset-0
-    z-0
-    h-full
-    w-full
-    object-cover
-    object-center
-  "
-/> */}
-
-
-
           {/* VIDEO OVERLAY */}
 
           <div
@@ -674,11 +738,12 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
               absolute
               inset-0
               z-[1]
+
               bg-[#3A2A2F]/5
             "
           />
 
-          {/* LIGHT BEHIND TEXT */}
+          {/* LIGHT */}
 
           <div
             className="
@@ -686,6 +751,7 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
               absolute
               inset-0
               z-[2]
+
               bg-[radial-gradient(ellipse_at_center,rgba(255,245,248,0.62)_0%,rgba(255,245,248,0.38)_30%,rgba(255,245,248,0.10)_58%,transparent_76%)]
             "
           />
@@ -698,6 +764,7 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
               absolute
               inset-0
               z-[3]
+
               bg-gradient-to-b
               from-black/[0.02]
               via-transparent
@@ -711,16 +778,20 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
             className="
               relative
               z-10
+
               mx-auto
+
               flex
               min-h-[calc(100svh-56px)]
-              lg:min-h-[calc(100vh-72px)]
               max-w-7xl
+
               items-center
               justify-center
+
               px-6
               pb-24
               pt-16
+
               text-center
 
               sm:px-8
@@ -728,16 +799,38 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
 
               md:px-12
 
+              lg:min-h-[calc(100vh-64px)]
               lg:px-16
-              lg:pt-20
+              lg:pt-16
             "
           >
-            <div className="mx-auto w-full max-w-4xl">
+            <div
+              className="
+                mx-auto
+                w-full
+                max-w-4xl
+              "
+            >
+              {/* LABEL */}
 
-              {/* TOP LABEL */}
+              <div
+                className="
+                  flex
+                  items-center
+                  justify-center
+                  gap-4
+                "
+              >
+                <span
+                  className="
+                    hidden
+                    h-px
+                    w-10
+                    bg-[#E75480]/60
 
-              <div className="flex items-center justify-center gap-4">
-                <span className="hidden h-px w-10 bg-[#E75480]/60 sm:block" />
+                    sm:block
+                  "
+                />
 
                 <p
                   className="
@@ -758,7 +851,16 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
                   Destination
                 </p>
 
-                <span className="hidden h-px w-10 bg-[#E75480]/60 sm:block" />
+                <span
+                  className="
+                    hidden
+                    h-px
+                    w-10
+                    bg-[#E75480]/60
+
+                    sm:block
+                  "
+                />
               </div>
 
               {/* TITLE */}
@@ -766,11 +868,15 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
               <h1
                 className="
                   mt-8
+
                   font-serif
+
                   text-[64px]
                   leading-[0.84]
                   tracking-[-2px]
+
                   text-[#3A2A2F]
+
                   drop-shadow-[0_2px_12px_rgba(255,255,255,0.30)]
 
                   sm:text-[78px]
@@ -786,8 +892,10 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
                   className="
                     mt-4
                     block
+
                     font-serif
                     italic
+
                     text-[#E75480]
                   "
                 >
@@ -802,10 +910,12 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
                   mx-auto
                   mt-10
                   max-w-3xl
+
                   font-serif
                   text-lg
                   italic
                   leading-relaxed
+
                   text-black
 
                   sm:text-xl
@@ -819,7 +929,7 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
                 Confidence
               </p>
 
-              {/* BUTTON */}
+              {/* CTA */}
 
               <button
                 type="button"
@@ -830,23 +940,33 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
                 }
                 className="
                   group
+
                   mt-11
+
                   inline-flex
                   items-center
                   justify-center
                   gap-5
+
                   rounded-full
+
                   border
                   border-[#E75480]
+
                   bg-[#E75480]
+
                   px-9
                   py-[17px]
+
                   text-[13px]
                   font-medium
                   uppercase
                   tracking-[3px]
+
                   text-white
+
                   shadow-[0_15px_40px_rgba(231,84,128,0.30)]
+
                   transition-all
                   duration-300
 
@@ -864,8 +984,10 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
                   className="
                     text-lg
                     leading-none
+
                     transition-transform
                     duration-300
+
                     group-hover:translate-x-1
                   "
                 >
@@ -883,6 +1005,7 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
               bottom-8
               left-8
               z-10
+
               hidden
               items-center
               gap-5
@@ -892,7 +1015,13 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
               xl:left-16
             "
           >
-            <span className="h-px w-12 bg-[#E75480]/70" />
+            <span
+              className="
+                h-px
+                w-12
+                bg-[#E75480]/70
+              "
+            />
 
             <p
               className="
@@ -900,12 +1029,13 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
                 font-semibold
                 uppercase
                 tracking-[4px]
+
                 text-white/90
+
                 drop-shadow-[0_1px_5px_rgba(0,0,0,0.25)]
               "
             >
-              Beauty • Wellness •
-              Confidence
+              Beauty • Wellness • Confidence
             </p>
           </div>
 
@@ -917,6 +1047,7 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
               bottom-8
               right-8
               z-10
+
               hidden
               items-center
               gap-5
@@ -926,14 +1057,43 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
               xl:right-16
             "
           >
-            <span className="h-px w-12 bg-[#E75480]/70" />
+            <span
+              className="
+                h-px
+                w-12
+                bg-[#E75480]/70
+              "
+            />
 
-            <div className="text-right">
-              <p className="text-[8px] font-semibold uppercase tracking-[4px] text-white">
+            <div
+              className="
+                text-right
+              "
+            >
+              <p
+                className="
+                  text-[8px]
+                  font-semibold
+                  uppercase
+                  tracking-[4px]
+
+                  text-white
+                "
+              >
                 Nirjara Beauty
               </p>
 
-              <p className="mt-2 text-[7px] uppercase tracking-[3px] text-white/80">
+              <p
+                className="
+                  mt-2
+
+                  text-[7px]
+                  uppercase
+                  tracking-[3px]
+
+                  text-white/80
+                "
+              >
                 Beauty Lives Here
               </p>
             </div>
@@ -941,11 +1101,28 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
         </section>
 
         {/* ====================================================
-            DYNAMIC STATS
+            STATS
         ==================================================== */}
 
-        <section className="border-y border-[#E75480]/10 bg-white">
-          <div className="mx-auto grid max-w-6xl grid-cols-2 md:grid-cols-4">
+        <section
+          className="
+            border-y
+            border-[#E75480]/10
+
+            bg-white
+          "
+        >
+          <div
+            className="
+              mx-auto
+
+              grid
+              max-w-6xl
+              grid-cols-2
+
+              md:grid-cols-4
+            "
+          >
             {stats.map(
               (
                 stat
@@ -957,13 +1134,27 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
                   className="
                     border-r
                     border-[#E75480]/10
-                    px-6
-                    py-10
+
+                    px-4
+                    py-7
+
                     text-center
+
                     last:border-r-0
+
+                    sm:px-6
+                    sm:py-9
                   "
                 >
-                  <h2 className="font-serif text-4xl text-[#E75480]">
+                  <h2
+                    className="
+                      font-serif
+                      text-3xl
+                      text-[#E75480]
+
+                      sm:text-4xl
+                    "
+                  >
                     {
                       stat.number
                     }
@@ -972,10 +1163,15 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
                   <p
                     className="
                       mt-2
-                      text-xs
+
+                      text-[9px]
                       uppercase
-                      tracking-[2px]
+                      tracking-[1.8px]
+
                       text-[#8A6F78]
+
+                      sm:text-xs
+                      sm:tracking-[2px]
                     "
                   >
                     {
@@ -992,59 +1188,152 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
             SERVICES
         ==================================================== */}
 
-        <section className="overflow-hidden bg-[#FFF5F8] pb-8 pt-10 sm:pb-10 sm:pt-12 md:px-12 md:py-24">
+        <section
+          className="
+            overflow-hidden
 
+            bg-[#FFF5F8]
+
+            pb-7
+            pt-9
+
+            sm:pb-8
+            sm:pt-10
+
+            md:px-12
+            md:pb-10
+            md:pt-16
+
+            lg:pb-10
+            lg:pt-16
+          "
+        >
           {/* HEADING */}
 
-          <div className="px-6 text-center">
-            <p
+          <div
+            className="
+              px-6
+              text-center
+            "
+          >
+            <div
               className="
-                text-[10px]
-                uppercase
-                tracking-[4px]
-                text-[#E75480]
-
-                sm:text-xs
+                flex
+                items-center
+                justify-center
+                gap-3
               "
             >
-              Our Services
-            </p>
+              <span
+                className="
+                  h-px
+                  w-7
+                  bg-[#E75480]/30
+
+                  sm:w-9
+                "
+              />
+
+              <p
+                className="
+                  text-[9px]
+                  font-semibold
+                  uppercase
+                  tracking-[3.5px]
+
+                  text-[#E75480]
+
+                  sm:text-[10px]
+                  sm:tracking-[4px]
+                "
+              >
+                Our Services
+              </p>
+
+              <span
+                className="
+                  h-px
+                  w-7
+                  bg-[#E75480]/30
+
+                  sm:w-9
+                "
+              />
+            </div>
 
             <h2
               className="
-                mt-4
+                mt-3
+
                 font-serif
-                text-[40px]
-                leading-tight
+
+                text-[36px]
+                leading-[1.05]
+
                 text-[#3A2A2F]
 
-                sm:text-5xl
+                sm:text-[42px]
+
+                md:text-[46px]
               "
             >
               The Art of{" "}
 
-              <span className="italic text-[#E75480]">
+              <span
+                className="
+                  italic
+                  text-[#E75480]
+                "
+              >
                 Beauty
               </span>
             </h2>
 
-            <div className="mx-auto mt-6 h-px w-20 bg-[#E75480]/40" />
+            <p
+              className="
+                mx-auto
+                mt-3
+                max-w-xl
+
+                text-[11px]
+                leading-5
+
+                text-[#8A6F78]
+
+                sm:text-xs
+                sm:leading-6
+              "
+            >
+              Thoughtfully delivered beauty services designed around care,
+              confidence and you.
+            </p>
           </div>
 
           {/* MOBILE SERVICES */}
 
-          <div className="mt-10 md:hidden">
+          <div
+            className="
+              mt-7
+
+              md:hidden
+            "
+          >
             <div
               className="
                 flex
                 snap-x
                 snap-mandatory
+
                 gap-4
+
                 overflow-x-auto
                 scroll-smooth
+
                 px-5
-                pb-5
+                pb-4
+
                 [scrollbar-width:none]
+
                 [&::-webkit-scrollbar]:hidden
               "
             >
@@ -1061,20 +1350,36 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
                     className="
                       w-[84vw]
                       max-w-[340px]
+
                       shrink-0
                       snap-center
-                      first:ml-0
                     "
                   >
                     <ServiceCard
-                      serviceId={service._id}
-                      available={service.available !==
-                        false}
-                      title={service.title}
-                      description={service.description}
-                      image={service.image || ""}
-                      startingPrice={getStartingPrice(service)}
-                      maxPrice={service.maxPrice ?? null}
+                      serviceId={
+                        service._id
+                      }
+                      available={
+                        service.available !==
+                        false
+                      }
+                      title={
+                        service.title
+                      }
+                      description={
+                        service.description
+                      }
+                      image={
+                        service.image ||
+                        ""
+                      }
+                      startingPrice={getStartingPrice(
+                        service
+                      )}
+                      maxPrice={
+                        service.maxPrice ??
+                        null
+                      }
                     />
                   </div>
                 )
@@ -1083,32 +1388,66 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
 
             {services.length >
               1 && (
-              <div className="mt-2 flex items-center justify-center gap-3">
-                <span className="h-px w-8 bg-[#E75480]/25" />
+              <div
+                className="
+                  mt-1
 
-                <p className="text-[9px] font-medium uppercase tracking-[3px] text-[#8A6F78]/60">
+                  flex
+                  items-center
+                  justify-center
+                  gap-3
+                "
+              >
+                <span
+                  className="
+                    h-px
+                    w-7
+                    bg-[#E75480]/20
+                  "
+                />
+
+                <p
+                  className="
+                    text-[8px]
+                    font-medium
+                    uppercase
+                    tracking-[2.5px]
+
+                    text-[#8A6F78]/55
+                  "
+                >
                   Swipe to explore
                 </p>
 
-                <span className="h-px w-8 bg-[#E75480]/25" />
+                <span
+                  className="
+                    h-px
+                    w-7
+                    bg-[#E75480]/20
+                  "
+                />
               </div>
             )}
           </div>
 
-          {/* TABLET / DESKTOP */}
+          {/* DESKTOP SERVICES */}
 
           <div
             className="
               mx-auto
-              mt-16
+              mt-10
+
               hidden
               max-w-6xl
-              gap-8
+
+              gap-6
 
               md:grid
               md:grid-cols-2
 
+              lg:mt-12
               lg:grid-cols-3
+              lg:gap-7
             "
           >
             {services.map(
@@ -1117,16 +1456,34 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
                 index
               ) => (
                 <ServiceCard
-                  key={service._id ||
-                    index}
-                  serviceId={service._id}
-                  available={service.available !==
-                    false}
-                  title={service.title}
-                  description={service.description}
-                  image={service.image || ""}
-                  startingPrice={getStartingPrice(service)}
-                  maxPrice={service.maxPrice ?? null}
+                  key={
+                    service._id ||
+                    index
+                  }
+                  serviceId={
+                    service._id
+                  }
+                  available={
+                    service.available !==
+                    false
+                  }
+                  title={
+                    service.title
+                  }
+                  description={
+                    service.description
+                  }
+                  image={
+                    service.image ||
+                    ""
+                  }
+                  startingPrice={getStartingPrice(
+                    service
+                  )}
+                  maxPrice={
+                    service.maxPrice ??
+                    null
+                  }
                 />
               )
             )}
@@ -1134,7 +1491,20 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
 
           {/* VIEW ALL */}
 
-          <div className="mt-10 flex justify-center px-6 md:mt-14">
+          <div
+            className="
+              mt-7
+
+              flex
+              justify-center
+
+              px-6
+
+              md:mt-9
+
+              lg:mt-10
+            "
+          >
             <button
               type="button"
               onClick={() =>
@@ -1144,22 +1514,31 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
               }
               className="
                 group
+
                 inline-flex
                 items-center
                 justify-center
-                gap-4
+                gap-3
+
                 rounded-full
+
                 border
-                border-[#E75480]/30
+                border-[#E75480]/25
+
                 bg-white
+
                 px-7
-                py-4
-                text-[10px]
+                py-3
+
+                text-[9px]
                 font-semibold
                 uppercase
-                tracking-[2.5px]
+                tracking-[2.2px]
+
                 text-[#E75480]
-                shadow-sm
+
+                shadow-[0_5px_18px_rgba(58,42,47,0.035)]
+
                 transition-all
                 duration-300
 
@@ -1167,15 +1546,26 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
                 hover:border-[#E75480]
                 hover:bg-[#E75480]
                 hover:text-white
-                hover:shadow-lg
+                hover:shadow-[0_9px_24px_rgba(231,84,128,0.16)]
 
-                sm:px-9
-                sm:text-[11px]
+                sm:px-8
+                sm:py-3.5
+                sm:text-[10px]
               "
             >
               View All Services
 
-              <span className="text-base leading-none transition-transform duration-300 group-hover:translate-x-1">
+              <span
+                className="
+                  text-sm
+                  leading-none
+
+                  transition-transform
+                  duration-300
+
+                  group-hover:translate-x-1
+                "
+              >
                 →
               </span>
             </button>
@@ -1186,7 +1576,9 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
             GALLERY
         ==================================================== */}
 
-        <Gallery embedded />
+        <Gallery
+          embedded
+        />
 
         {/* ====================================================
             BRANCHES
@@ -1195,6 +1587,7 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
         <section
           className="
             bg-white
+
             px-4
             pb-10
             pt-8
@@ -1212,12 +1605,17 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
         >
           {/* HEADING */}
 
-          <div className="text-center">
+          <div
+            className="
+              text-center
+            "
+          >
             <p
               className="
                 text-[10px]
                 uppercase
                 tracking-[4px]
+
                 text-[#E75480]
 
                 sm:text-xs
@@ -1229,9 +1627,12 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
             <h2
               className="
                 mt-3
+
                 font-serif
+
                 text-[38px]
                 leading-tight
+
                 text-[#3A2A2F]
 
                 sm:mt-4
@@ -1240,16 +1641,34 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
             >
               Visit{" "}
 
-              <span className="italic text-[#E75480]">
+              <span
+                className="
+                  italic
+                  text-[#E75480]
+                "
+              >
                 Nirjara
               </span>
             </h2>
 
-            <div className="mx-auto mt-5 h-px w-16 bg-[#E75480]/40 sm:mt-6 sm:w-20" />
+            <div
+              className="
+                mx-auto
+                mt-5
+
+                h-px
+                w-16
+
+                bg-[#E75480]/40
+
+                sm:mt-6
+                sm:w-20
+              "
+            />
           </div>
 
           {/* ==================================================
-              MOBILE + TABLET
+              MOBILE + TABLET BRANCHES
           ================================================== */}
 
           {visibleBranches.length >
@@ -1257,8 +1676,10 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
             <div
               className="
                 relative
+
                 mx-auto
                 mt-10
+
                 w-full
                 max-w-[680px]
 
@@ -1281,14 +1702,20 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
             >
               {/* VIEWPORT */}
 
-              <div className="w-full overflow-hidden rounded-[24px]">
-
+              <div
+                className="
+                  w-full
+                  overflow-hidden
+                  rounded-[24px]
+                "
+              >
                 {/* TRACK */}
 
                 <div
                   className="
                     flex
                     w-full
+
                     transition-transform
                     duration-700
                     ease-in-out
@@ -1311,6 +1738,7 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
                         className="
                           w-full
                           min-w-full
+
                           shrink-0
                           basis-full
                         "
@@ -1318,6 +1746,7 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
                         <div
                           className="
                             mx-auto
+
                             w-[90%]
                             max-w-[340px]
 
@@ -1382,21 +1811,30 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
                     left-2
                     top-1/2
                     z-20
+
                     flex
                     h-10
                     w-10
                     -translate-y-1/2
+
                     items-center
                     justify-center
+
                     rounded-full
+
                     border
                     border-[#E75480]/25
+
                     bg-white/95
+
                     font-serif
                     text-2xl
                     text-[#E75480]
+
                     shadow-[0_8px_25px_rgba(58,42,47,0.12)]
+
                     backdrop-blur-md
+
                     transition-all
                     duration-300
 
@@ -1433,21 +1871,30 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
                     right-2
                     top-1/2
                     z-20
+
                     flex
                     h-10
                     w-10
                     -translate-y-1/2
+
                     items-center
                     justify-center
+
                     rounded-full
+
                     border
                     border-[#E75480]/25
+
                     bg-white/95
+
                     font-serif
                     text-2xl
                     text-[#E75480]
+
                     shadow-[0_8px_25px_rgba(58,42,47,0.12)]
+
                     backdrop-blur-md
+
                     transition-all
                     duration-300
 
@@ -1473,7 +1920,16 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
 
               {visibleBranches.length >
                 1 && (
-                <div className="mt-6 flex items-center justify-center gap-2">
+                <div
+                  className="
+                    mt-6
+
+                    flex
+                    items-center
+                    justify-center
+                    gap-2
+                  "
+                >
                   {visibleBranches.map(
                     (
                       branch,
@@ -1491,6 +1947,7 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
                         className={`
                           h-2
                           rounded-full
+
                           transition-all
                           duration-500
 
@@ -1507,16 +1964,19 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
                 </div>
               )}
 
-              {/* LOCATION COUNTER */}
+              {/* COUNTER */}
 
               <p
                 className="
                   mt-4
+
                   text-center
+
                   text-[8px]
                   font-medium
                   uppercase
                   tracking-[3px]
+
                   text-[#8A6F78]/60
 
                   sm:text-[9px]
@@ -1537,7 +1997,7 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
           )}
 
           {/* ==================================================
-              DESKTOP
+              DESKTOP BRANCHES
           ================================================== */}
 
           {visibleBranches.length >
@@ -1546,11 +2006,14 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
               className="
                 mx-auto
                 mt-16
+
                 hidden
                 w-full
                 max-w-7xl
+
                 grid-cols-3
                 items-stretch
+
                 gap-5
 
                 lg:grid
@@ -1565,7 +2028,10 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
                 ) => (
                   <div
                     key={`${branch.name}-desktop-${index}`}
-                    className="h-full min-w-0"
+                    className="
+                      h-full
+                      min-w-0
+                    "
                   >
                     <BranchCard
                       number={String(
@@ -1603,9 +2069,7 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
             </div>
           )}
 
-          {/* ==================================================
-              DYNAMIC BOTTOM LABEL
-          ================================================== */}
+          {/* BOTTOM LABEL */}
 
           {visibleBranches.length >
             0 && (
@@ -1613,6 +2077,7 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
               className="
                 mx-auto
                 mt-12
+
                 hidden
                 items-center
                 justify-center
@@ -1621,13 +2086,20 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
                 lg:flex
               "
             >
-              <span className="h-px w-8 bg-[#E75480]/30" />
+              <span
+                className="
+                  h-px
+                  w-8
+                  bg-[#E75480]/30
+                "
+              />
 
               <p
                 className="
                   text-[9px]
                   uppercase
                   tracking-[4px]
+
                   text-[#8A6F78]/70
                 "
               >
@@ -1638,31 +2110,41 @@ export default function Home({ initialData }: { initialData?: HomeInitialData })
                 1
                   ? "Location"
                   : "Locations"}{" "}
-                • One Nirjara
-                Experience
+                • One Nirjara Experience
               </p>
 
-              <span className="h-px w-8 bg-[#E75480]/30" />
+              <span
+                className="
+                  h-px
+                  w-8
+                  bg-[#E75480]/30
+                "
+              />
             </div>
           )}
 
-          {/* EMPTY STATE */}
+          {/* EMPTY */}
 
           {visibleBranches.length ===
             0 && (
-            <div className="mx-auto mt-14 max-w-xl text-center">
+            <div
+              className="
+                mx-auto
+                mt-14
+                max-w-xl
+                text-center
+              "
+            >
               <p
                 className="
                   font-serif
                   text-xl
                   italic
+
                   text-[#8A6F78]
                 "
               >
-                Our branch
-                information is
-                currently being
-                updated.
+                Our branch information is currently being updated.
               </p>
             </div>
           )}

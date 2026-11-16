@@ -879,7 +879,7 @@ export default function Products() {
                 text-[#E75480]
               "
             >
-              ${Number(product.price).toFixed(2)}
+              Rs.{Number(product.price).toFixed(2)}
             </p>
           </div>
 
@@ -1313,7 +1313,7 @@ export default function Products() {
                 text-[#E75480]
               "
             >
-              ${Number(product.price).toFixed(2)}
+              Rs.{Number(product.price).toFixed(2)}
             </span>
 
             <span

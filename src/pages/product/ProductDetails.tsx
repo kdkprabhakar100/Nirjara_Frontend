@@ -908,20 +908,17 @@ const handleBuyNow = async () => {
                 <p
                   className="
                     font-serif
-
                     text-[26px]
                     font-semibold
                     leading-none
-
                     text-[#E75480]
-
                     sm:text-[34px]
                   "
                 >
-                  $
+                  Rs.{" "}
                   {Number(
                     product.price,
-                  ).toFixed(2)}
+                  ).toLocaleString("en-NP")}
                 </p>
 
                 <span
