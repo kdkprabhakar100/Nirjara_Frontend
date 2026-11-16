@@ -727,7 +727,7 @@ export default function Home({
             "
           >
             <source
-              src="/videos/hero.MOV"
+              src="/videos/hero.mp4"
               type="video/mp4"
             />
           </video>
